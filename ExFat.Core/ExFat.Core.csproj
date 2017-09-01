@@ -33,23 +33,39 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Buffer\BufferBytes.cs" />
-    <Compile Include="Buffer\BufferData.cs" />
-    <Compile Include="Buffer\BufferByteString.cs" />
-    <Compile Include="Buffer\BufferUInt32.cs" />
-    <Compile Include="Buffer\BufferUInt64.cs" />
-    <Compile Include="Buffer\BufferInt64.cs" />
-    <Compile Include="Buffer\BytesExtensions.cs" />
+    <Compile Include="Buffers\Buffer.cs" />
+    <Compile Include="Buffers\BufferBytes.cs" />
+    <Compile Include="Buffers\BufferWideString.cs" />
+    <Compile Include="Buffers\BufferByteString.cs" />
+    <Compile Include="Buffers\BufferUInt8.cs" />
+    <Compile Include="Buffers\BufferUInt16.cs" />
+    <Compile Include="Buffers\BufferUInt32.cs" />
+    <Compile Include="Buffers\BufferUInt64.cs" />
+    <Compile Include="Buffers\BytesExtensions.cs" />
+    <Compile Include="Buffers\EnumValueProvider.cs" />
+    <Compile Include="Buffers\IValueProvider.cs" />
+    <Compile Include="ExFatDirectory.cs" />
+    <Compile Include="Entries\AllocationBitmapExFatDirectoryEntry.cs" />
+    <Compile Include="Entries\ExFatDirectoryEntry.cs" />
+    <Compile Include="Entries\ExFatDirectoryEntryType.cs" />
+    <Compile Include="Entries\ExFatFileAttributes.cs" />
+    <Compile Include="Entries\FileExFatDirectoryEntry.cs" />
+    <Compile Include="Entries\ExFatGeneralSecondaryFlags.cs" />
+    <Compile Include="Entries\FileNameExtensionExFatDirectoryEntry.cs" />
+    <Compile Include="Entries\StreamExtensionExFatDirectoryEntry.cs" />
+    <Compile Include="Entries\UpCaseTableExFatDirectoryEntry.cs" />
+    <Compile Include="Entries\VolumeLabelExFatDirectoryEntry.cs" />
     <Compile Include="ExFatBootSector.cs" />
     <Compile Include="ExFatFS.cs" />
+    <Compile Include="IClusterInformationReader.cs" />
+    <Compile Include="IO\ClusterStream.cs" />
+    <Compile Include="IPartitionReader.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

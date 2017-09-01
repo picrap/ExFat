@@ -41,6 +41,7 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="StructureTests.cs" />
     <Compile Include="TestEnvironment.cs" />
     <Compile Include="IntegrityTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -52,6 +53,10 @@
     <None Include="project.json" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\ExFat.Core\ExFat.Core.csproj">
+      <Project>{694BBB9A-204F-41A3-927E-2BCB8AA9DADE}</Project>
+      <Name>ExFat.Core</Name>
+    </ProjectReference>
     <ProjectReference Include="..\ExFat.DiscUtils\ExFat.DiscUtils.csproj">
       <Project>{D3FE0435-345E-4BDE-A22E-AD923638275C}</Project>
       <Name>ExFat.DiscUtils</Name>

@@ -1,4 +1,4 @@
-﻿namespace ExFat.Core.Buffer
+﻿namespace ExFat.Core.Buffers
 {
     using System;
     using System.Collections;
@@ -9,10 +9,11 @@
     /// <summary>
     /// Represents bytes in the buffer
     /// </summary>
-    /// <seealso cref="BufferData" />
     [DebuggerDisplay("{" + nameof(DebugLiteral) + "}")]
-    public class BufferBytes : BufferData, IEnumerable<byte>
+    public class BufferBytes : IEnumerable<byte>
     {
+        private readonly Buffers.Buffer _buffer;
+
         /// <summary>
         /// Gets or sets the <see cref="System.Byte"/> at the specified index.
         /// </summary>
@@ -25,15 +26,15 @@
         /// </exception>
         public byte this[int index]
         {
-            get { return GetAt(index); }
-            set { SetAt(index, value); }
+            get { return _buffer[index]; }
+            set { _buffer[index] = value; }
         }
 
         private string DebugLiteral
         {
             get
             {
-                var bytes = GetAll();
+                var bytes = _buffer.GetBytes();
                 var s = string.Join(", ", bytes.Take(10).Select(b => $"0x{b:X2}"));
                 if (bytes.Length > 10)
                     s += " ...";
@@ -47,14 +48,14 @@
         /// <param name="buffer">The buffer.</param>
         /// <param name="offset">The offset.</param>
         /// <param name="length">The length.</param>
-        public BufferBytes(byte[] buffer, int offset, int length)
-            : base(buffer, offset, length)
+        public BufferBytes(Buffers.Buffer buffer, int offset, int length)
         {
+            _buffer = new Buffers.Buffer(buffer, offset, length);
         }
 
         public IEnumerator<byte> GetEnumerator()
         {
-            return ((IEnumerable<byte>)GetAll()).GetEnumerator();
+            return ((IEnumerable<byte>)_buffer.GetBytes()).GetEnumerator();
         }
 
         IEnumerator IEnumerable.GetEnumerator()

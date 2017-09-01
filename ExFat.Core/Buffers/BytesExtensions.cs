@@ -1,4 +1,4 @@
-﻿namespace ExFat.Core.Buffer
+﻿namespace ExFat.Core.Buffers
 {
     using System;
     using System.Linq;

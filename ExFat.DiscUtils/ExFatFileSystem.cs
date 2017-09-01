@@ -10,8 +10,9 @@
     {
         private Stream _partitionStream;
         private ExFatFS _fs;
+        private ExFatBootSector _bootSector;
 
-        public override string FriendlyName { get; }
+        public override string FriendlyName => "Microsoft exFAT";
 
         /// <summary>
         /// Gets a value indicating whether the file system is read-only or read-write.
@@ -24,13 +25,16 @@
         public ExFatFileSystem(Stream partitionStream)
         {
             _fs = new ExFatFS(partitionStream);
+            _bootSector = ExFatFS.ReadBootSector(partitionStream);
+            if (!_bootSector.IsValid)
+                throw new InvalidOperationException("Given stream is not exFAT volume");
             _partitionStream = partitionStream;
         }
 
         public static bool Detect(Stream partitionStream)
         {
             var fs = new ExFatFS(partitionStream);
-            var bootSector = fs.ReadBootSector(partitionStream);
+            var bootSector = ExFatFS.ReadBootSector(partitionStream);
             return bootSector.IsValid;
         }
 
