@@ -1,0 +1,11 @@
+﻿{
+  "dependencies": {
+    "DiscUtils.Vhdx": "0.13.0-alpha"
+  },
+  "frameworks": {
+    "net40": {}
+  },
+  "runtimes": {
+    "win": {}
+  }
+}

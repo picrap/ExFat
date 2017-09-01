@@ -40,6 +40,14 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Buffer\BufferBytes.cs" />
+    <Compile Include="Buffer\BufferData.cs" />
+    <Compile Include="Buffer\BufferByteString.cs" />
+    <Compile Include="Buffer\BufferUInt32.cs" />
+    <Compile Include="Buffer\BufferUInt64.cs" />
+    <Compile Include="Buffer\BufferInt64.cs" />
+    <Compile Include="Buffer\BytesExtensions.cs" />
+    <Compile Include="ExFatBootSector.cs" />
     <Compile Include="ExFatFS.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

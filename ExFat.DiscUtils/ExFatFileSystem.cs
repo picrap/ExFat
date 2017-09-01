@@ -2,16 +2,37 @@
 {
     using System;
     using System.IO;
+    using Core;
     using global::DiscUtils;
     using global::DiscUtils.Streams;
 
-    public class ExFatFileSystem: DiscFileSystem
+    public class ExFatFileSystem : DiscFileSystem
     {
+        private Stream _partitionStream;
+        private ExFatFS _fs;
+
         public override string FriendlyName { get; }
-        public override bool CanWrite { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the file system is read-only or read-write.
+        /// </summary>
+        public override bool CanWrite => _partitionStream.CanWrite;
         public override long Size { get; }
         public override long UsedSpace { get; }
         public override long AvailableSpace { get; }
+
+        public ExFatFileSystem(Stream partitionStream)
+        {
+            _fs = new ExFatFS(partitionStream);
+            _partitionStream = partitionStream;
+        }
+
+        public static bool Detect(Stream partitionStream)
+        {
+            var fs = new ExFatFS(partitionStream);
+            var bootSector = fs.ReadBootSector(partitionStream);
+            return bootSector.IsValid;
+        }
 
         public override void CopyFile(string sourceFile, string destinationFile, bool overwrite)
         {
