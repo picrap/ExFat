@@ -17,7 +17,7 @@
         public long SectorsPerCluster => 1 << BootSector.SectorsPerCluster.Value;
         public int BytesPerSector => 1 << BootSector.BytesPerSector.Value;
 
-        public int BytesPerCluster => 1 << (BootSector.BytesPerSector.Value + BootSector.BytesPerSector.Value);
+        public int BytesPerCluster => 1 << (BootSector.SectorsPerCluster.Value + BootSector.BytesPerSector.Value);
 
         public ExFatFilesystemAccessor(Stream partitionStream)
         {
@@ -39,7 +39,7 @@
         /// <param name="startCluster">The start cluster.</param>
         /// <param name="length">The length.</param>
         /// <returns></returns>
-        public Stream OpenClusters(long startCluster, long? length = null)
+        public Stream OpenClusters(long startCluster, ulong? length = null)
         {
             return new ClusterStream(this, this, startCluster, length);
         }
@@ -84,14 +84,15 @@
             return _fatPage;
         }
 
-        public long GetNext(long cluster)
+        public long GetNextCluster(long cluster)
         {
             lock (_streamLock)
             {
                 // TODO: optimize... A lot!
-                var fatPage = GetFatPage(cluster);
-                var clusterIndex = cluster % ClustersPerFatPage;
-                return LittleEndian.ToUInt32(fatPage, (int) clusterIndex * sizeof(Int32));
+                var actualCluster = cluster + 2;
+                var fatPage = GetFatPage(actualCluster);
+                var clusterIndex = (int)(actualCluster % ClustersPerFatPage);
+                return (int)LittleEndian.ToUInt32(fatPage, clusterIndex * sizeof(Int32)) - 2;
             }
         }
 

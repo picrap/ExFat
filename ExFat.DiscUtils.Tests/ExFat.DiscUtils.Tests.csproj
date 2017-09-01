@@ -41,6 +41,8 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ClustersTests.cs" />
+    <Compile Include="StreamTests.cs" />
     <Compile Include="StructureTests.cs" />
     <Compile Include="TestEnvironment.cs" />
     <Compile Include="IntegrityTests.cs" />

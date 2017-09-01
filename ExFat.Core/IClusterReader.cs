@@ -2,6 +2,6 @@
 {
     public interface IClusterReader
     {
-        long GetNext(long cluster);
+        long GetNextCluster(long cluster);
     }
 }

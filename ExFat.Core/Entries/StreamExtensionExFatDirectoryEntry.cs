@@ -12,6 +12,12 @@
         public IValueProvider<Byte> NameLength { get; }
         public IValueProvider<UInt16> NameHash { get; }
         public IValueProvider<UInt64> ValidDataLength { get; }
+        /// <summary>
+        /// Gets the first cluster MINUS 2 (WTF?).
+        /// </summary>
+        /// <value>
+        /// The first cluster.
+        /// </value>
         public IValueProvider<UInt32> FirstCluster { get; }
         public IValueProvider<UInt64> DataLength { get; }
 

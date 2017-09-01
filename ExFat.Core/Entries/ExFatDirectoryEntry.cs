@@ -20,8 +20,8 @@
             }
         }
 
-        public bool IsSecondary => (EntryType.Value & ExFatDirectoryEntryType.IsSecondary) != 0;
-        public bool IsBenign => (EntryType.Value & ExFatDirectoryEntryType.IsBenign) != 0;
+        public bool IsSecondary => (EntryType.Value & ExFatDirectoryEntryType.Secondary) != 0;
+        public bool IsBenign => (EntryType.Value & ExFatDirectoryEntryType.Benign) != 0;
 
         protected ExFatDirectoryEntry(Buffer buffer)
         {

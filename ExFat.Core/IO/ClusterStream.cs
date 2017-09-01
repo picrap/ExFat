@@ -50,12 +50,12 @@
         /// <param name="partitionReader">The partition reader.</param>
         /// <param name="startCluster">The start cluster.</param>
         /// <param name="length">The length.</param>
-        public ClusterStream(IClusterReader clusterReader, IPartitionReader partitionReader, long startCluster, long? length)
+        public ClusterStream(IClusterReader clusterReader, IPartitionReader partitionReader, long startCluster, ulong? length)
         {
             _clusterReader = clusterReader;
             _partitionReader = partitionReader;
             _startCluster = startCluster;
-            _length = length;
+            _length = (long?)length;
 
             _position = 0;
             _currentCluster = _startCluster;
@@ -114,7 +114,7 @@
 
             // now, it's only a forward seek
             for (var index = CurrentClusterIndex; index < clusterIndex; index++)
-                _currentCluster = _clusterReader.GetNext(_currentCluster);
+                _currentCluster = _clusterReader.GetNextCluster(_currentCluster);
             _position = offset;
             return offset;
         }
@@ -141,7 +141,7 @@
 
                 _partitionReader.ReadCluster(_currentCluster, _currentClusterData);
                 _currentClusterDataIndex = CurrentClusterIndex;
-                _currentCluster = _clusterReader.GetNext(_currentCluster);
+                _currentCluster = _clusterReader.GetNextCluster(_currentCluster);
             }
 
             return _currentClusterData;
