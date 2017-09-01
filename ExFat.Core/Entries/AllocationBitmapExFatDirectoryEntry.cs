@@ -1,9 +1,11 @@
 ﻿namespace ExFat.Core.Entries
 {
     using System;
+    using System.Diagnostics;
     using Buffers;
     using Buffer = Buffers.Buffer;
 
+    [DebuggerDisplay("Allocation bitmap {FirstCluster.Value} ({DataLength.Value})")]
     public class AllocationBitmapExFatDirectoryEntry : ExFatDirectoryEntry
     {
         public IValueProvider<Byte> BitmapFlags { get; }

@@ -5,8 +5,21 @@
 
     public class Buffer
     {
-        private readonly int _offset;
-        private readonly byte[] _bytes;
+        /// <summary>
+        /// Gets the bytes.
+        /// </summary>
+        /// <value>
+        /// The bytes.
+        /// </value>
+        public byte[] Bytes { get; }
+
+        /// <summary>
+        /// Gets the start offset in bytes.
+        /// </summary>
+        /// <value>
+        /// The offset.
+        /// </value>
+        public int Offset { get; }
 
         /// <summary>
         /// Gets the length.
@@ -35,13 +48,13 @@
             {
                 if (index < 0 || index >= Length)
                     throw new ArgumentOutOfRangeException(nameof(index));
-                return _bytes[_offset + index];
+                return Bytes[Offset + index];
             }
             set
             {
                 if (index < 0 || index >= Length)
                     throw new ArgumentOutOfRangeException(nameof(index));
-                _bytes[_offset + index] = value;
+                Bytes[Offset + index] = value;
             }
         }
 
@@ -52,7 +65,7 @@
         public byte[] GetBytes()
         {
             var bytes = new byte[Length];
-            Array.Copy(_bytes, _offset, bytes, 0, Length);
+            Array.Copy(Bytes, Offset, bytes, 0, Length);
             return bytes;
         }
 
@@ -61,7 +74,7 @@
             if (bytes.Count > Length)
                 throw new ArgumentException(nameof(bytes));
             for (int index = 0; index < bytes.Count; index++)
-                _bytes[_offset + index] = bytes[index];
+                Bytes[Offset + index] = bytes[index];
         }
 
         /// <summary>
@@ -70,8 +83,8 @@
         /// <param name="bytes">The bytes.</param>
         public Buffer(byte[] bytes)
         {
-            _bytes = bytes;
-            Length = _bytes.Length;
+            Bytes = bytes;
+            Length = Bytes.Length;
         }
 
         /// <summary>
@@ -91,8 +104,8 @@
                 throw new ArgumentOutOfRangeException(nameof(offset));
             if (offset + length > buffer.Length)
                 throw new ArgumentOutOfRangeException(nameof(length));
-            _bytes = buffer._bytes;
-            _offset = buffer._offset + offset;
+            Bytes = buffer.Bytes;
+            Offset = buffer.Offset + offset;
             Length = length;
         }
 

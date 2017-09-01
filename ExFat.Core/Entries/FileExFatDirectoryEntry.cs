@@ -1,9 +1,11 @@
 ﻿namespace ExFat.Core.Entries
 {
     using System;
+    using System.Diagnostics;
     using Buffers;
     using Buffer = Buffers.Buffer;
 
+    [DebuggerDisplay("File")]
     public class FileExFatDirectoryEntry : ExFatDirectoryEntry
     {
         public IValueProvider<Byte> SecondaryCount { get; }

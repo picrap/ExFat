@@ -4,11 +4,24 @@
     using Buffers;
     using Buffer = Buffers.Buffer;
 
-    public abstract class ExFatDirectoryEntry
+    public class ExFatDirectoryEntry
     {
         public IValueProvider<ExFatDirectoryEntryType> EntryType { get; }
 
-        public bool IsDeleted => ((int)EntryType.Value & 0x80) == 0;
+        public bool InUse
+        {
+            get { return (EntryType.Value & ExFatDirectoryEntryType.InUse) != 0; }
+            set
+            {
+                if (value)
+                    EntryType.Value |= ExFatDirectoryEntryType.InUse;
+                else
+                    EntryType.Value &= ~ExFatDirectoryEntryType.InUse;
+            }
+        }
+
+        public bool IsSecondary => (EntryType.Value & ExFatDirectoryEntryType.IsSecondary) != 0;
+        public bool IsBenign => (EntryType.Value & ExFatDirectoryEntryType.IsBenign) != 0;
 
         protected ExFatDirectoryEntry(Buffer buffer)
         {
@@ -23,7 +36,7 @@
         /// <exception cref="System.ArgumentOutOfRangeException"></exception>
         public static ExFatDirectoryEntry Create(Buffer buffer)
         {
-            switch ((ExFatDirectoryEntryType)(buffer[0] & 0x7F))
+            switch ((ExFatDirectoryEntryType)(buffer[0] & (byte)~ExFatDirectoryEntryType.InUse))
             {
                 case 0:
                     return null;
@@ -40,7 +53,8 @@
                 case ExFatDirectoryEntryType.FileName:
                     return new FileNameExtensionExFatDirectoryEntry(buffer);
                 default:
-                    throw new ArgumentOutOfRangeException();
+                    // unhandled entries
+                    return new ExFatDirectoryEntry(buffer);
             }
         }
     }

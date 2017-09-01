@@ -16,8 +16,8 @@
         /// </value>
         public UInt64 Value
         {
-            get { return BitConverter.ToUInt64(_buffer.GetBytes().FromLittleEndian(), 0); }
-            set { _buffer.Set(BitConverter.GetBytes(value).ToLittleEndian()); }
+            get { return LittleEndian.ToUInt64(_buffer); }
+            set { LittleEndian.GetBytes(value, _buffer); }
         }
 
         public BufferUInt64(Buffers.Buffer buffer, int offset)

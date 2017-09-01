@@ -4,7 +4,7 @@
     using System.IO;
     public class ClusterStream : Stream
     {
-        private readonly IClusterInformationReader _clusterInformationReader;
+        private readonly IClusterReader _clusterReader;
         private readonly IPartitionReader _partitionReader;
         private readonly long _startCluster;
         private readonly long? _length;
@@ -46,13 +46,13 @@
         /// <summary>
         /// Initializes a new instance of the <see cref="ClusterStream" /> class.
         /// </summary>
-        /// <param name="clusterInformationReader">The cluster information reader.</param>
+        /// <param name="clusterReader">The cluster information reader.</param>
         /// <param name="partitionReader">The partition reader.</param>
         /// <param name="startCluster">The start cluster.</param>
         /// <param name="length">The length.</param>
-        public ClusterStream(IClusterInformationReader clusterInformationReader, IPartitionReader partitionReader, long startCluster, long? length)
+        public ClusterStream(IClusterReader clusterReader, IPartitionReader partitionReader, long startCluster, long? length)
         {
-            _clusterInformationReader = clusterInformationReader;
+            _clusterReader = clusterReader;
             _partitionReader = partitionReader;
             _startCluster = startCluster;
             _length = length;
@@ -114,7 +114,7 @@
 
             // now, it's only a forward seek
             for (var index = CurrentClusterIndex; index < clusterIndex; index++)
-                _currentCluster = _clusterInformationReader.GetNext(_currentCluster);
+                _currentCluster = _clusterReader.GetNext(_currentCluster);
             _position = offset;
             return offset;
         }
@@ -131,10 +131,17 @@
                 _currentClusterData = new byte[_partitionReader.BytesPerCluster];
 
             // if the current requested cluster is not the one we have, read it
+            // we get here after to operations:
+            // 1. (most common) read next cluster after current is exhausted (Read() has reached its buffer end)
+            // 2. after a Seek()
             if (CurrentClusterIndex != _currentClusterDataIndex)
             {
+                if (_currentCluster < 0)
+                    return null;
+
                 _partitionReader.ReadCluster(_currentCluster, _currentClusterData);
                 _currentClusterDataIndex = CurrentClusterIndex;
+                _currentCluster = _clusterReader.GetNext(_currentCluster);
             }
 
             return _currentClusterData;
@@ -145,8 +152,6 @@
             var totalRead = 0;
             while (count > 0)
             {
-                if (_currentCluster < 0)
-                    break;
                 // what remaings in current cluster
                 var remainingInCluster = _partitionReader.BytesPerCluster - CurrentClusterOffset;
                 var toRead = Math.Min(remainingInCluster, count);
@@ -158,10 +163,12 @@
                     if (toRead > leftInFile)
                         toRead = (int)leftInFile;
                 }
-                Buffer.BlockCopy(GetCurrentCluster(), CurrentClusterOffset, buffer, offset, toRead);
+                var currentCluster = GetCurrentCluster();
+                // null means nothing left to read (for streams without length; with length we've exited before)
+                if (currentCluster == null)
+                    break;
+                Buffer.BlockCopy(currentCluster, CurrentClusterOffset, buffer, offset, toRead);
                 _position += toRead;
-                if (_position >= (CurrentClusterIndex + 1) * _partitionReader.BytesPerCluster)
-                    _currentCluster = _clusterInformationReader.GetNext(_currentCluster);
                 offset += toRead;
                 count -= toRead;
                 totalRead += toRead;

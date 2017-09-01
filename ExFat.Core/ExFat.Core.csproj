@@ -45,9 +45,9 @@
     <Compile Include="Buffers\BufferUInt16.cs" />
     <Compile Include="Buffers\BufferUInt32.cs" />
     <Compile Include="Buffers\BufferUInt64.cs" />
-    <Compile Include="Buffers\BytesExtensions.cs" />
     <Compile Include="Buffers\EnumValueProvider.cs" />
     <Compile Include="Buffers\IValueProvider.cs" />
+    <Compile Include="Entries\ExFatMetaDirectoryEntry.cs" />
     <Compile Include="ExFatDirectory.cs" />
     <Compile Include="Entries\AllocationBitmapExFatDirectoryEntry.cs" />
     <Compile Include="Entries\ExFatDirectoryEntry.cs" />
@@ -60,10 +60,11 @@
     <Compile Include="Entries\UpCaseTableExFatDirectoryEntry.cs" />
     <Compile Include="Entries\VolumeLabelExFatDirectoryEntry.cs" />
     <Compile Include="ExFatBootSector.cs" />
-    <Compile Include="ExFatFS.cs" />
-    <Compile Include="IClusterInformationReader.cs" />
+    <Compile Include="ExFatFilesystemAccessor.cs" />
+    <Compile Include="IClusterReader.cs" />
     <Compile Include="IO\ClusterStream.cs" />
     <Compile Include="IPartitionReader.cs" />
+    <Compile Include="LittleEndian.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup />

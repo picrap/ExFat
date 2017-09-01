@@ -2,26 +2,27 @@
 {
     using System;
     using System.IO;
+    using IO;
 
     /// <summary>
     /// The ExFAT filesystem.
-    /// The class is a quite low-level manipulator
-    /// TODO: come up with a better name :)
+    /// The class is a quite low-level accessor
     /// </summary>
-    public class ExFatFS : IClusterInformationReader, IPartitionReader
+    public class ExFatFilesystemAccessor : IClusterReader, IPartitionReader
     {
-        public Stream PartitionStream { get; }
-        public ExFatBootSector BootSector { get; }
+        private readonly Stream _partitionStream;
+        private readonly object _streamLock = new object();
 
+        public ExFatBootSector BootSector { get; }
         public long SectorsPerCluster => 1 << BootSector.SectorsPerCluster.Value;
         public int BytesPerSector => 1 << BootSector.BytesPerSector.Value;
 
         public int BytesPerCluster => 1 << (BootSector.BytesPerSector.Value + BootSector.BytesPerSector.Value);
 
-        public ExFatFS(Stream partitionStream)
+        public ExFatFilesystemAccessor(Stream partitionStream)
         {
-            PartitionStream = partitionStream;
-            BootSector = ReadBootSector(PartitionStream);
+            _partitionStream = partitionStream;
+            BootSector = ReadBootSector(_partitionStream);
         }
 
         public static ExFatBootSector ReadBootSector(Stream partitionStream)
@@ -32,14 +33,25 @@
             return bootSector;
         }
 
+        /// <summary>
+        /// Opens a clusters stream.
+        /// </summary>
+        /// <param name="startCluster">The start cluster.</param>
+        /// <param name="length">The length.</param>
+        /// <returns></returns>
+        public Stream OpenClusters(long startCluster, long? length = null)
+        {
+            return new ClusterStream(this, this, startCluster, length);
+        }
+
         public long GetClusterOffset(long clusterIndex)
         {
             return (BootSector.ClusterOffset.Value + (clusterIndex - 2) * SectorsPerCluster) * BytesPerSector;
         }
 
-        public void SeekCluster(long clusterIndex)
+        private void SeekCluster(long clusterIndex)
         {
-            PartitionStream.Seek(GetClusterOffset(clusterIndex), SeekOrigin.Begin);
+            _partitionStream.Seek(GetClusterOffset(clusterIndex), SeekOrigin.Begin);
         }
 
         public long GetSectorOffset(long sectorIndex)
@@ -47,9 +59,9 @@
             return sectorIndex * BytesPerSector;
         }
 
-        public void SeekSector(long sectorIndex)
+        private void SeekSector(long sectorIndex)
         {
-            PartitionStream.Seek(GetSectorOffset(sectorIndex), SeekOrigin.Begin);
+            _partitionStream.Seek(GetSectorOffset(sectorIndex), SeekOrigin.Begin);
         }
 
         private long _fatPageIndex = -1;
@@ -74,22 +86,31 @@
 
         public long GetNext(long cluster)
         {
-            // TODO: optimize... A lot!
-            var fatPage = GetFatPage(cluster);
-            var clusterIndex = cluster % ClustersPerFatPage;
-            return BitConverter.ToInt32(fatPage, (int)clusterIndex * sizeof(Int32));
+            lock (_streamLock)
+            {
+                // TODO: optimize... A lot!
+                var fatPage = GetFatPage(cluster);
+                var clusterIndex = cluster % ClustersPerFatPage;
+                return LittleEndian.ToUInt32(fatPage, (int) clusterIndex * sizeof(Int32));
+            }
         }
 
         public void ReadCluster(long cluster, byte[] clusterBuffer)
         {
-            SeekCluster(cluster);
-            PartitionStream.Read(clusterBuffer, 0, BytesPerCluster);
+            lock (_streamLock)
+            {
+                SeekCluster(cluster);
+                _partitionStream.Read(clusterBuffer, 0, BytesPerCluster);
+            }
         }
 
         public void ReadSectors(long sector, byte[] sectorBuffer, int sectorCount)
         {
-            SeekSector(sector);
-            PartitionStream.Read(sectorBuffer, 0, BytesPerSector * sectorCount);
+            lock (_streamLock)
+            {
+                SeekSector(sector);
+                _partitionStream.Read(sectorBuffer, 0, BytesPerSector * sectorCount);
+            }
         }
     }
 }

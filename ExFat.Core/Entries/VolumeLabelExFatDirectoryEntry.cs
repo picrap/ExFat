@@ -1,14 +1,34 @@
 ﻿namespace ExFat.Core.Entries
 {
     using System;
+    using System.Diagnostics;
     using Buffers;
     using Buffer = Buffers.Buffer;
 
+    [DebuggerDisplay("Volume label {" + nameof(VolumeLabel) + "}")]
     public class VolumeLabelExFatDirectoryEntry : ExFatDirectoryEntry
     {
+        /// <summary>
+        /// Gets the volume label length, in characters.
+        /// </summary>
+        /// <value>
+        /// The character count.
+        /// </value>
         public IValueProvider<Byte> CharacterCount { get; }
+        /// <summary>
+        /// Full length volume label.
+        /// </summary>
+        /// <value>
+        /// All volume label.
+        /// </value>
         public IValueProvider<string> AllVolumeLabel { get; }
 
+        /// <summary>
+        /// Gets or sets the volume label.
+        /// </summary>
+        /// <value>
+        /// The volume label.
+        /// </value>
         public string VolumeLabel
         {
             get { return AllVolumeLabel.Value.Substring(0, CharacterCount.Value); }
@@ -19,6 +39,10 @@
             }
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="VolumeLabelExFatDirectoryEntry"/> class.
+        /// </summary>
+        /// <param name="buffer">The buffer.</param>
         public VolumeLabelExFatDirectoryEntry(Buffer buffer) : base(buffer)
         {
             CharacterCount = new BufferUInt8(buffer, 1);
