@@ -41,7 +41,8 @@
                         var v = LittleEndian.ToUInt64(vb);
                         Assert.AreEqual(v, getValueAtOffset((ulong)offset));
                     }
-                    Assert.AreEqual(0, stream.Read(vb, 0, vb.Length));
+                    if (forward)
+                        Assert.AreEqual(0, stream.Read(vb, 0, vb.Length));
                 }
             }
         }
@@ -49,7 +50,13 @@
         [TestMethod]
         public void ReadLongContiguousFull()
         {
-            ReadFile(DiskContent.LongContiguousFileName, DiskContent.GetLongContiguousFileNameOffsetValue, null);
+            ReadFile(DiskContent.LongContiguousFileName, DiskContent.GetLongContiguousFileNameOffsetValue);
+        }
+
+        [TestMethod]
+        public void ReadLongContiguousFullBackwards()
+        {
+            ReadFile(DiskContent.LongContiguousFileName, DiskContent.GetLongContiguousFileNameOffsetValue, forward: false);
         }
 
         [TestMethod]
@@ -62,7 +69,13 @@
         [TestMethod]
         public void ReadLongSparseFull()
         {
-            ReadFile(DiskContent.LongSparseFile1Name, DiskContent.GetLongSparseFile1NameOffsetValue, null);
+            ReadFile(DiskContent.LongSparseFile1Name, DiskContent.GetLongSparseFile1NameOffsetValue);
+        }
+
+        [TestMethod]
+        public void ReadLongSparseFullBackwards()
+        {
+            ReadFile(DiskContent.LongSparseFile1Name, DiskContent.GetLongSparseFile1NameOffsetValue, forward: false);
         }
 
         [TestMethod]
