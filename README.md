@@ -13,6 +13,7 @@ Current features:
 - [ ] Creating directories
 - [ ] Creating files
 - [ ] Deleting files/directories
+- [ ] Partition formatting
 - [ ] Working with [DiscUtils](https://github.com/DiscUtils/DiscUtils)
 - [ ] Standalone Nuget package
 - [ ] [DiscUtils](https://www.nuget.org/packages/DiscUtils) related package
