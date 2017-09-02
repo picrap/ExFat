@@ -19,6 +19,7 @@
         /// <param name="cluster">The cluster number.</param>
         /// <param name="clusterBuffer">The cluster buffer. It must be large enough to contain full cluster</param>
         void ReadCluster(long cluster, byte[] clusterBuffer);
+
         /// <summary>
         /// Gets the next item for a given cluster.
         /// </summary>

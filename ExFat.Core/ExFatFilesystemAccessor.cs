@@ -119,5 +119,23 @@
                 _partitionStream.Read(sectorBuffer, 0, BytesPerSector * sectorCount);
             }
         }
+
+        /// <summary>
+        /// Gets the name hash.
+        /// </summary>
+        /// <param name="name">The name.</param>
+        /// <returns></returns>
+        public UInt16 GetNameHash(string name)
+        {
+            UInt16 hash = 0;
+            foreach (var c in name)
+            {
+                // TODO use Up case table
+                var uc = char.ToUpper(c);
+                hash = (UInt16)(hash.RotateRight() + (uc & 0XFF));
+                hash = (UInt16)(hash.RotateRight() + (uc >> 8));
+            }
+            return hash;
+        }
     }
 }

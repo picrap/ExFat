@@ -62,6 +62,7 @@
     <Compile Include="ExFatBootSector.cs" />
     <Compile Include="ExFatFilesystemAccessor.cs" />
     <Compile Include="IClusterReader.cs" />
+    <Compile Include="IntegerExtensions.cs" />
     <Compile Include="IO\ClusterStream.cs" />
     <Compile Include="LittleEndian.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
