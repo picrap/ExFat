@@ -5,16 +5,15 @@
     public class ClusterStream : Stream
     {
         private readonly IClusterReader _clusterReader;
-        private readonly IPartitionReader _partitionReader;
         private readonly long _startCluster;
         private readonly long? _length;
         private long _position;
         private byte[] _currentClusterData;
         private long _currentClusterDataIndex = -1;
-        private long CurrentClusterIndex => _position / _partitionReader.BytesPerCluster;
+        private long CurrentClusterIndex => _position / _clusterReader.BytesPerCluster;
         private long _currentCluster;
 
-        private int CurrentClusterOffset => (int)_position % _partitionReader.BytesPerCluster;
+        private int CurrentClusterOffset => (int)_position % _clusterReader.BytesPerCluster;
 
         public override bool CanRead => true;
         public override bool CanSeek => _length.HasValue;
@@ -47,13 +46,11 @@
         /// Initializes a new instance of the <see cref="ClusterStream" /> class.
         /// </summary>
         /// <param name="clusterReader">The cluster information reader.</param>
-        /// <param name="partitionReader">The partition reader.</param>
         /// <param name="startCluster">The start cluster.</param>
         /// <param name="length">The length.</param>
-        public ClusterStream(IClusterReader clusterReader, IPartitionReader partitionReader, long startCluster, ulong? length)
+        public ClusterStream(IClusterReader clusterReader, long startCluster, ulong? length)
         {
             _clusterReader = clusterReader;
-            _partitionReader = partitionReader;
             _startCluster = startCluster;
             _length = (long?)length;
 
@@ -90,7 +87,7 @@
                 offset = _length.Value;
 
             // if the seek is in the same cluster, keep here
-            var clusterIndex = offset / _partitionReader.BytesPerCluster;
+            var clusterIndex = offset / _clusterReader.BytesPerCluster;
             if (clusterIndex == CurrentClusterIndex)
             {
                 _position = offset;
@@ -128,7 +125,7 @@
         {
             // lazy initialization of cluster index
             if (_currentClusterData == null)
-                _currentClusterData = new byte[_partitionReader.BytesPerCluster];
+                _currentClusterData = new byte[_clusterReader.BytesPerCluster];
 
             // if the current requested cluster is not the one we have, read it
             // we get here after to operations:
@@ -139,7 +136,7 @@
                 if (_currentCluster < 0)
                     return null;
 
-                _partitionReader.ReadCluster(_currentCluster, _currentClusterData);
+                _clusterReader.ReadCluster(_currentCluster, _currentClusterData);
                 _currentClusterDataIndex = CurrentClusterIndex;
                 _currentCluster = _clusterReader.GetNextCluster(_currentCluster);
             }
@@ -153,7 +150,7 @@
             while (count > 0)
             {
                 // what remaings in current cluster
-                var remainingInCluster = _partitionReader.BytesPerCluster - CurrentClusterOffset;
+                var remainingInCluster = _clusterReader.BytesPerCluster - CurrentClusterOffset;
                 var toRead = Math.Min(remainingInCluster, count);
                 if (_length.HasValue)
                 {

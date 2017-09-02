@@ -63,7 +63,6 @@
     <Compile Include="ExFatFilesystemAccessor.cs" />
     <Compile Include="IClusterReader.cs" />
     <Compile Include="IO\ClusterStream.cs" />
-    <Compile Include="IPartitionReader.cs" />
     <Compile Include="LittleEndian.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

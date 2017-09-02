@@ -8,7 +8,7 @@
     /// The ExFAT filesystem.
     /// The class is a quite low-level accessor
     /// </summary>
-    public class ExFatFilesystemAccessor : IClusterReader, IPartitionReader
+    public class ExFatFilesystemAccessor : IClusterReader
     {
         private readonly Stream _partitionStream;
         private readonly object _streamLock = new object();
@@ -41,7 +41,7 @@
         /// <returns></returns>
         public Stream OpenClusters(long startCluster, ulong? length = null)
         {
-            return new ClusterStream(this, this, startCluster, length);
+            return new ClusterStream(this, startCluster, length);
         }
 
         public long GetClusterOffset(long clusterIndex)
@@ -86,13 +86,18 @@
 
         public long GetNextCluster(long cluster)
         {
+            // TODO: optimize... A lot!
             lock (_streamLock)
             {
-                // TODO: optimize... A lot!
                 var actualCluster = cluster + 2;
                 var fatPage = GetFatPage(actualCluster);
                 var clusterIndex = (int)(actualCluster % ClustersPerFatPage);
-                return (int)LittleEndian.ToUInt32(fatPage, clusterIndex * sizeof(Int32)) - 2;
+                var nextCluster = LittleEndian.ToUInt32(fatPage, clusterIndex * sizeof(Int32));
+                // consider this as signed
+                if (nextCluster >= 0xFFFFFFF7)
+                    return (int)nextCluster;
+                // otherwise, it's the raw unsigned cluster number, extended to long
+                return nextCluster - 2;
             }
         }
 

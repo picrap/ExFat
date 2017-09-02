@@ -17,7 +17,7 @@
 
         public TestEnvironment()
         {
-            _vhdxPath = Path.GetTempFileName();
+            _vhdxPath = Path.Combine(Path.GetTempPath(), $"exFAT test (to be removed) {Guid.NewGuid():N}.vhdx");
 
             using (var gzStream = GetType().Assembly.GetManifestResourceStream(GetType(), "exFAT.vhdx.gz"))
             using (var gzipStream = new GZipStream(gzStream, CompressionMode.Decompress))

@@ -10,7 +10,7 @@
     public class StructureTests
     {
         [TestMethod]
-        public void ValidVolume()
+        public void DirectoryEntries()
         {
             using (var testEnvironment = new TestEnvironment())
             {
