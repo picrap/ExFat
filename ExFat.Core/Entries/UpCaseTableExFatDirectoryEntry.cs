@@ -5,7 +5,7 @@
     using Buffers;
     using Buffer = Buffers.Buffer;
 
-    [DebuggerDisplay("Up case table {FirstCluster.Value} ({DataLength.Value})")]
+    [DebuggerDisplay("Up case table @{FirstCluster.Value} ({DataLength.Value})")]
     public class UpCaseTableExFatDirectoryEntry : ExFatDirectoryEntry
     {
         public IValueProvider<UInt32> TableChecksum { get; }

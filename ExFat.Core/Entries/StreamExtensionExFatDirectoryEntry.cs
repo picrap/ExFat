@@ -5,7 +5,7 @@
     using Buffers;
     using Buffer = Buffers.Buffer;
 
-    [DebuggerDisplay("Stream extension length={ValidDataLength.Value} {FirstCluster.Value} ({DataLength.Value})")]
+    [DebuggerDisplay("Stream extension length={ValidDataLength.Value} @{FirstCluster.Value} ({DataLength.Value})")]
     public class StreamExtensionExFatDirectoryEntry : ExFatDirectoryEntry
     {
         public IValueProvider<ExFatGeneralSecondaryFlags> GeneralSecondaryFlags { get; }

@@ -37,11 +37,12 @@
         /// Opens a clusters stream.
         /// </summary>
         /// <param name="startCluster">The start cluster.</param>
+        /// <param name="contiguous">if set to <c>true</c> all stream clusters are contiguous (allowing a faster seek).</param>
         /// <param name="length">The length.</param>
         /// <returns></returns>
-        public Stream OpenClusters(long startCluster, ulong? length = null)
+        public Stream OpenClusters(long startCluster, bool contiguous, ulong? length = null)
         {
-            return new ClusterStream(this, startCluster, length);
+            return new ClusterStream(this, startCluster, contiguous, length);
         }
 
         public long GetClusterOffset(long clusterIndex)
@@ -89,7 +90,7 @@
             // TODO: optimize... A lot!
             lock (_streamLock)
             {
-                var actualCluster = cluster + 2;
+                var actualCluster = cluster;
                 var fatPage = GetFatPage(actualCluster);
                 var clusterIndex = (int)(actualCluster % ClustersPerFatPage);
                 var nextCluster = LittleEndian.ToUInt32(fatPage, clusterIndex * sizeof(Int32));
@@ -97,7 +98,7 @@
                 if (nextCluster >= 0xFFFFFFF7)
                     return (int)nextCluster;
                 // otherwise, it's the raw unsigned cluster number, extended to long
-                return nextCluster - 2;
+                return nextCluster;
             }
         }
 

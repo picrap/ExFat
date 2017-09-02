@@ -3,7 +3,6 @@
     using System.Linq;
     using Core;
     using Core.Entries;
-    using Core.IO;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
 
     [TestClass]
@@ -15,11 +14,11 @@
             using (var testEnvironment = new TestEnvironment())
             {
                 var fs = new ExFatFilesystemAccessor(testEnvironment.PartitionStream);
-                var rootDirectoryStream = fs.OpenClusters(fs.BootSector.RootDirectory.Value);
+                var rootDirectoryStream = fs.OpenClusters(fs.BootSector.RootDirectory.Value, false);
                 var rootDirectory = new ExFatDirectory(rootDirectoryStream);
 
                 var entries = rootDirectory.GetEntries().ToArray();
-                Assert.IsTrue(entries.OfType<FileNameExtensionExFatDirectoryEntry>().Any(e => e.FileName.Value == "1M"));
+                Assert.IsTrue(entries.OfType<FileNameExtensionExFatDirectoryEntry>().Any(e => e.FileName.Value == DiskContent.LongContiguousFileName));
             }
         }
 
@@ -29,11 +28,11 @@
             using (var testEnvironment = new TestEnvironment())
             {
                 var fs = new ExFatFilesystemAccessor(testEnvironment.PartitionStream);
-                var rootDirectoryStream = fs.OpenClusters(fs.BootSector.RootDirectory.Value);
+                var rootDirectoryStream = fs.OpenClusters(fs.BootSector.RootDirectory.Value, false);
                 var rootDirectory = new ExFatDirectory(rootDirectoryStream);
 
-                var entries = rootDirectory.GetGroupedEntries().ToArray();
-                Assert.IsTrue(entries.Any(e => e.ExtensionsFileName == "1M"));
+                var entries = rootDirectory.GetMetaEntries().ToArray();
+                Assert.IsTrue(entries.Any(e => e.ExtensionsFileName == DiskContent.LongContiguousFileName));
             }
         }
     }

@@ -42,6 +42,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ClustersTests.cs" />
+    <Compile Include="DiskContent.cs" />
     <Compile Include="StreamTests.cs" />
     <Compile Include="StructureTests.cs" />
     <Compile Include="TestEnvironment.cs" />

@@ -6,6 +6,7 @@
     {
         private readonly IClusterReader _clusterReader;
         private readonly long _startCluster;
+        private readonly bool _contiguous;
         private readonly long? _length;
         private long _position;
         private byte[] _currentClusterData;
@@ -47,11 +48,16 @@
         /// </summary>
         /// <param name="clusterReader">The cluster information reader.</param>
         /// <param name="startCluster">The start cluster.</param>
+        /// <param name="contiguous">if set to <c>true</c> [contiguous].</param>
         /// <param name="length">The length.</param>
-        public ClusterStream(IClusterReader clusterReader, long startCluster, ulong? length)
+        public ClusterStream(IClusterReader clusterReader, long startCluster, bool contiguous, ulong? length)
         {
+            if (contiguous && !length.HasValue)
+                throw new ArgumentException("If contiguous is true, the length must be specified");
+
             _clusterReader = clusterReader;
             _startCluster = startCluster;
+            _contiguous = contiguous;
             _length = (long?)length;
 
             _position = 0;
@@ -110,8 +116,7 @@
             }
 
             // now, it's only a forward seek
-            for (var index = CurrentClusterIndex; index < clusterIndex; index++)
-                _currentCluster = _clusterReader.GetNextCluster(_currentCluster);
+            SeekNextCluster(clusterIndex - CurrentClusterIndex);
             _position = offset;
             return offset;
         }
@@ -138,10 +143,21 @@
 
                 _clusterReader.ReadCluster(_currentCluster, _currentClusterData);
                 _currentClusterDataIndex = CurrentClusterIndex;
-                _currentCluster = _clusterReader.GetNextCluster(_currentCluster);
+                SeekNextCluster(1);
             }
 
             return _currentClusterData;
+        }
+
+        private void SeekNextCluster(long clustersCount)
+        {
+            if (_contiguous)
+                _currentCluster += clustersCount;
+            else
+            {
+                for (var index = 0; index < clustersCount; index++)
+                    _currentCluster = _clusterReader.GetNextCluster(_currentCluster);
+            }
         }
 
         public override int Read(byte[] buffer, int offset, int count)

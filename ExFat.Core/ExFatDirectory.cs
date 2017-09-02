@@ -38,7 +38,7 @@
         /// Gets the entries grouped: one primary followed by its secondaries.
         /// </summary>
         /// <returns></returns>
-        public IEnumerable<ExFatMetaDirectoryEntry> GetGroupedEntries()
+        public IEnumerable<ExFatMetaDirectoryEntry> GetMetaEntries()
         {
             var entriesStack = new List<ExFatDirectoryEntry>();
             foreach (var directoryEntry in GetEntries())

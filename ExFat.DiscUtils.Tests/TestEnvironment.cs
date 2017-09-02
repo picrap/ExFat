@@ -22,7 +22,7 @@
             using (var gzStream = GetType().Assembly.GetManifestResourceStream(GetType(), "exFAT.vhdx.gz"))
             using (var gzipStream = new GZipStream(gzStream, CompressionMode.Decompress))
             {
-                var vhdxStream = File.Create(_vhdxPath);
+                var vhdxStream = File.Create(_vhdxPath, 1 << 20, FileOptions.DeleteOnClose);
                 gzipStream.CopyTo(vhdxStream);
 
                 _disk = new Disk(vhdxStream, Ownership.Dispose);
@@ -35,7 +35,9 @@
         {
             PartitionStream.Dispose();
             _disk.Dispose();
-            File.Delete(_vhdxPath);
+            // Should not
+            if (File.Exists(_vhdxPath))
+                File.Delete(_vhdxPath);
         }
     }
 }
