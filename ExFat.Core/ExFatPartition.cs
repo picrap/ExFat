@@ -14,8 +14,6 @@
         private readonly object _streamLock = new object();
 
         public ExFatBootSector BootSector { get; }
-        public int SectorsPerCluster => (int) BootSector.SectorsPerCluster.Value;
-        public int BytesPerSector => (int) BootSector.BytesPerSector.Value;
 
         public int BytesPerCluster => (int)(BootSector.SectorsPerCluster.Value * BootSector.BytesPerSector.Value);
 
@@ -23,6 +21,11 @@
 
         public ExFatPartition(Stream partitionStream)
         {
+            if (!partitionStream.CanSeek)
+                throw new ArgumentException("Given stream must be seekable");
+            if (!partitionStream.CanRead)
+                throw new ArgumentException("Given stream must be readable");
+
             _partitionStream = partitionStream;
             BootSector = ReadBootSector(_partitionStream);
         }
@@ -37,7 +40,7 @@
 
         public long GetClusterOffset(long clusterIndex)
         {
-            return (BootSector.ClusterOffsetSector.Value + (clusterIndex - 2) * SectorsPerCluster) * BytesPerSector;
+            return (BootSector.ClusterOffsetSector.Value + (clusterIndex - 2) * BootSector.SectorsPerCluster.Value) * BootSector.BytesPerSector.Value;
         }
 
         private void SeekCluster(long clusterIndex)
@@ -47,7 +50,7 @@
 
         public long GetSectorOffset(long sectorIndex)
         {
-            return sectorIndex * BytesPerSector;
+            return sectorIndex * (int)BootSector.BytesPerSector.Value;
         }
 
         private void SeekSector(long sectorIndex)
@@ -58,7 +61,7 @@
         private long _fatPageIndex = -1;
         private byte[] _fatPage;
         private const int SectorsPerFatPage = 1;
-        private int FatPageSize => BytesPerSector * SectorsPerFatPage;
+        private int FatPageSize => (int)BootSector.BytesPerSector.Value * SectorsPerFatPage;
         private int ClustersPerFatPage => FatPageSize / sizeof(Int32);
 
         private byte[] GetFatPage(long cluster)
@@ -106,7 +109,7 @@
             lock (_streamLock)
             {
                 SeekSector(sector);
-                _partitionStream.Read(sectorBuffer, 0, BytesPerSector * sectorCount);
+                _partitionStream.Read(sectorBuffer, 0, (int)BootSector.BytesPerSector.Value * sectorCount);
             }
         }
 
@@ -154,6 +157,8 @@
 
         /// <summary>
         /// Opens a directory.
+        /// Caution: this does not check that the given <see cref="DataDescriptor"/> matches a directory descriptor.
+        /// (You're at low-level, dude)
         /// </summary>
         /// <param name="dataDescriptor">The data descriptor.</param>
         /// <returns></returns>
