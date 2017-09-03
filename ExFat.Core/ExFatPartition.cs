@@ -1,6 +1,7 @@
 ﻿namespace ExFat.Core
 {
     using System;
+    using System.Collections.Generic;
     using System.IO;
     using System.Linq;
     using Entries;
@@ -170,21 +171,21 @@
             return new ExFatDirectory(OpenDataStream(dataDescriptor), true);
         }
 
-        private TDirectoryEntry FindRootDirectoryEntry<TDirectoryEntry>()
+        private IEnumerable<TDirectoryEntry> FindRootDirectoryEntries<TDirectoryEntry>()
             where TDirectoryEntry : ExFatDirectoryEntry
         {
             using (var rootDirectory = OpenDirectory(RootDirectoryDataDescriptor))
-                return rootDirectory.GetEntries().OfType<TDirectoryEntry>().FirstOrDefault();
+                return rootDirectory.GetEntries().OfType<TDirectoryEntry>();
         }
 
         private ExFatUpCaseTable _upCaseTable;
 
-        private ExFatUpCaseTable GetUpCaseTable()
+        public ExFatUpCaseTable GetUpCaseTable()
         {
             if (_upCaseTable == null)
             {
                 _upCaseTable = new ExFatUpCaseTable();
-                var upCaseTableEntry = FindRootDirectoryEntry<UpCaseTableExFatDirectoryEntry>();
+                var upCaseTableEntry = FindRootDirectoryEntries<UpCaseTableExFatDirectoryEntry>().FirstOrDefault();
                 if (upCaseTableEntry != null)
                 {
                     using (var upCaseTableStream = OpenDataStream(upCaseTableEntry.DataDescriptor))
@@ -194,6 +195,21 @@
                     _upCaseTable.SetDefault();
             }
             return _upCaseTable;
+        }
+
+        private ExFatAllocationBitmap _allocationBitmap;
+
+        public ExFatAllocationBitmap GetAllocationBitmap()
+        {
+            if (_allocationBitmap == null)
+            {
+                _allocationBitmap = new ExFatAllocationBitmap();
+                var allocationBitmapEntry = FindRootDirectoryEntries<AllocationBitmapExFatDirectoryEntry>()
+                    .First(b => !b.BitmapFlags.Value.HasFlag(AllocationBitmapFlags.SecondClusterBitmap));
+                var allocationBitmapStream = OpenDataStream(allocationBitmapEntry.DataDescriptor);
+                _allocationBitmap.Open(allocationBitmapStream, BootSector.ClusterCount.Value - 2);
+            }
+            return _allocationBitmap;
         }
     }
 }

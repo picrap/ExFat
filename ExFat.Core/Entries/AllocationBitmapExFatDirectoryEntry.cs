@@ -15,7 +15,8 @@
         /// <value>
         /// The bitmap flags.
         /// </value>
-        public IValueProvider<Byte> BitmapFlags { get; }
+        public IValueProvider<AllocationBitmapFlags> BitmapFlags { get; }
+
         public IValueProvider<UInt32> FirstCluster { get; }
         public IValueProvider<UInt64> DataLength { get; }
 
@@ -23,7 +24,7 @@
 
         public AllocationBitmapExFatDirectoryEntry(Buffer buffer) : base(buffer)
         {
-            BitmapFlags = new BufferUInt8(buffer, 1);
+            BitmapFlags = new EnumValueProvider<AllocationBitmapFlags, Byte>(new BufferUInt8(buffer, 1));
             FirstCluster = new BufferUInt32(buffer, 20);
             DataLength = new BufferUInt64(buffer, 24);
         }
