@@ -39,7 +39,11 @@
                     settingCurrentChar = false;
                 }
                 else
-                    _table[currentChar++] = c;
+                {
+                    if (currentChar != c)
+                        _table[currentChar] = c;
+                    ++currentChar;
+                }
             }
         }
 
