@@ -100,7 +100,7 @@
         /// <value>
         ///   <c>true</c> if this instance is valid; otherwise, <c>false</c>.
         /// </value>
-        public bool IsValid => Marker.SequenceEqual(DefaultMarker) && FileSystemName.Value == ExFatFileSystemName;
+        public bool IsValid => FileSystemName.Value == ExFatFileSystemName;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ExFatBootSector"/> class.
