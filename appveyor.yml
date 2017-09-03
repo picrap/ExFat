@@ -16,8 +16,11 @@ before_build:
 notifications:
   provider: Slack
   auth_token:
-      secure: tv8q1S0sKJGnirkiriCf+BEXA1+EyX7TOBtHyp/hBqqnkk97Eaf1BJRR7iQONe7nCKK10lHcBdmFA1UXD49CL1hXpCk1Rdto8mhH8eodczQ=
+      secure: tv8q1S0sKJGnirkiriCf+BEXA1+EyX7TOBtHyp/hBqqpRcB0AofQt99AvR4zTRHz2Bh0XtzFKABzoMZ7bXaCWdFraIoT/52oK/+ktx85fYE=
   channel: '#build'
+  on_build_success: false
+  on_build_failure: true
+  on_build_status_changed: true
 
 nuget:
   account_feed: true
