@@ -14,12 +14,12 @@
         private readonly object _streamLock = new object();
 
         public ExFatBootSector BootSector { get; }
-        public long SectorsPerCluster => 1 << BootSector.SectorsPerCluster.Value;
-        public int BytesPerSector => 1 << BootSector.BytesPerSector.Value;
+        public int SectorsPerCluster => (int) BootSector.SectorsPerCluster.Value;
+        public int BytesPerSector => (int) BootSector.BytesPerSector.Value;
 
-        public int BytesPerCluster => 1 << (BootSector.SectorsPerCluster.Value + BootSector.BytesPerSector.Value);
+        public int BytesPerCluster => (int)(BootSector.SectorsPerCluster.Value * BootSector.BytesPerSector.Value);
 
-        public DataDescriptor RootDirectoryDataDescriptor => new DataDescriptor(BootSector.RootDirectory.Value, false, null);
+        public DataDescriptor RootDirectoryDataDescriptor => new DataDescriptor(BootSector.RootDirectoryCluster.Value, false, null);
 
         public ExFatPartition(Stream partitionStream)
         {
@@ -37,7 +37,7 @@
 
         public long GetClusterOffset(long clusterIndex)
         {
-            return (BootSector.ClusterOffset.Value + (clusterIndex - 2) * SectorsPerCluster) * BytesPerSector;
+            return (BootSector.ClusterOffsetSector.Value + (clusterIndex - 2) * SectorsPerCluster) * BytesPerSector;
         }
 
         private void SeekCluster(long clusterIndex)
@@ -69,7 +69,7 @@
             var fatPageIndex = cluster / ClustersPerFatPage;
             if (fatPageIndex != _fatPageIndex)
             {
-                ReadSectors(BootSector.FatOffset.Value + fatPageIndex * SectorsPerFatPage, _fatPage, SectorsPerFatPage);
+                ReadSectors(BootSector.FatOffsetSector.Value + fatPageIndex * SectorsPerFatPage, _fatPage, SectorsPerFatPage);
                 _fatPageIndex = fatPageIndex;
             }
             return _fatPage;

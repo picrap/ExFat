@@ -47,6 +47,7 @@
     <Compile Include="Buffers\BufferUInt64.cs" />
     <Compile Include="Buffers\EnumValueProvider.cs" />
     <Compile Include="Buffers\IValueProvider.cs" />
+    <Compile Include="Buffers\ShiftValueProvider.cs" />
     <Compile Include="IO\DataDescriptor.cs" />
     <Compile Include="Entries\ExFatMetaDirectoryEntry.cs" />
     <Compile Include="IO\IDataProvider.cs" />
