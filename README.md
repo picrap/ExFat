@@ -2,6 +2,9 @@
 
 An exFAT accessor library.
 
+Current build status: [![Build status](https://ci.appveyor.com/api/projects/status/k0jf58a0e5g2ue2h?svg=true
+)](https://ci.appveyor.com/project/picrap/exfat).
+
 ## Summary
 
 **ExFat** allows to manipulate an exFAT formatted partition (provided as a `System.IO.Stream`).
