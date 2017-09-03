@@ -51,6 +51,7 @@
     <Compile Include="Entries\AllocationBitmapFlags.cs" />
     <Compile Include="ExFatAllocationBitmap.cs" />
     <Compile Include="ExFatUpCaseTable.cs" />
+    <Compile Include="IClusterWriter.cs" />
     <Compile Include="IO\DataDescriptor.cs" />
     <Compile Include="Entries\ExFatMetaDirectoryEntry.cs" />
     <Compile Include="IO\IDataProvider.cs" />

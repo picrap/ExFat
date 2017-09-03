@@ -8,6 +8,20 @@
     {
         public IValueProvider<ExFatDirectoryEntryType> EntryType { get; }
 
+        /// <summary>
+        /// Gets the offset in directory.
+        /// </summary>
+        /// <value>
+        /// The offset.
+        /// </value>
+        public long Offset { get; private set; }
+
+        /// <summary>
+        /// Indicates if the entry is in use
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if [in use]; otherwise, <c>false</c>.
+        /// </value>
         public bool InUse
         {
             get { return (EntryType.Value & ExFatDirectoryEntryType.InUse) != 0; }
@@ -29,12 +43,21 @@
         }
 
         /// <summary>
-        /// Creates a <see cref="ExFatDirectoryEntry"/> given a buffer.
+        /// Creates a <see cref="ExFatDirectoryEntry" /> given a buffer.
         /// </summary>
         /// <param name="buffer">The buffer.</param>
+        /// <param name="offset">The offset.</param>
         /// <returns></returns>
         /// <exception cref="System.ArgumentOutOfRangeException"></exception>
-        public static ExFatDirectoryEntry Create(Buffer buffer)
+        public static ExFatDirectoryEntry Create(Buffer buffer, long offset)
+        {
+            var entry = Create(buffer);
+            if (entry != null)
+                entry.Offset = offset;
+            return entry;
+        }
+
+        private static ExFatDirectoryEntry Create(Buffer buffer)
         {
             switch ((ExFatDirectoryEntryType)(buffer[0] & (byte)~ExFatDirectoryEntryType.InUse))
             {

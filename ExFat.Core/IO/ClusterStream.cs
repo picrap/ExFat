@@ -5,20 +5,23 @@
     public class ClusterStream : Stream
     {
         private readonly IClusterReader _clusterReader;
+        private readonly IClusterWriter _clusterWriter;
         private readonly long _startCluster;
-        private readonly bool _contiguous;
-        private readonly long? _length;
+        private bool _contiguous;
+        private long? _length;
         private long _position;
-        private byte[] _currentClusterData;
+
+        private byte[] _currentClusterBuffer;
         private long _currentClusterDataIndex = -1;
         private long CurrentClusterIndex => _position / _clusterReader.BytesPerCluster;
-        private long _currentCluster;
+        private long _previousCluster, _currentCluster;
+        private bool _currentClusterDirty;
 
         private int CurrentClusterOffset => (int)_position % _clusterReader.BytesPerCluster;
 
         public override bool CanRead => true;
         public override bool CanSeek => _length.HasValue;
-        public override bool CanWrite => false;
+        public override bool CanWrite => _clusterWriter != null;
 
         /// <summary>
         /// Gets the length in bytes of the stream.
@@ -47,25 +50,39 @@
         /// Initializes a new instance of the <see cref="ClusterStream" /> class.
         /// </summary>
         /// <param name="clusterReader">The cluster information reader.</param>
+        /// <param name="clusterWriter">The cluster writer.</param>
         /// <param name="startCluster">The start cluster.</param>
         /// <param name="contiguous">if set to <c>true</c> [contiguous].</param>
         /// <param name="length">The length.</param>
-        public ClusterStream(IClusterReader clusterReader, ulong startCluster, bool contiguous, ulong? length)
+        /// <exception cref="ArgumentException">If contiguous is true, the length must be specified</exception>
+        public ClusterStream(IClusterReader clusterReader, IClusterWriter clusterWriter, ulong startCluster, bool contiguous, ulong? length)
         {
             if (contiguous && !length.HasValue)
                 throw new ArgumentException("If contiguous is true, the length must be specified");
 
             _clusterReader = clusterReader;
-            _startCluster = (long) startCluster;
+            _clusterWriter = clusterWriter;
+            _startCluster = (long)startCluster;
             _contiguous = contiguous;
             _length = (long?)length;
 
             _position = 0;
+            _previousCluster = 0;
             _currentCluster = _startCluster;
         }
 
+        /// <summary>
+        /// Clears all buffers for this stream and causes any buffered data to be written to the underlying device.
+        /// </summary>
         public override void Flush()
         {
+            if (!CanWrite)
+                throw new NotSupportedException();
+            if (_currentClusterDirty)
+            {
+                _clusterWriter.WriteCluster(_currentCluster, _currentClusterBuffer);
+                _currentClusterDirty = false;
+            }
         }
 
         /// <summary>Sets the position within the current stream.</summary>
@@ -104,6 +121,7 @@
             if (offset == 0)
             {
                 _position = 0;
+                _previousCluster = 0;
                 _currentCluster = _startCluster;
                 return 0;
             }
@@ -126,11 +144,15 @@
             throw new System.NotImplementedException();
         }
 
+        /// <summary>
+        /// Gets the current cluster.
+        /// </summary>
+        /// <returns></returns>
         private byte[] GetCurrentCluster()
         {
             // lazy initialization of cluster index
-            if (_currentClusterData == null)
-                _currentClusterData = new byte[_clusterReader.BytesPerCluster];
+            if (_currentClusterBuffer == null)
+                _currentClusterBuffer = new byte[_clusterReader.BytesPerCluster];
 
             // if the current requested cluster is not the one we have, read it
             // we get here after to operations:
@@ -138,26 +160,69 @@
             // 2. after a Seek()
             if (CurrentClusterIndex != _currentClusterDataIndex)
             {
+                // end of stream
                 if (_currentCluster < 0)
-                    return null;
+                {
+                    if (!CanWrite)
+                        return null;
 
-                _clusterReader.ReadCluster(_currentCluster, _currentClusterData);
+                    // there is probably a pending cluster
+                    Flush();
+
+                    // allocate new cluster
+                    var newCluster = _clusterWriter.AllocateCluster(_previousCluster);
+                    _clusterWriter.SetNextCluster(_previousCluster, newCluster);
+
+                    // from contiguous to sparse mode, make sure all clusters are linked
+                    if (_contiguous && newCluster != _previousCluster + 1)
+                    {
+                        _contiguous = false;
+                        for (int clusterIndex = 0; clusterIndex < CurrentClusterIndex; clusterIndex++)
+                            _clusterWriter.SetNextCluster(_startCluster + clusterIndex, _startCluster + clusterIndex + 1);
+                    }
+
+                    _previousCluster = newCluster;
+                    _currentClusterDirty = true;
+                    // give something clean
+                    Array.Clear(_currentClusterBuffer, 0, _currentClusterBuffer.Length);
+                    _currentClusterDataIndex++;
+                    return _currentClusterBuffer;
+                }
+
+                // optionnally flushes a pending change
+                if (CanWrite)
+                    Flush();
+                _clusterReader.ReadCluster(_currentCluster, _currentClusterBuffer);
                 _currentClusterDataIndex = CurrentClusterIndex;
                 SeekNextCluster(1);
             }
 
-            return _currentClusterData;
+            return _currentClusterBuffer;
+        }
+
+        private long GetNextCluster(long cluster, long clustersCount, out long previousCluster)
+        {
+            if (clustersCount <= 0)
+                throw new ArgumentOutOfRangeException(nameof(cluster), "cluster must be greater than 0");
+
+            if (_contiguous)
+            {
+                previousCluster = cluster + clustersCount - 1;
+                return cluster + clustersCount;
+            }
+
+            previousCluster = cluster;
+            for (var index = 0; index < clustersCount; index++)
+            {
+                previousCluster = cluster;
+                cluster = _clusterReader.GetNextCluster(cluster);
+            }
+            return cluster;
         }
 
         private void SeekNextCluster(long clustersCount)
         {
-            if (_contiguous)
-                _currentCluster += clustersCount;
-            else
-            {
-                for (var index = 0; index < clustersCount; index++)
-                    _currentCluster = _clusterReader.GetNextCluster(_currentCluster);
-            }
+            _currentCluster = GetNextCluster(_currentCluster, clustersCount, out _previousCluster);
         }
 
         public override int Read(byte[] buffer, int offset, int count)
@@ -189,9 +254,32 @@
             return totalRead;
         }
 
+        /// <summary>
+        /// Writes a sequence of bytes to the current stream and advances the current position within this stream by the number of bytes written.
+        /// </summary>
+        /// <param name="buffer">An array of bytes. This method copies <paramref name="count" /> bytes from <paramref name="buffer" /> to the current stream.</param>
+        /// <param name="offset">The zero-based byte offset in <paramref name="buffer" /> at which to begin copying bytes to the current stream.</param>
+        /// <param name="count">The number of bytes to be written to the current stream.</param>
+        /// <exception cref="NotSupportedException"></exception>
         public override void Write(byte[] buffer, int offset, int count)
         {
-            throw new System.NotImplementedException();
+            if (!CanWrite)
+                throw new NotSupportedException();
+
+            while (count > 0)
+            {
+                // write is limited by what remaings in current cluster
+                var remainingInCluster = _clusterReader.BytesPerCluster - CurrentClusterOffset;
+                var toWrite = Math.Min(remainingInCluster, count);
+                var currentCluster = GetCurrentCluster();
+                Buffer.BlockCopy(buffer, offset, currentCluster, CurrentClusterOffset, toWrite);
+                _position += toWrite;
+                // pushing the limits!
+                if (_position > _length)
+                    _length = _position;
+                offset += toWrite;
+                count -= toWrite;
+            }
         }
     }
 }

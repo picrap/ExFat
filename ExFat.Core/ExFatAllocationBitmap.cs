@@ -11,17 +11,17 @@
         public long Length { get; private set; }
 
         /// <summary>
-        /// Gets or sets the allocation state at the specified index.
+        /// Gets or sets the allocation state fpr the specified cluster.
         /// </summary>
         /// <value>
         /// The <see cref="System.Boolean"/>.
         /// </value>
-        /// <param name="index">The index.</param>
+        /// <param name="cluster">The cluster.</param>
         /// <returns></returns>
-        public bool this[long index]
+        public bool this[long cluster]
         {
-            get { return GetAt(index); }
-            set { SetAt(index, value); }
+            get { return GetAt(cluster); }
+            set { SetAt(cluster, value); }
         }
 
         /// <summary>

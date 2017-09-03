@@ -11,7 +11,7 @@
     /// The ExFAT filesystem.
     /// The class is a quite low-level accessor
     /// </summary>
-    public class ExFatPartition : IClusterReader
+    public class ExFatPartition : IClusterWriter, IDisposable
     {
         private readonly Stream _partitionStream;
         private readonly object _streamLock = new object();
@@ -31,6 +31,19 @@
 
             _partitionStream = partitionStream;
             BootSector = ReadBootSector(_partitionStream);
+        }
+
+        public void Dispose()
+        {
+            Flush();
+        }
+
+        /// <summary>
+        /// Flushes all pending changes.
+        /// </summary>
+        public void Flush()
+        {
+            FlushFatPage();
         }
 
         public static ExFatBootSector ReadBootSector(Stream partitionStream)
@@ -63,6 +76,7 @@
 
         private long _fatPageIndex = -1;
         private byte[] _fatPage;
+        private bool _fatPageDirty;
         private const int SectorsPerFatPage = 1;
         private int FatPageSize => (int)BootSector.BytesPerSector.Value * SectorsPerFatPage;
         private int ClustersPerFatPage => FatPageSize / sizeof(Int32);
@@ -75,26 +89,68 @@
             var fatPageIndex = cluster / ClustersPerFatPage;
             if (fatPageIndex != _fatPageIndex)
             {
+                FlushFatPage();
                 ReadSectors(BootSector.FatOffsetSector.Value + fatPageIndex * SectorsPerFatPage, _fatPage, SectorsPerFatPage);
                 _fatPageIndex = fatPageIndex;
             }
             return _fatPage;
         }
 
+        private void FlushFatPage()
+        {
+            if (_fatPage != null && _fatPageDirty)
+            {
+                // write first fat
+                WriteSectors(BootSector.FatOffsetSector.Value + _fatPageIndex * SectorsPerFatPage, _fatPage, SectorsPerFatPage);
+                // optionnally update second
+                if (BootSector.NumberOfFats.Value == 2)
+                    WriteSectors(BootSector.FatOffsetSector.Value + BootSector.FatLengthSectors.Value + _fatPageIndex * SectorsPerFatPage, _fatPage, SectorsPerFatPage);
+                _fatPageDirty = false;
+            }
+        }
+
         public long GetNextCluster(long cluster)
         {
-            // TODO: optimize... A lot!
+            // TODO: optimize?
             lock (_streamLock)
             {
-                var actualCluster = cluster;
-                var fatPage = GetFatPage(actualCluster);
-                var clusterIndex = (int)(actualCluster % ClustersPerFatPage);
+                var fatPage = GetFatPage(cluster);
+                var clusterIndex = (int)(cluster % ClustersPerFatPage);
                 var nextCluster = LittleEndian.ToUInt32(fatPage, clusterIndex * sizeof(Int32));
                 // consider this as signed
                 if (nextCluster >= 0xFFFFFFF7)
                     return (int)nextCluster;
                 // otherwise, it's the raw unsigned cluster number, extended to long
                 return nextCluster;
+            }
+        }
+
+        public void SetNextCluster(long cluster, long nextCluster)
+        {
+            lock (_streamLock)
+            {
+                var fatPage = GetFatPage(cluster);
+                var clusterIndex = (int)(cluster % ClustersPerFatPage);
+                LittleEndian.GetBytes((UInt32)nextCluster, fatPage, clusterIndex * sizeof(Int32));
+                _fatPageDirty = true;
+            }
+        }
+
+        /// <summary>
+        /// Allocates a cluster.
+        /// </summary>
+        /// <param name="previousCluster">The previous cluster.</param>
+        /// <returns></returns>
+        public long AllocateCluster(long previousCluster)
+        {
+            var allocationBitmap = GetAllocationBitmap();
+            lock (_streamLock)
+            {
+                var cluster = previousCluster+1;
+                if (allocationBitmap[cluster])
+                    cluster = allocationBitmap.FindUnallocated();
+                allocationBitmap[cluster] = true;
+                return cluster;
             }
         }
 
@@ -107,12 +163,30 @@
             }
         }
 
+        public void WriteCluster(long cluster, byte[] clusterBuffer)
+        {
+            lock (_streamLock)
+            {
+                SeekCluster(cluster);
+                _partitionStream.Write(clusterBuffer, 0, BytesPerCluster);
+            }
+        }
+
         public void ReadSectors(long sector, byte[] sectorBuffer, int sectorCount)
         {
             lock (_streamLock)
             {
                 SeekSector(sector);
                 _partitionStream.Read(sectorBuffer, 0, (int)BootSector.BytesPerSector.Value * sectorCount);
+            }
+        }
+
+        public void WriteSectors(long sector, byte[] sectorBuffer, int sectorCount)
+        {
+            lock (_streamLock)
+            {
+                SeekSector(sector);
+                _partitionStream.Write(sectorBuffer, 0, (int)BootSector.BytesPerSector.Value * sectorCount);
             }
         }
 
@@ -144,7 +218,7 @@
         /// <returns></returns>
         public Stream OpenClusters(ulong firstCluster, bool contiguous, ulong? length = null)
         {
-            return new ClusterStream(this, firstCluster, contiguous, length);
+            return new ClusterStream(this, null, firstCluster, contiguous, length);
         }
 
         /// <summary>

@@ -39,12 +39,12 @@
         {
             if (_directoryStream.CanSeek)
                 _directoryStream.Seek(0, SeekOrigin.Begin);
-            for (; ; )
+            for (var offset = 0L; ; offset += 32)
             {
                 var entryBytes = new byte[32];
                 if (_directoryStream.Read(entryBytes, 0, entryBytes.Length) != 32)
                     break;
-                var directoryEntry = ExFatDirectoryEntry.Create(new Buffer(entryBytes));
+                var directoryEntry = ExFatDirectoryEntry.Create(new Buffer(entryBytes), offset);
                 if (directoryEntry == null)
                     break;
                 yield return directoryEntry;
