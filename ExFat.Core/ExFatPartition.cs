@@ -2,6 +2,8 @@
 {
     using System;
     using System.IO;
+    using System.Linq;
+    using Entries;
     using IO;
 
     /// <summary>
@@ -121,10 +123,11 @@
         public UInt16 GetNameHash(string name)
         {
             UInt16 hash = 0;
+            var upCaseTable = GetUpCaseTable();
             foreach (var c in name)
             {
                 // TODO use Up case table
-                var uc = char.ToUpper(c);
+                var uc = upCaseTable.ToUpper(c);
                 hash = (UInt16)(hash.RotateRight() + (uc & 0XFF));
                 hash = (UInt16)(hash.RotateRight() + (uc >> 8));
             }
@@ -165,6 +168,32 @@
         public ExFatDirectory OpenDirectory(DataDescriptor dataDescriptor)
         {
             return new ExFatDirectory(OpenDataStream(dataDescriptor), true);
+        }
+
+        private TDirectoryEntry FindRootDirectoryEntry<TDirectoryEntry>()
+            where TDirectoryEntry : ExFatDirectoryEntry
+        {
+            using (var rootDirectory = OpenDirectory(RootDirectoryDataDescriptor))
+                return rootDirectory.GetEntries().OfType<TDirectoryEntry>().FirstOrDefault();
+        }
+
+        private ExFatUpCaseTable _upCaseTable;
+
+        private ExFatUpCaseTable GetUpCaseTable()
+        {
+            if (_upCaseTable == null)
+            {
+                _upCaseTable = new ExFatUpCaseTable();
+                var upCaseTableEntry = FindRootDirectoryEntry<UpCaseTableExFatDirectoryEntry>();
+                if (upCaseTableEntry != null)
+                {
+                    using (var upCaseTableStream = OpenDataStream(upCaseTableEntry.DataDescriptor))
+                        _upCaseTable.Read(upCaseTableStream);
+                }
+                else
+                    _upCaseTable.SetDefault();
+            }
+            return _upCaseTable;
         }
     }
 }

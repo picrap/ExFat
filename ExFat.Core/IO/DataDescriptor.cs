@@ -1,10 +1,12 @@
 ﻿namespace ExFat.Core.IO
 {
     using System;
+    using System.Diagnostics;
 
     /// <summary>
     /// Information about data in partition
     /// </summary>
+    [DebuggerDisplay("@{FirstCluster} ({Length}) contiguous={Contiguous}")]
     public class DataDescriptor
     {
         /// <summary>
@@ -34,7 +36,7 @@
 
         public DataDescriptor(ulong firstCluster, bool contiguous, ulong? length)
         {
-            if(contiguous && !length.HasValue)
+            if (contiguous && !length.HasValue)
                 throw new ArgumentException("length must be provided for contiguous streams");
             FirstCluster = firstCluster;
             Contiguous = contiguous;
