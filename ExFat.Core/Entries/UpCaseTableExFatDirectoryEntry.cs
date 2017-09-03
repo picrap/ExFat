@@ -3,14 +3,17 @@
     using System;
     using System.Diagnostics;
     using Buffers;
+    using IO;
     using Buffer = Buffers.Buffer;
 
     [DebuggerDisplay("Up case table @{FirstCluster.Value} ({DataLength.Value})")]
-    public class UpCaseTableExFatDirectoryEntry : ExFatDirectoryEntry
+    public class UpCaseTableExFatDirectoryEntry : ExFatDirectoryEntry, IDataProvider
     {
         public IValueProvider<UInt32> TableChecksum { get; }
         public IValueProvider<UInt32> FirstCluster { get; }
         public IValueProvider<UInt64> DataLength { get; }
+
+        public DataDescriptor DataDescriptor => new DataDescriptor(FirstCluster.Value, false, DataLength.Value);
 
         public UpCaseTableExFatDirectoryEntry(Buffer buffer) : base(buffer)
         {

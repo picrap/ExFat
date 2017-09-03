@@ -3,7 +3,7 @@
     using System;
     using System.IO;
     using Core;
-    using DiscUtils.Tests;
+    using DiscUtils;
 
     public static class Program
     {

@@ -6,7 +6,7 @@
     <ProjectGuid>{14CB35EF-DC35-4DCD-87DA-C18515F82900}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>ExFat.DiscUtils.Tests</RootNamespace>
+    <RootNamespace>ExFat.DiscUtils</RootNamespace>
     <AssemblyName>ExFat.DiscUtils.Tests</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
@@ -41,12 +41,12 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ClustersTests.cs" />
+    <Compile Include="Tests\ClustersTests.cs" />
     <Compile Include="DiskContent.cs" />
-    <Compile Include="StreamTests.cs" />
-    <Compile Include="StructureTests.cs" />
+    <Compile Include="Tests\StreamTests.cs" />
+    <Compile Include="Tests\StructureTests.cs" />
     <Compile Include="TestEnvironment.cs" />
-    <Compile Include="IntegrityTests.cs" />
+    <Compile Include="Tests\IntegrityTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -50,13 +50,13 @@
         /// <param name="startCluster">The start cluster.</param>
         /// <param name="contiguous">if set to <c>true</c> [contiguous].</param>
         /// <param name="length">The length.</param>
-        public ClusterStream(IClusterReader clusterReader, long startCluster, bool contiguous, ulong? length)
+        public ClusterStream(IClusterReader clusterReader, ulong startCluster, bool contiguous, ulong? length)
         {
             if (contiguous && !length.HasValue)
                 throw new ArgumentException("If contiguous is true, the length must be specified");
 
             _clusterReader = clusterReader;
-            _startCluster = startCluster;
+            _startCluster = (long) startCluster;
             _contiguous = contiguous;
             _length = (long?)length;
 

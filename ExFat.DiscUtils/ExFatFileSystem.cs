@@ -9,7 +9,7 @@
     public class ExFatFileSystem : DiscFileSystem
     {
         private Stream _partitionStream;
-        private ExFatFilesystemAccessor _filesystemAccessor;
+        private ExFatPartition _partition;
         private ExFatBootSector _bootSector;
 
         public override string FriendlyName => "Microsoft exFAT";
@@ -24,8 +24,8 @@
 
         public ExFatFileSystem(Stream partitionStream)
         {
-            _filesystemAccessor = new ExFatFilesystemAccessor(partitionStream);
-            _bootSector = ExFatFilesystemAccessor.ReadBootSector(partitionStream);
+            _partition = new ExFatPartition(partitionStream);
+            _bootSector = ExFatPartition.ReadBootSector(partitionStream);
             if (!_bootSector.IsValid)
                 throw new InvalidOperationException("Given stream is not exFAT volume");
             _partitionStream = partitionStream;
@@ -33,8 +33,8 @@
 
         public static bool Detect(Stream partitionStream)
         {
-            var fs = new ExFatFilesystemAccessor(partitionStream);
-            var bootSector = ExFatFilesystemAccessor.ReadBootSector(partitionStream);
+            var fs = new ExFatPartition(partitionStream);
+            var bootSector = ExFatPartition.ReadBootSector(partitionStream);
             return bootSector.IsValid;
         }
 

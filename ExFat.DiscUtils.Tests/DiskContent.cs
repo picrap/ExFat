@@ -1,4 +1,4 @@
-﻿namespace ExFat.DiscUtils.Tests
+﻿namespace ExFat.DiscUtils
 {
     public static class DiskContent
     {

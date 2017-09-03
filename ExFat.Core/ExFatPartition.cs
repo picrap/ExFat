@@ -8,7 +8,7 @@
     /// The ExFAT filesystem.
     /// The class is a quite low-level accessor
     /// </summary>
-    public class ExFatFilesystemAccessor : IClusterReader
+    public class ExFatPartition : IClusterReader
     {
         private readonly Stream _partitionStream;
         private readonly object _streamLock = new object();
@@ -19,7 +19,9 @@
 
         public int BytesPerCluster => 1 << (BootSector.SectorsPerCluster.Value + BootSector.BytesPerSector.Value);
 
-        public ExFatFilesystemAccessor(Stream partitionStream)
+        public DataDescriptor RootDirectoryDataDescriptor => new DataDescriptor(BootSector.RootDirectory.Value, false, null);
+
+        public ExFatPartition(Stream partitionStream)
         {
             _partitionStream = partitionStream;
             BootSector = ReadBootSector(_partitionStream);
@@ -31,18 +33,6 @@
             var bootSector = new ExFatBootSector();
             bootSector.Read(partitionStream);
             return bootSector;
-        }
-
-        /// <summary>
-        /// Opens a clusters stream.
-        /// </summary>
-        /// <param name="startCluster">The start cluster.</param>
-        /// <param name="contiguous">if set to <c>true</c> all stream clusters are contiguous (allowing a faster seek).</param>
-        /// <param name="length">The length.</param>
-        /// <returns></returns>
-        public Stream OpenClusters(long startCluster, bool contiguous, ulong? length = null)
-        {
-            return new ClusterStream(this, startCluster, contiguous, length);
         }
 
         public long GetClusterOffset(long clusterIndex)
@@ -136,6 +126,40 @@
                 hash = (UInt16)(hash.RotateRight() + (uc >> 8));
             }
             return hash;
+        }
+
+        /// <summary>
+        /// Opens a clusters stream.
+        /// </summary>
+        /// <param name="firstCluster">The first cluster.</param>
+        /// <param name="contiguous">if set to <c>true</c> all stream clusters are contiguous (allowing a faster seek).</param>
+        /// <param name="length">The length (optional for non-contiguous cluster streams).</param>
+        /// <returns></returns>
+        public Stream OpenClusters(ulong firstCluster, bool contiguous, ulong? length = null)
+        {
+            return new ClusterStream(this, firstCluster, contiguous, length);
+        }
+
+        /// <summary>
+        /// Opens the data stream.
+        /// </summary>
+        /// <param name="dataDescriptor">The data descriptor.</param>
+        /// <returns></returns>
+        public Stream OpenDataStream(DataDescriptor dataDescriptor)
+        {
+            if (dataDescriptor == null)
+                return null;
+            return OpenClusters(dataDescriptor.FirstCluster, dataDescriptor.Contiguous, dataDescriptor.Length);
+        }
+
+        /// <summary>
+        /// Opens a directory.
+        /// </summary>
+        /// <param name="dataDescriptor">The data descriptor.</param>
+        /// <returns></returns>
+        public ExFatDirectory OpenDirectory(DataDescriptor dataDescriptor)
+        {
+            return new ExFatDirectory(OpenDataStream(dataDescriptor), true);
         }
     }
 }

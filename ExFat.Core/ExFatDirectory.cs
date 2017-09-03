@@ -1,17 +1,34 @@
 ﻿namespace ExFat.Core
 {
+    using System;
     using System.Collections.Generic;
     using System.IO;
-    using Buffers;
     using Entries;
+    using Buffer = Buffers.Buffer;
 
-    public class ExFatDirectory
+    public class ExFatDirectory : IDisposable
     {
         private readonly Stream _directoryStream;
+        private readonly bool _ownsStream;
 
-        public ExFatDirectory(Stream directoryStream)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ExFatDirectory"/> class.
+        /// </summary>
+        /// <param name="directoryStream">The directory stream.</param>
+        /// <param name="ownsStream">if set to <c>true</c> [owns stream].</param>
+        public ExFatDirectory(Stream directoryStream, bool ownsStream)
         {
             _directoryStream = directoryStream;
+            _ownsStream = ownsStream;
+        }
+
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// </summary>
+        public void Dispose()
+        {
+            if (_ownsStream)
+                _directoryStream.Dispose();
         }
 
         /// <summary>

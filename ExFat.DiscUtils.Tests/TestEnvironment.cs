@@ -1,9 +1,8 @@
-﻿namespace ExFat.DiscUtils.Tests
+﻿namespace ExFat.DiscUtils
 {
     using System;
     using System.IO;
     using System.IO.Compression;
-    using System.Runtime.InteropServices;
     using global::DiscUtils;
     using global::DiscUtils.Streams;
     using global::DiscUtils.Vhdx;

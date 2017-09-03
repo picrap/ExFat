@@ -3,10 +3,11 @@
     using System;
     using System.Diagnostics;
     using Buffers;
+    using IO;
     using Buffer = Buffers.Buffer;
 
     [DebuggerDisplay("Stream extension length={ValidDataLength.Value} @{FirstCluster.Value} ({DataLength.Value})")]
-    public class StreamExtensionExFatDirectoryEntry : ExFatDirectoryEntry
+    public class StreamExtensionExFatDirectoryEntry : ExFatDirectoryEntry, IDataProvider
     {
         public IValueProvider<ExFatGeneralSecondaryFlags> GeneralSecondaryFlags { get; }
         public IValueProvider<Byte> NameLength { get; }
@@ -20,6 +21,8 @@
         /// </value>
         public IValueProvider<UInt32> FirstCluster { get; }
         public IValueProvider<UInt64> DataLength { get; }
+
+        public DataDescriptor DataDescriptor => new DataDescriptor(FirstCluster.Value, false, DataLength.Value);
 
         public StreamExtensionExFatDirectoryEntry(Buffer buffer) : base(buffer)
         {

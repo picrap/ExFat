@@ -2,11 +2,12 @@
 {
     using System.Collections.Generic;
     using System.Linq;
+    using IO;
 
     /// <summary>
     /// Groups entries by primary entry
     /// </summary>
-    public class ExFatMetaDirectoryEntry
+    public class ExFatMetaDirectoryEntry: IDataProvider
     {
         public List<ExFatDirectoryEntry> Entries { get; } = new List<ExFatDirectoryEntry>();
 
@@ -47,6 +48,15 @@
         /// The name of the extensions file.
         /// </value>
         public string ExtensionsFileName => string.Join("", SecondaryFileNameExtensions.Select(s => s.FileName.Value));
+
+        /// <inheritdoc />
+        /// <summary>
+        /// Gets the data descriptor.
+        /// </summary>
+        /// <value>
+        /// The data descriptor.
+        /// </value>
+        public DataDescriptor DataDescriptor => Entries.OfType<IDataProvider>().FirstOrDefault()?.DataDescriptor;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ExFatMetaDirectoryEntry"/> class.
