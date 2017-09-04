@@ -282,7 +282,7 @@
                 var allocationBitmapEntry = FindRootDirectoryEntries<AllocationBitmapExFatDirectoryEntry>()
                     .First(b => !b.BitmapFlags.Value.HasFlag(AllocationBitmapFlags.SecondClusterBitmap));
                 var allocationBitmapStream = OpenDataStream(allocationBitmapEntry.DataDescriptor);
-                _allocationBitmap.Open(allocationBitmapStream, BootSector.ClusterCount.Value - 2);
+                _allocationBitmap.Open(allocationBitmapStream, allocationBitmapEntry.FirstCluster.Value, BootSector.ClusterCount.Value);
             }
             return _allocationBitmap;
         }

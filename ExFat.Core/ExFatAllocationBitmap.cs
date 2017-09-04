@@ -7,6 +7,7 @@
     {
         private byte[] _bitmap;
         private Stream _dataStream;
+        private uint _firstCluster;
 
         public long Length { get; private set; }
 
@@ -28,10 +29,12 @@
         /// Opens the specified data stream.
         /// </summary>
         /// <param name="dataStream">The data stream.</param>
+        /// <param name="firstCluster">The first cluster.</param>
         /// <param name="length">The length.</param>
-        public void Open(Stream dataStream, long length)
+        public void Open(Stream dataStream, uint firstCluster, long length)
         {
             _dataStream = dataStream;
+            _firstCluster = firstCluster;
             _bitmap = new byte[dataStream.Length];
             dataStream.Read(_bitmap, 0, _bitmap.Length);
             Length = length;
@@ -39,9 +42,9 @@
 
         public bool GetAt(long cluster)
         {
-            if (cluster < 0 || cluster >= Length)
+            if (cluster < _firstCluster || cluster >= Length)
                 throw new ArgumentOutOfRangeException(nameof(cluster));
-            cluster -= 2;
+            cluster -= _firstCluster;
             var byteIndex = (int)cluster / 8;
             var bitMask = 1 << (int)(cluster & 7);
             return (_bitmap[byteIndex] & bitMask) != 0;
@@ -49,9 +52,9 @@
 
         public void SetAt(long cluster, bool allocated)
         {
-            if (cluster < 0 || cluster >= Length)
+            if (cluster < _firstCluster || cluster >= Length)
                 throw new ArgumentOutOfRangeException(nameof(cluster));
-            cluster -= 2;
+            cluster -= _firstCluster;
             var byteIndex = (int)cluster / 8;
             var bitMask = 1 << (int)(cluster & 7);
             if (allocated)
@@ -64,10 +67,10 @@
         {
             long freeCluster = -1;
             int unallocatedCount = 0;
-            for (long cluster = 2; cluster < Length;)
+            for (long cluster = _firstCluster; cluster < Length;)
             {
                 // special case: byte is filled, skip the block (and reset the search)
-                if (((cluster - 2) & 0x07) == 0 && _bitmap[cluster / 8] == 0xFF)
+                if (((cluster - _firstCluster) & 0x07) == 0 && _bitmap[cluster / 8] == 0xFF)
                 {
                     freeCluster = -1;
                     unallocatedCount = 0;
