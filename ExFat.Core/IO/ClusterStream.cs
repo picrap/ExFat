@@ -114,44 +114,29 @@
             if (!_length.HasValue)
                 throw new InvalidOperationException();
 
-            // simplify complex seeks
-            if (origin == SeekOrigin.End)
-                return Seek(_length.Value + offset, SeekOrigin.Begin);
-            if (origin == SeekOrigin.Current)
-                return Seek(_position + offset, SeekOrigin.Begin);
-
-            if (offset < 0)
-                offset = 0;
-            if (offset > _length)
-                offset = _length.Value;
-
-            // if the seek is in the same cluster, keep here
-            var clusterIndex = offset / _clusterReader.BytesPerCluster;
-            if (clusterIndex == CurrentClusterIndexFromPosition)
+            long newPosition;
+            switch (origin)
             {
-                _position = offset;
-                return _position;
+                case SeekOrigin.Begin:
+                    newPosition = offset;
+                    break;
+                case SeekOrigin.Current:
+                    newPosition = _position + offset;
+                    break;
+                case SeekOrigin.End:
+                    newPosition = _length.Value + offset;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(origin), origin, null);
             }
 
-            // seek to begin is also special, we clear it all
-            if (offset == 0)
-            {
-                _position = 0;
-                _currentCluster = _startCluster;
-                return 0;
-            }
+            if (newPosition < 0)
+                newPosition = 0;
+            if (newPosition > _length)
+                newPosition = _length.Value;
 
-            // if we need to rewind, get forward from scratch
-            if (offset < _position)
-            {
-                Seek(0, SeekOrigin.Begin);
-                return Seek(offset, SeekOrigin.Begin);
-            }
-
-            // now, it's only a forward seek
-            _currentCluster = GetNextCluster(_startCluster, clusterIndex - CurrentClusterIndexFromPosition);
-            _position = offset;
-            return offset;
+            _position = newPosition;
+            return _position;
         }
 
         public override void SetLength(long value)
