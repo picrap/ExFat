@@ -4,8 +4,8 @@
     using Buffers;
     public class EntryDateTime : IValueProvider<DateTime>
     {
-        private readonly IValueProvider<ushort> _dateTimeProvider;
-        private readonly IValueProvider<byte> _tenMsProvider;
+        private readonly IValueProvider<UInt32> _dateTimeProvider;
+        private readonly IValueProvider<Byte> _tenMsProvider;
 
         public DateTime Value
         {
@@ -18,7 +18,7 @@
             }
         }
 
-        public EntryDateTime(IValueProvider<UInt16> dateTimeProvider, IValueProvider<Byte> tenMsProvider)
+        public EntryDateTime(IValueProvider<UInt32> dateTimeProvider, IValueProvider<Byte> tenMsProvider)
         {
             _dateTimeProvider = dateTimeProvider;
             _tenMsProvider = tenMsProvider;
