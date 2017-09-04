@@ -1,6 +1,7 @@
 ﻿namespace ExFat.Core.Entries
 {
     using System;
+    using System.Collections.Generic;
     using System.Diagnostics;
     using Buffers;
     using Buffer = Buffers.Buffer;
@@ -36,6 +37,21 @@
             CreationDateTime = new EntryDateTime(CreationTime, Create10msIncrement);
             LastModifiedDateTime = new EntryDateTime(LastModified, LastModified10msIncrement);
             LastAccessedDateTime = new EntryDateTime(LastAccessed, LastAccessed10msIncrement);
+        }
+
+        public override void Update(ICollection<ExFatDirectoryEntry> secondaryEntries)
+        {
+            SecondaryCount.Value = (Byte)secondaryEntries.Count;
+            SetChecksum.Value = ComputeChecksum(secondaryEntries);
+        }
+
+        public UInt16 ComputeChecksum(IEnumerable<ExFatDirectoryEntry> secondaryEntries)
+        {
+            var checksum = Buffer.Bytes.GetChecksum(0, 2);
+            checksum = Buffer.Bytes.GetChecksum(4, 28, checksum);
+            foreach (var secondaryEntry in secondaryEntries)
+                checksum = secondaryEntry.Buffer.Bytes.GetChecksum(0, 32, checksum);
+            return checksum;
         }
     }
 }

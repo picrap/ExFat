@@ -1,13 +1,14 @@
 ﻿namespace ExFat.Core.Entries
 {
     using System.Collections.Generic;
+    using System.IO;
     using System.Linq;
     using IO;
 
     /// <summary>
     /// Groups entries by primary entry
     /// </summary>
-    public class ExFatMetaDirectoryEntry: IDataProvider
+    public class ExFatMetaDirectoryEntry : IDataProvider
     {
         public List<ExFatDirectoryEntry> Entries { get; } = new List<ExFatDirectoryEntry>();
 
@@ -65,6 +66,13 @@
         public ExFatMetaDirectoryEntry(IEnumerable<ExFatDirectoryEntry> entries)
         {
             Entries.AddRange(entries);
+        }
+
+        public void Write(Stream stream)
+        {
+            Primary.Update(Secondaries.ToList());
+            foreach (var entry in Entries)
+                entry.Write(stream);
         }
     }
 }

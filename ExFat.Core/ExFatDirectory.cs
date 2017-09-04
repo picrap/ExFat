@@ -76,5 +76,17 @@
             if (entriesStack.Count > 0)
                 yield return new ExFatMetaDirectoryEntry(entriesStack);
         }
+
+        public void UpdateEntry(ExFatDirectoryEntry entry)
+        {
+            _directoryStream.Seek(entry.Offset, SeekOrigin.Begin);
+            entry.Write(_directoryStream);
+        }
+
+        public void UpdateEntry(ExFatMetaDirectoryEntry entry)
+        {
+            _directoryStream.Seek(entry.Primary.Offset, SeekOrigin.Begin);
+            entry.Write(_directoryStream);
+        }
     }
 }

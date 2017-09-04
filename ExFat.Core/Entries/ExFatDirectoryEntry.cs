@@ -1,11 +1,14 @@
 ﻿namespace ExFat.Core.Entries
 {
     using System;
+    using System.Collections.Generic;
+    using System.IO;
     using Buffers;
     using Buffer = Buffers.Buffer;
 
     public class ExFatDirectoryEntry
     {
+        protected internal Buffer Buffer { get; }
         public IValueProvider<ExFatDirectoryEntryType> EntryType { get; }
 
         /// <summary>
@@ -39,6 +42,7 @@
 
         protected ExFatDirectoryEntry(Buffer buffer)
         {
+            Buffer = buffer;
             EntryType = new EnumValueProvider<ExFatDirectoryEntryType, Byte>(new BufferUInt8(buffer, 0));
         }
 
@@ -79,6 +83,18 @@
                     // unhandled entries
                     return new ExFatDirectoryEntry(buffer);
             }
+        }
+
+        public virtual void Update(ICollection<ExFatDirectoryEntry > secondaryEntries)
+        { }
+
+        /// <summary>
+        /// Writes the instance to specified stream.
+        /// </summary>
+        /// <param name="stream">The stream.</param>
+        public void Write(Stream stream)
+        {
+            stream.Write(Buffer.Bytes, 0, Buffer.Bytes.Length);
         }
     }
 }

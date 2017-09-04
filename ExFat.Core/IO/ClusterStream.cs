@@ -8,6 +8,7 @@
         private readonly IClusterWriter _clusterWriter;
         private readonly long _startCluster;
         private bool _contiguous;
+        private readonly Action _onDisposed;
         private long? _length;
         private long _position;
 
@@ -54,8 +55,9 @@
         /// <param name="startCluster">The start cluster.</param>
         /// <param name="contiguous">if set to <c>true</c> [contiguous].</param>
         /// <param name="length">The length.</param>
+        /// <param name="onDisposed">The on disposed.</param>
         /// <exception cref="ArgumentException">If contiguous is true, the length must be specified</exception>
-        public ClusterStream(IClusterReader clusterReader, IClusterWriter clusterWriter, ulong startCluster, bool contiguous, ulong? length)
+        public ClusterStream(IClusterReader clusterReader, IClusterWriter clusterWriter, ulong startCluster, bool contiguous, ulong? length, Action onDisposed)
         {
             if (contiguous && !length.HasValue)
                 throw new ArgumentException("If contiguous is true, the length must be specified");
@@ -64,11 +66,19 @@
             _clusterWriter = clusterWriter;
             _startCluster = (long)startCluster;
             _contiguous = contiguous;
+            _onDisposed = onDisposed;
             _length = (long?)length;
 
             _position = 0;
             _previousCluster = 0;
             _currentCluster = _startCluster;
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+            if (disposing && _onDisposed != null)
+                _onDisposed();
         }
 
         /// <summary>

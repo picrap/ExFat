@@ -146,7 +146,7 @@
             var allocationBitmap = GetAllocationBitmap();
             lock (_streamLock)
             {
-                var cluster = previousCluster+1;
+                var cluster = previousCluster + 1;
                 if (allocationBitmap[cluster])
                     cluster = allocationBitmap.FindUnallocated();
                 allocationBitmap[cluster] = true;
@@ -195,7 +195,7 @@
         /// </summary>
         /// <param name="name">The name.</param>
         /// <returns></returns>
-        public UInt16 GetNameHash(string name)
+        public UInt16 ComputeNameHash(string name)
         {
             UInt16 hash = 0;
             var upCaseTable = GetUpCaseTable();
@@ -203,7 +203,7 @@
             {
                 // TODO use Up case table
                 var uc = upCaseTable.ToUpper(c);
-                hash = (UInt16)(hash.RotateRight() + (uc & 0XFF));
+                hash = (UInt16)(hash.RotateRight() + (uc & 0xFF));
                 hash = (UInt16)(hash.RotateRight() + (uc >> 8));
             }
             return hash;
@@ -215,10 +215,11 @@
         /// <param name="firstCluster">The first cluster.</param>
         /// <param name="contiguous">if set to <c>true</c> all stream clusters are contiguous (allowing a faster seek).</param>
         /// <param name="length">The length (optional for non-contiguous cluster streams).</param>
+        /// <param name="onDisposed">The on disposed.</param>
         /// <returns></returns>
-        public Stream OpenClusters(ulong firstCluster, bool contiguous, ulong? length = null)
+        public Stream OpenClusters(ulong firstCluster, bool contiguous, ulong? length = null, Action onDisposed = null)
         {
-            return new ClusterStream(this, null, firstCluster, contiguous, length);
+            return new ClusterStream(this, null, firstCluster, contiguous, length, onDisposed);
         }
 
         /// <summary>

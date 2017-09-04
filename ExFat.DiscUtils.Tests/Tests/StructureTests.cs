@@ -48,8 +48,28 @@
                     {
                         if (entry.Primary is FileExFatDirectoryEntry)
                         {
-                            var hash = fs.GetNameHash(entry.ExtensionsFileName);
+                            var hash = fs.ComputeNameHash(entry.ExtensionsFileName);
                             Assert.AreEqual(entry.SecondaryStreamExtension.NameHash.Value, hash);
+                        }
+                    }
+                }
+            }
+        }
+
+        [TestMethod]
+        public void CheckChecksums()
+        {
+            using (var testEnvironment = new TestEnvironment())
+            {
+                var fs = new ExFatPartition(testEnvironment.PartitionStream);
+                using (var rootDirectory = fs.OpenDirectory(fs.RootDirectoryDataDescriptor))
+                {
+                    foreach (var entry in rootDirectory.GetMetaEntries())
+                    {
+                        if (entry.Primary is FileExFatDirectoryEntry fileEntry)
+                        {
+                            var checksum = fileEntry.ComputeChecksum(entry.Secondaries);
+                            Assert.AreEqual(fileEntry.SetChecksum.Value, checksum);
                         }
                     }
                 }
