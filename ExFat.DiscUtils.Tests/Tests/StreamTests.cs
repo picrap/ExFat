@@ -20,10 +20,10 @@
                     var fileEntry = rootDirectory.GetMetaEntries().Single(e => e.ExtensionsFileName == fileName);
                     var length = overrideLength ?? fileEntry.SecondaryStreamExtension.DataLength.Value;
                     var contiguous = fileEntry.SecondaryStreamExtension.GeneralSecondaryFlags.Value.HasFlag(ExFatGeneralSecondaryFlags.NoFatChain);
-                    using (var stream = fs.OpenClusters(fileEntry.SecondaryStreamExtension.FirstCluster.Value, contiguous, length))
+                    using (var stream = fs.OpenClusterStream(fileEntry.SecondaryStreamExtension.FirstCluster.Value, contiguous, FileAccess.Read, length))
                     {
                         var vb = new byte[sizeof(ulong)];
-                        var range = Enumerable.Range(0, (int) (length / sizeof(ulong))).Select(r => r * sizeof(ulong));
+                        var range = Enumerable.Range(0, (int)(length / sizeof(ulong))).Select(r => r * sizeof(ulong));
                         if (!forward)
                         {
                             range = range.Reverse();
@@ -38,7 +38,7 @@
                             }
                             stream.Read(vb, 0, vb.Length);
                             var v = LittleEndian.ToUInt64(vb);
-                            Assert.AreEqual(v, getValueAtOffset((ulong) offset));
+                            Assert.AreEqual(v, getValueAtOffset((ulong)offset));
                         }
                         if (forward)
                             Assert.AreEqual(0, stream.Read(vb, 0, vb.Length));

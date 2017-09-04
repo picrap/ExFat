@@ -49,6 +49,7 @@
     <Compile Include="TestEnvironment.cs" />
     <Compile Include="Tests\IntegrityTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Tests\WriteTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="exFAT.vhdx.gz" />

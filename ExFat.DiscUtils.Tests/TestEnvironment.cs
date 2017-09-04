@@ -14,14 +14,19 @@
 
         public Stream PartitionStream { get; }
 
-        public TestEnvironment()
+        public TestEnvironment(bool allowDebugKeep = false)
         {
             _vhdxPath = Path.Combine(Path.GetTempPath(), $"exFAT test (to be removed) {Guid.NewGuid():N}.vhdx");
 
             using (var gzStream = GetType().Assembly.GetManifestResourceStream(GetType(), "exFAT.vhdx.gz"))
             using (var gzipStream = new GZipStream(gzStream, CompressionMode.Decompress))
             {
-                var vhdxStream = File.Create(_vhdxPath, 1 << 20, FileOptions.DeleteOnClose);
+                var fileOptions = FileOptions.DeleteOnClose;
+#if DEBUG
+                if (allowDebugKeep)
+                    fileOptions &= ~FileOptions.DeleteOnClose;
+#endif
+                var vhdxStream = File.Create(_vhdxPath, 1 << 20, fileOptions);
                 gzipStream.CopyTo(vhdxStream);
 
                 _disk = new Disk(vhdxStream, Ownership.Dispose);

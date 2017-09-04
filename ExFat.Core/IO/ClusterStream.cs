@@ -14,8 +14,8 @@
 
         private byte[] _currentClusterBuffer;
         private long _currentClusterDataIndex = -1;
-        private long CurrentClusterIndex => _position / _clusterReader.BytesPerCluster;
-        private long _previousCluster, _currentCluster;
+        private long CurrentClusterIndexFromPosition => _position / _clusterReader.BytesPerCluster;
+        private long _currentCluster;
         private bool _currentClusterDirty;
 
         private int CurrentClusterOffset => (int)_position % _clusterReader.BytesPerCluster;
@@ -70,12 +70,12 @@
             _length = (long?)length;
 
             _position = 0;
-            _previousCluster = 0;
             _currentCluster = _startCluster;
         }
 
         protected override void Dispose(bool disposing)
         {
+            FlushCurrentCluster();
             base.Dispose(disposing);
             if (disposing && _onDisposed != null)
                 _onDisposed();
@@ -88,6 +88,12 @@
         {
             if (!CanWrite)
                 throw new NotSupportedException();
+
+            FlushCurrentCluster();
+        }
+
+        private void FlushCurrentCluster()
+        {
             if (_currentClusterDirty)
             {
                 _clusterWriter.WriteCluster(_currentCluster, _currentClusterBuffer);
@@ -121,7 +127,7 @@
 
             // if the seek is in the same cluster, keep here
             var clusterIndex = offset / _clusterReader.BytesPerCluster;
-            if (clusterIndex == CurrentClusterIndex)
+            if (clusterIndex == CurrentClusterIndexFromPosition)
             {
                 _position = offset;
                 return _position;
@@ -131,7 +137,6 @@
             if (offset == 0)
             {
                 _position = 0;
-                _previousCluster = 0;
                 _currentCluster = _startCluster;
                 return 0;
             }
@@ -144,7 +149,7 @@
             }
 
             // now, it's only a forward seek
-            SeekNextCluster(clusterIndex - CurrentClusterIndex);
+            _currentCluster = GetNextCluster(_startCluster, clusterIndex - CurrentClusterIndexFromPosition);
             _position = offset;
             return offset;
         }
@@ -158,7 +163,7 @@
         /// Gets the current cluster.
         /// </summary>
         /// <returns></returns>
-        private byte[] GetCurrentCluster()
+        private byte[] GetCurrentCluster(bool append)
         {
             // lazy initialization of cluster index
             if (_currentClusterBuffer == null)
@@ -168,71 +173,74 @@
             // we get here after to operations:
             // 1. (most common) read next cluster after current is exhausted (Read() has reached its buffer end)
             // 2. after a Seek()
-            if (CurrentClusterIndex != _currentClusterDataIndex)
+            if (CurrentClusterIndexFromPosition != _currentClusterDataIndex)
             {
+                var currentCluster = GetCurrentClusterFromPosition();
                 // end of stream
-                if (_currentCluster < 0)
+                if (currentCluster < 0)
                 {
-                    if (!CanWrite)
+                    if (!CanWrite || !append)
                         return null;
 
                     // there is probably a pending cluster
-                    Flush();
+                    FlushCurrentCluster();
 
                     // allocate new cluster
-                    var newCluster = _clusterWriter.AllocateCluster(_previousCluster);
-                    _clusterWriter.SetNextCluster(_previousCluster, newCluster);
+                    var newCluster = _clusterWriter.AllocateCluster(_currentCluster);
+                    _clusterWriter.SetNextCluster(_currentCluster, newCluster);
+                    _clusterWriter.SetNextCluster(newCluster, -1);
 
                     // from contiguous to sparse mode, make sure all clusters are linked
-                    if (_contiguous && newCluster != _previousCluster + 1)
+                    if (_contiguous && newCluster != _currentCluster + 1)
                     {
                         _contiguous = false;
-                        for (int clusterIndex = 0; clusterIndex < CurrentClusterIndex; clusterIndex++)
-                            _clusterWriter.SetNextCluster(_startCluster + clusterIndex, _startCluster + clusterIndex + 1);
+                        for (int clusterIndex = 1; clusterIndex < CurrentClusterIndexFromPosition; clusterIndex++)
+                            _clusterWriter.SetNextCluster(_startCluster + clusterIndex - 1, _startCluster + clusterIndex);
                     }
 
-                    _previousCluster = newCluster;
+                    _currentCluster = newCluster;
                     _currentClusterDirty = true;
                     // give something clean
                     Array.Clear(_currentClusterBuffer, 0, _currentClusterBuffer.Length);
-                    _currentClusterDataIndex++;
+                    _currentClusterDataIndex = CurrentClusterIndexFromPosition;
                     return _currentClusterBuffer;
                 }
 
                 // optionnally flushes a pending change
-                if (CanWrite)
-                    Flush();
-                _clusterReader.ReadCluster(_currentCluster, _currentClusterBuffer);
-                _currentClusterDataIndex = CurrentClusterIndex;
-                SeekNextCluster(1);
+                FlushCurrentCluster();
+
+                _clusterReader.ReadCluster(currentCluster, _currentClusterBuffer);
+                _currentClusterDataIndex = CurrentClusterIndexFromPosition;
+                _currentCluster = currentCluster;
             }
 
             return _currentClusterBuffer;
         }
 
-        private long GetNextCluster(long cluster, long clustersCount, out long previousCluster)
+        private long GetCurrentClusterFromPosition()
         {
-            if (clustersCount <= 0)
-                throw new ArgumentOutOfRangeException(nameof(cluster), "cluster must be greater than 0");
-
-            if (_contiguous)
-            {
-                previousCluster = cluster + clustersCount - 1;
-                return cluster + clustersCount;
-            }
-
-            previousCluster = cluster;
-            for (var index = 0; index < clustersCount; index++)
-            {
-                previousCluster = cluster;
-                cluster = _clusterReader.GetNextCluster(cluster);
-            }
-            return cluster;
+            var currentClusterIndexFromPosition = CurrentClusterIndexFromPosition;
+            if (currentClusterIndexFromPosition == 0)
+                return _startCluster;
+            // -1 means buffer is new
+            if (_currentClusterDataIndex == -1)
+                return GetNextCluster(_startCluster, currentClusterIndexFromPosition);
+            if (currentClusterIndexFromPosition > _currentClusterDataIndex)
+                return GetNextCluster(_currentCluster, currentClusterIndexFromPosition - _currentClusterDataIndex);
+            return GetNextCluster(_startCluster, currentClusterIndexFromPosition);
         }
 
-        private void SeekNextCluster(long clustersCount)
+        private long GetNextCluster(long cluster, long clustersCount)
         {
-            _currentCluster = GetNextCluster(_currentCluster, clustersCount, out _previousCluster);
+            if (clustersCount < 0)
+                throw new ArgumentOutOfRangeException(nameof(cluster), "cluster must be >= 0");
+
+            if (_contiguous)
+                return cluster + clustersCount;
+
+            for (var index = 0; index < clustersCount; index++)
+                cluster = _clusterReader.GetNextCluster(cluster);
+            return cluster;
         }
 
         public override int Read(byte[] buffer, int offset, int count)
@@ -251,7 +259,7 @@
                     if (toRead > leftInFile)
                         toRead = (int)leftInFile;
                 }
-                var currentCluster = GetCurrentCluster();
+                var currentCluster = GetCurrentCluster(false);
                 // null means nothing left to read (for streams without length; with length we've exited before)
                 if (currentCluster == null)
                     break;
@@ -281,8 +289,9 @@
                 // write is limited by what remaings in current cluster
                 var remainingInCluster = _clusterReader.BytesPerCluster - CurrentClusterOffset;
                 var toWrite = Math.Min(remainingInCluster, count);
-                var currentCluster = GetCurrentCluster();
+                var currentCluster = GetCurrentCluster(true);
                 Buffer.BlockCopy(buffer, offset, currentCluster, CurrentClusterOffset, toWrite);
+                _currentClusterDirty = true;
                 _position += toWrite;
                 // pushing the limits!
                 if (_position > _length)

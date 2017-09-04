@@ -93,6 +93,7 @@
                 ReadSectors(BootSector.FatOffsetSector.Value + fatPageIndex * SectorsPerFatPage, _fatPage, SectorsPerFatPage);
                 _fatPageIndex = fatPageIndex;
             }
+
             return _fatPage;
         }
 
@@ -214,24 +215,29 @@
         /// </summary>
         /// <param name="firstCluster">The first cluster.</param>
         /// <param name="contiguous">if set to <c>true</c> all stream clusters are contiguous (allowing a faster seek).</param>
+        /// <param name="fileAccess">The file access.</param>
         /// <param name="length">The length (optional for non-contiguous cluster streams).</param>
         /// <param name="onDisposed">The on disposed.</param>
         /// <returns></returns>
-        public Stream OpenClusters(ulong firstCluster, bool contiguous, ulong? length = null, Action onDisposed = null)
+        public Stream OpenClusterStream(ulong firstCluster, bool contiguous, FileAccess fileAccess, ulong? length = null, Action onDisposed = null)
         {
-            return new ClusterStream(this, null, firstCluster, contiguous, length, onDisposed);
+            if (fileAccess == FileAccess.Read)
+                return new ClusterStream(this, null, firstCluster, contiguous, length, onDisposed);
+            // write and read/write will be the same
+            return new ClusterStream(this, this, firstCluster, contiguous, length, onDisposed);
         }
 
         /// <summary>
         /// Opens the data stream.
         /// </summary>
         /// <param name="dataDescriptor">The data descriptor.</param>
+        /// <param name="fileAccess">The file access.</param>
         /// <returns></returns>
-        public Stream OpenDataStream(DataDescriptor dataDescriptor)
+        public Stream OpenDataStream(DataDescriptor dataDescriptor, FileAccess fileAccess)
         {
             if (dataDescriptor == null)
                 return null;
-            return OpenClusters(dataDescriptor.FirstCluster, dataDescriptor.Contiguous, dataDescriptor.Length);
+            return OpenClusterStream(dataDescriptor.FirstCluster, dataDescriptor.Contiguous, fileAccess, dataDescriptor.Length);
         }
 
         /// <summary>
@@ -243,7 +249,7 @@
         /// <returns></returns>
         public ExFatDirectory OpenDirectory(DataDescriptor dataDescriptor)
         {
-            return new ExFatDirectory(OpenDataStream(dataDescriptor), true);
+            return new ExFatDirectory(OpenDataStream(dataDescriptor, FileAccess.ReadWrite), true);
         }
 
         private IEnumerable<TDirectoryEntry> FindRootDirectoryEntries<TDirectoryEntry>()
@@ -263,7 +269,7 @@
                 var upCaseTableEntry = FindRootDirectoryEntries<UpCaseTableExFatDirectoryEntry>().FirstOrDefault();
                 if (upCaseTableEntry != null)
                 {
-                    using (var upCaseTableStream = OpenDataStream(upCaseTableEntry.DataDescriptor))
+                    using (var upCaseTableStream = OpenDataStream(upCaseTableEntry.DataDescriptor, FileAccess.Read))
                         _upCaseTable.Read(upCaseTableStream);
                 }
                 else
@@ -281,7 +287,7 @@
                 _allocationBitmap = new ExFatAllocationBitmap();
                 var allocationBitmapEntry = FindRootDirectoryEntries<AllocationBitmapExFatDirectoryEntry>()
                     .First(b => !b.BitmapFlags.Value.HasFlag(AllocationBitmapFlags.SecondClusterBitmap));
-                var allocationBitmapStream = OpenDataStream(allocationBitmapEntry.DataDescriptor);
+                var allocationBitmapStream = OpenDataStream(allocationBitmapEntry.DataDescriptor, FileAccess.Read);
                 _allocationBitmap.Open(allocationBitmapStream, allocationBitmapEntry.FirstCluster.Value, BootSector.ClusterCount.Value);
             }
             return _allocationBitmap;

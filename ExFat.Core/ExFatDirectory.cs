@@ -45,9 +45,8 @@
                 if (_directoryStream.Read(entryBytes, 0, entryBytes.Length) != 32)
                     break;
                 var directoryEntry = ExFatDirectoryEntry.Create(new Buffer(entryBytes), offset);
-                if (directoryEntry == null)
-                    break;
-                yield return directoryEntry;
+                if (directoryEntry != null)
+                    yield return directoryEntry;
             }
         }
 
