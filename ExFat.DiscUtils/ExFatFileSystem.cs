@@ -1,10 +1,14 @@
-﻿namespace ExFat.DiscUtils
+﻿// This is ExFat, an exFAT accessor written in pure C#
+// Released under MIT license
+// https://github.com/picrap/ExFat
+
+namespace ExFat.DiscUtils
 {
     using System;
     using System.IO;
-    using Core;
     using global::DiscUtils;
     using global::DiscUtils.Streams;
+    using Partition;
 
     public class ExFatFileSystem : DiscFileSystem
     {
@@ -18,6 +22,7 @@
         /// Gets a value indicating whether the file system is read-only or read-write.
         /// </summary>
         public override bool CanWrite => _partitionStream.CanWrite;
+
         public override long Size { get; }
         public override long UsedSpace { get; }
         public override long AvailableSpace { get; }

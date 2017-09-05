@@ -1,4 +1,8 @@
-﻿namespace ExFat.Core.Entries
+﻿// This is ExFat, an exFAT accessor written in pure C#
+// Released under MIT license
+// https://github.com/picrap/ExFat
+
+namespace ExFat.Partition.Entries
 {
     using System.Collections.Generic;
     using System.IO;
@@ -19,6 +23,7 @@
         /// The primary.
         /// </value>
         public ExFatDirectoryEntry Primary => Entries.FirstOrDefault();
+
         /// <summary>
         /// Gets the secondary <see cref="ExFatDirectoryEntry"/> entries, if any.
         /// </summary>
@@ -34,6 +39,7 @@
         /// The secondary stream extension.
         /// </value>
         public StreamExtensionExFatDirectoryEntry SecondaryStreamExtension => Secondaries.OfType<StreamExtensionExFatDirectoryEntry>().FirstOrDefault();
+
         /// <summary>
         /// Gets the secondary <see cref="FileNameExtensionExFatDirectoryEntry"/>, if any.
         /// </summary>

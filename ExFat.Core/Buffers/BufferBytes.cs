@@ -1,4 +1,8 @@
-﻿namespace ExFat.Core.Buffers
+﻿// This is ExFat, an exFAT accessor written in pure C#
+// Released under MIT license
+// https://github.com/picrap/ExFat
+
+namespace ExFat.Buffers
 {
     using System;
     using System.Collections;
@@ -12,7 +16,7 @@
     [DebuggerDisplay("{" + nameof(DebugLiteral) + "}")]
     public class BufferBytes : IEnumerable<byte>
     {
-        private readonly Buffers.Buffer _buffer;
+        private readonly Buffer _buffer;
 
         /// <summary>
         /// Gets or sets the <see cref="System.Byte"/> at the specified index.
@@ -48,14 +52,14 @@
         /// <param name="buffer">The buffer.</param>
         /// <param name="offset">The offset.</param>
         /// <param name="length">The length.</param>
-        public BufferBytes(Buffers.Buffer buffer, int offset, int length)
+        public BufferBytes(Buffer buffer, int offset, int length)
         {
-            _buffer = new Buffers.Buffer(buffer, offset, length);
+            _buffer = new Buffer(buffer, offset, length);
         }
 
         public IEnumerator<byte> GetEnumerator()
         {
-            return ((IEnumerable<byte>)_buffer.GetBytes()).GetEnumerator();
+            return ((IEnumerable<byte>) _buffer.GetBytes()).GetEnumerator();
         }
 
         IEnumerator IEnumerable.GetEnumerator()

@@ -1,4 +1,8 @@
-﻿namespace ExFat.Core.Buffers
+﻿// This is ExFat, an exFAT accessor written in pure C#
+// Released under MIT license
+// https://github.com/picrap/ExFat
+
+namespace ExFat.Buffers
 {
     using System;
     using System.Diagnostics;
@@ -20,9 +24,9 @@
             set { _buffer[0] = value; }
         }
 
-        public BufferUInt8(Buffers.Buffer buffer, int offset)
+        public BufferUInt8(Buffer buffer, int offset)
         {
-            _buffer = new Buffers.Buffer(buffer, offset, 1);
+            _buffer = new Buffer(buffer, offset, 1);
         }
     }
 }

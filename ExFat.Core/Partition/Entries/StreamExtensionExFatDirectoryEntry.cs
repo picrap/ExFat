@@ -1,4 +1,8 @@
-﻿namespace ExFat.Core.Entries
+﻿// This is ExFat, an exFAT accessor written in pure C#
+// Released under MIT license
+// https://github.com/picrap/ExFat
+
+namespace ExFat.Partition.Entries
 {
     using System;
     using System.Diagnostics;
@@ -13,6 +17,7 @@
         public IValueProvider<Byte> NameLength { get; }
         public IValueProvider<UInt16> NameHash { get; }
         public IValueProvider<UInt64> ValidDataLength { get; }
+
         /// <summary>
         /// Gets the first cluster MINUS 2 (WTF?).
         /// </summary>
@@ -20,9 +25,10 @@
         /// The first cluster.
         /// </value>
         public IValueProvider<UInt32> FirstCluster { get; }
+
         public IValueProvider<UInt64> DataLength { get; }
 
-        public DataDescriptor DataDescriptor => new DataDescriptor(FirstCluster.Value, false, DataLength.Value);
+        public DataDescriptor DataDescriptor => new DataDescriptor(FirstCluster.Value, GeneralSecondaryFlags.Value.HasFlag(ExFatGeneralSecondaryFlags.NoFatChain), DataLength.Value);
 
         public StreamExtensionExFatDirectoryEntry(Buffer buffer) : base(buffer)
         {

@@ -1,4 +1,8 @@
-﻿namespace ExFat.Core.Entries
+﻿// This is ExFat, an exFAT accessor written in pure C#
+// Released under MIT license
+// https://github.com/picrap/ExFat
+
+namespace ExFat.Partition.Entries
 {
     using System;
     using System.Diagnostics;
@@ -15,6 +19,7 @@
         /// The character count.
         /// </value>
         public IValueProvider<Byte> CharacterCount { get; }
+
         /// <summary>
         /// Full length volume label.
         /// </summary>
@@ -34,7 +39,7 @@
             get { return AllVolumeLabel.Value.Substring(0, CharacterCount.Value); }
             set
             {
-                CharacterCount.Value = (byte)value.Length;
+                CharacterCount.Value = (byte) value.Length;
                 AllVolumeLabel.Value = value;
             }
         }

@@ -1,4 +1,8 @@
-﻿namespace ExFat.DiscUtils
+﻿// This is ExFat, an exFAT accessor written in pure C#
+// Released under MIT license
+// https://github.com/picrap/ExFat
+
+namespace ExFat.DiscUtils
 {
     public static class DiskContent
     {
@@ -19,6 +23,7 @@
         // a file contains 3 entries: file, stream and name
         // 1400 * 3 = 4200, which is > 4096
         public const int LongFolderEntriesCount = 1400;
+
         public const string LongFolderFileName = "Big folder";
     }
 }

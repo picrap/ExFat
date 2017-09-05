@@ -1,4 +1,8 @@
-﻿namespace ExFat.Core
+﻿// This is ExFat, an exFAT accessor written in pure C#
+// Released under MIT license
+// https://github.com/picrap/ExFat
+
+namespace ExFat.Partition
 {
     using System;
     using System.Collections.Generic;
@@ -18,7 +22,7 @@
 
         public ExFatBootSector BootSector { get; }
 
-        public int BytesPerCluster => (int)(BootSector.SectorsPerCluster.Value * BootSector.BytesPerSector.Value);
+        public int BytesPerCluster => (int) (BootSector.SectorsPerCluster.Value * BootSector.BytesPerSector.Value);
 
         public DataDescriptor RootDirectoryDataDescriptor => new DataDescriptor(BootSector.RootDirectoryCluster.Value, false, null);
 
@@ -66,7 +70,7 @@
 
         public long GetSectorOffset(long sectorIndex)
         {
-            return sectorIndex * (int)BootSector.BytesPerSector.Value;
+            return sectorIndex * (int) BootSector.BytesPerSector.Value;
         }
 
         private void SeekSector(long sectorIndex)
@@ -78,7 +82,7 @@
         private byte[] _fatPage;
         private bool _fatPageDirty;
         private const int SectorsPerFatPage = 1;
-        private int FatPageSize => (int)BootSector.BytesPerSector.Value * SectorsPerFatPage;
+        private int FatPageSize => (int) BootSector.BytesPerSector.Value * SectorsPerFatPage;
         private int ClustersPerFatPage => FatPageSize / sizeof(Int32);
 
         private byte[] GetFatPage(long cluster)
@@ -116,11 +120,11 @@
             lock (_streamLock)
             {
                 var fatPage = GetFatPage(cluster);
-                var clusterIndex = (int)(cluster % ClustersPerFatPage);
+                var clusterIndex = (int) (cluster % ClustersPerFatPage);
                 var nextCluster = LittleEndian.ToUInt32(fatPage, clusterIndex * sizeof(Int32));
                 // consider this as signed
                 if (nextCluster >= 0xFFFFFFF7)
-                    return (int)nextCluster;
+                    return (int) nextCluster;
                 // otherwise, it's the raw unsigned cluster number, extended to long
                 return nextCluster;
             }
@@ -131,8 +135,8 @@
             lock (_streamLock)
             {
                 var fatPage = GetFatPage(cluster);
-                var clusterIndex = (int)(cluster % ClustersPerFatPage);
-                LittleEndian.GetBytes((UInt32)nextCluster, fatPage, clusterIndex * sizeof(Int32));
+                var clusterIndex = (int) (cluster % ClustersPerFatPage);
+                LittleEndian.GetBytes((UInt32) nextCluster, fatPage, clusterIndex * sizeof(Int32));
                 _fatPageDirty = true;
             }
         }
@@ -155,21 +159,33 @@
             }
         }
 
-        public void ReadCluster(long cluster, byte[] clusterBuffer)
+        public void ReadCluster(long cluster, byte[] clusterBuffer, int offset, int length)
         {
+            if (length + offset > BytesPerCluster)
+                throw new ArgumentOutOfRangeException(nameof(length));
+            if (length < 0)
+                throw new ArgumentOutOfRangeException(nameof(length));
+            if (offset < 0)
+                throw new ArgumentOutOfRangeException(nameof(offset));
             lock (_streamLock)
             {
                 SeekCluster(cluster);
-                _partitionStream.Read(clusterBuffer, 0, BytesPerCluster);
+                _partitionStream.Read(clusterBuffer, offset, length);
             }
         }
 
-        public void WriteCluster(long cluster, byte[] clusterBuffer)
+        public void WriteCluster(long cluster, byte[] clusterBuffer, int offset, int length)
         {
+            if (length + offset > BytesPerCluster)
+                throw new ArgumentOutOfRangeException(nameof(length));
+            if (length < 0)
+                throw new ArgumentOutOfRangeException(nameof(length));
+            if (offset < 0)
+                throw new ArgumentOutOfRangeException(nameof(offset));
             lock (_streamLock)
             {
                 SeekCluster(cluster);
-                _partitionStream.Write(clusterBuffer, 0, BytesPerCluster);
+                _partitionStream.Write(clusterBuffer, offset, length);
             }
         }
 
@@ -178,7 +194,7 @@
             lock (_streamLock)
             {
                 SeekSector(sector);
-                _partitionStream.Read(sectorBuffer, 0, (int)BootSector.BytesPerSector.Value * sectorCount);
+                _partitionStream.Read(sectorBuffer, 0, (int) BootSector.BytesPerSector.Value * sectorCount);
             }
         }
 
@@ -187,7 +203,7 @@
             lock (_streamLock)
             {
                 SeekSector(sector);
-                _partitionStream.Write(sectorBuffer, 0, (int)BootSector.BytesPerSector.Value * sectorCount);
+                _partitionStream.Write(sectorBuffer, 0, (int) BootSector.BytesPerSector.Value * sectorCount);
             }
         }
 
@@ -204,8 +220,8 @@
             {
                 // TODO use Up case table
                 var uc = upCaseTable.ToUpper(c);
-                hash = (UInt16)(hash.RotateRight() + (uc & 0xFF));
-                hash = (UInt16)(hash.RotateRight() + (uc >> 8));
+                hash = (UInt16) (hash.RotateRight() + (uc & 0xFF));
+                hash = (UInt16) (hash.RotateRight() + (uc >> 8));
             }
             return hash;
         }
@@ -219,7 +235,7 @@
         /// <param name="length">The length (optional for non-contiguous cluster streams).</param>
         /// <param name="onDisposed">The on disposed.</param>
         /// <returns></returns>
-        public Stream OpenClusterStream(ulong firstCluster, bool contiguous, FileAccess fileAccess, ulong? length = null, Action onDisposed = null)
+        public ClusterStream OpenClusterStream(ulong firstCluster, bool contiguous, FileAccess fileAccess, ulong? length = null, Action onDisposed = null)
         {
             if (fileAccess == FileAccess.Read)
                 return new ClusterStream(this, null, firstCluster, contiguous, length, onDisposed);
@@ -233,7 +249,7 @@
         /// <param name="dataDescriptor">The data descriptor.</param>
         /// <param name="fileAccess">The file access.</param>
         /// <returns></returns>
-        public Stream OpenDataStream(DataDescriptor dataDescriptor, FileAccess fileAccess)
+        public ClusterStream OpenDataStream(DataDescriptor dataDescriptor, FileAccess fileAccess)
         {
             if (dataDescriptor == null)
                 return null;

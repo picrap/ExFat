@@ -1,4 +1,8 @@
-﻿namespace ExFat.Core
+﻿// This is ExFat, an exFAT accessor written in pure C#
+// Released under MIT license
+// https://github.com/picrap/ExFat
+
+namespace ExFat.Partition
 {
     using System.Collections.Generic;
     using System.IO;
@@ -24,11 +28,11 @@
             byte[] pairBytes = new byte[2];
             char currentChar = '\0';
             bool settingCurrentChar = false;
-            for (; ; )
+            for (;;)
             {
                 if (upcaseTableStream.Read(pairBytes, 0, pairBytes.Length) == 0)
                     break;
-                var c = (char)LittleEndian.ToUInt16(pairBytes);
+                var c = (char) LittleEndian.ToUInt16(pairBytes);
                 // short form: FFFF <char> sets the next char to be set
                 // otherwise this is indexed
                 if (c == 0xFFFF)

@@ -1,4 +1,8 @@
-﻿namespace ExFat.Core.Buffers
+﻿// This is ExFat, an exFAT accessor written in pure C#
+// Released under MIT license
+// https://github.com/picrap/ExFat
+
+namespace ExFat.Buffers
 {
     using System.Diagnostics;
 
@@ -16,8 +20,8 @@
         public TEnum Value
         {
             // the casts are a bit dirty here, however they do the job
-            get { return (TEnum)(object)_backingValueProvider.Value; }
-            set { _backingValueProvider.Value = (TBacking)(object)value; }
+            get { return (TEnum) (object) _backingValueProvider.Value; }
+            set { _backingValueProvider.Value = (TBacking) (object) value; }
         }
 
         /// <summary>

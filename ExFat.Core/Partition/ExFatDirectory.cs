@@ -1,14 +1,19 @@
-﻿namespace ExFat.Core
+﻿// This is ExFat, an exFAT accessor written in pure C#
+// Released under MIT license
+// https://github.com/picrap/ExFat
+
+namespace ExFat.Partition
 {
     using System;
     using System.Collections.Generic;
     using System.IO;
     using Entries;
+    using IO;
     using Buffer = Buffers.Buffer;
 
     public class ExFatDirectory : IDisposable
     {
-        private readonly Stream _directoryStream;
+        private readonly PartitionStream _directoryStream;
         private readonly bool _ownsStream;
 
         /// <summary>
@@ -16,7 +21,7 @@
         /// </summary>
         /// <param name="directoryStream">The directory stream.</param>
         /// <param name="ownsStream">if set to <c>true</c> [owns stream].</param>
-        public ExFatDirectory(Stream directoryStream, bool ownsStream)
+        public ExFatDirectory(PartitionStream directoryStream, bool ownsStream)
         {
             _directoryStream = directoryStream;
             _ownsStream = ownsStream;
@@ -39,12 +44,14 @@
         {
             if (_directoryStream.CanSeek)
                 _directoryStream.Seek(0, SeekOrigin.Begin);
-            for (var offset = 0L; ; offset += 32)
+            for (var offset = 0L;; offset += 32)
             {
                 var entryBytes = new byte[32];
+                // cluster offset before reading data, since it's the start
+                var clusterOffset = _directoryStream.ClusterOffset;
                 if (_directoryStream.Read(entryBytes, 0, entryBytes.Length) != 32)
                     break;
-                var directoryEntry = ExFatDirectoryEntry.Create(new Buffer(entryBytes), offset);
+                var directoryEntry = ExFatDirectoryEntry.Create(new Buffer(entryBytes), offset, clusterOffset);
                 if (directoryEntry != null)
                     yield return directoryEntry;
             }
@@ -78,13 +85,13 @@
 
         public void UpdateEntry(ExFatDirectoryEntry entry)
         {
-            _directoryStream.Seek(entry.Offset, SeekOrigin.Begin);
+            _directoryStream.Seek(entry.Position, SeekOrigin.Begin);
             entry.Write(_directoryStream);
         }
 
         public void UpdateEntry(ExFatMetaDirectoryEntry entry)
         {
-            _directoryStream.Seek(entry.Primary.Offset, SeekOrigin.Begin);
+            _directoryStream.Seek(entry.Primary.Position, SeekOrigin.Begin);
             entry.Write(_directoryStream);
         }
     }

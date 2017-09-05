@@ -1,7 +1,12 @@
-﻿namespace ExFat.Core.Entries
+﻿// This is ExFat, an exFAT accessor written in pure C#
+// Released under MIT license
+// https://github.com/picrap/ExFat
+
+namespace ExFat.Partition.Entries
 {
     using System;
     using Buffers;
+
     public class EntryDateTime : IValueProvider<DateTime>
     {
         private readonly IValueProvider<UInt32> _dateTimeProvider;
@@ -9,7 +14,7 @@
 
         public DateTime Value
         {
-            get { return DateTimeUtility.FromTimeStamp(_dateTimeProvider.Value, _tenMsProvider != null ? _tenMsProvider.Value : (byte)0); }
+            get { return DateTimeUtility.FromTimeStamp(_dateTimeProvider.Value, _tenMsProvider != null ? _tenMsProvider.Value : (byte) 0); }
             set
             {
                 var t = value.ToTimeStamp();

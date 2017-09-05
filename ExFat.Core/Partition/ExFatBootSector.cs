@@ -1,4 +1,8 @@
-﻿namespace ExFat.Core
+﻿// This is ExFat, an exFAT accessor written in pure C#
+// Released under MIT license
+// https://github.com/picrap/ExFat
+
+namespace ExFat.Partition
 {
     using System;
     using System.IO;
@@ -7,7 +11,7 @@
 
     public class ExFatBootSector
     {
-        public static readonly byte[] DefaultJmpBoot = new byte[] { 0xEB, 0x76, 0x90 };
+        public static readonly byte[] DefaultJmpBoot = new byte[] {0xEB, 0x76, 0x90};
         public const string ExFatOemName = "EXFAT   ";
 
         private readonly byte[] _bytes;
@@ -23,6 +27,7 @@
         /// The length of the volume.
         /// </value>
         public IValueProvider<UInt64> VolumeLengthSectors { get; }
+
         /// <summary>
         /// Sector address of 1st FAT.
         /// </summary>
@@ -30,6 +35,7 @@
         /// The fat offset.
         /// </value>
         public IValueProvider<UInt32> FatOffsetSector { get; }
+
         /// <summary>
         /// Size of FAT in sectors.
         /// </summary>
@@ -37,6 +43,7 @@
         /// The length of the fat.
         /// </value>
         public IValueProvider<UInt32> FatLengthSectors { get; }
+
         /// <summary>
         /// Starting sector of cluster heap
         /// </summary>
@@ -44,6 +51,7 @@
         /// The cluster offset.
         /// </value>
         public IValueProvider<UInt32> ClusterOffsetSector { get; }
+
         /// <summary>
         /// Number of clusters.
         /// </summary>
@@ -51,6 +59,7 @@
         /// The cluster count.
         /// </value>
         public IValueProvider<UInt32> ClusterCount { get; }
+
         /// <summary>
         /// First cluster of root directory.
         /// </summary>
@@ -58,6 +67,7 @@
         /// The root directory.
         /// </value>
         public IValueProvider<UInt32> RootDirectoryCluster { get; }
+
         /// <summary>
         /// Gets the volume flags.
         /// Bit 0 – Active FAT
@@ -71,6 +81,7 @@
         /// The volume flags.
         /// </value>
         public IValueProvider<UInt16> VolumeFlags { get; }
+
         /// <summary>
         /// This is power of 2; Minimal value is 9; 2^9=512 bytes
         /// Bytes and maximum 2^12=4096 Bytes
@@ -79,6 +90,7 @@
         /// The bytes per sector.
         /// </value>
         public IValueProvider<UInt32> BytesPerSector { get; }
+
         /// <summary>
         /// This is power of 2; Minimal value is 1; 2^0=1
         /// sector (512 Bytes) and maximum 32 MB cluster
@@ -88,6 +100,7 @@
         /// The sectors per cluster.
         /// </value>
         public IValueProvider<UInt32> SectorsPerCluster { get; }
+
         /// <summary>
         /// Either 1 or 2; if TexFAT is supported then it will be 2
         /// </summary>

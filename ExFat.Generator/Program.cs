@@ -1,8 +1,11 @@
-﻿namespace ExFat.Generator
+﻿// This is ExFat, an exFAT accessor written in pure C#
+// Released under MIT license
+// https://github.com/picrap/ExFat
+
+namespace ExFat.Generator
 {
     using System;
     using System.IO;
-    using Core;
     using DiscUtils;
 
     public static class Program

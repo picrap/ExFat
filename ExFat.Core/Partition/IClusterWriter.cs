@@ -1,9 +1,13 @@
-﻿namespace ExFat.Core
+﻿// This is ExFat, an exFAT accessor written in pure C#
+// Released under MIT license
+// https://github.com/picrap/ExFat
+
+namespace ExFat.Partition
 {
     /// <summary>
     /// Cluster writer
     /// </summary>
-    /// <seealso cref="ExFat.Core.IClusterReader" />
+    /// <seealso cref="IClusterReader" />
     public interface IClusterWriter : IClusterReader
     {
         /// <summary>
@@ -11,7 +15,9 @@
         /// </summary>
         /// <param name="cluster">The cluster.</param>
         /// <param name="clusterBuffer">The cluster buffer.</param>
-        void WriteCluster(long cluster, byte[] clusterBuffer);
+        /// <param name="offset"></param>
+        /// <param name="length"></param>
+        void WriteCluster(long cluster, byte[] clusterBuffer, int offset, int length);
 
         /// <summary>
         /// Sets the next cluster.

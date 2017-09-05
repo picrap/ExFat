@@ -1,4 +1,8 @@
-﻿namespace ExFat.Core
+﻿// This is ExFat, an exFAT accessor written in pure C#
+// Released under MIT license
+// https://github.com/picrap/ExFat
+
+namespace ExFat.Partition
 {
     using System;
     using System.IO;
@@ -45,8 +49,8 @@
             if (cluster < _firstCluster || cluster >= Length)
                 throw new ArgumentOutOfRangeException(nameof(cluster));
             cluster -= _firstCluster;
-            var byteIndex = (int)cluster / 8;
-            var bitMask = 1 << (int)(cluster & 7);
+            var byteIndex = (int) cluster / 8;
+            var bitMask = 1 << (int) (cluster & 7);
             return (_bitmap[byteIndex] & bitMask) != 0;
         }
 
@@ -55,12 +59,12 @@
             if (cluster < _firstCluster || cluster >= Length)
                 throw new ArgumentOutOfRangeException(nameof(cluster));
             cluster -= _firstCluster;
-            var byteIndex = (int)cluster / 8;
-            var bitMask = 1 << (int)(cluster & 7);
+            var byteIndex = (int) cluster / 8;
+            var bitMask = 1 << (int) (cluster & 7);
             if (allocated)
-                _bitmap[byteIndex] |= (byte)bitMask;
+                _bitmap[byteIndex] |= (byte) bitMask;
             else
-                _bitmap[byteIndex] &= (byte)~bitMask;
+                _bitmap[byteIndex] &= (byte) ~bitMask;
         }
 
         public long FindUnallocated(int contiguous = 1)

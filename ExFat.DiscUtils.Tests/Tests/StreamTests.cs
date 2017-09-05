@@ -1,65 +1,76 @@
-﻿namespace ExFat.DiscUtils.Tests
+﻿// This is ExFat, an exFAT accessor written in pure C#
+// Released under MIT license
+// https://github.com/picrap/ExFat
+
+namespace ExFat.DiscUtils.Tests
 {
     using System;
     using System.IO;
     using System.Linq;
-    using Core;
-    using Core.Entries;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using Partition;
+    using Partition.Entries;
 
     [TestClass]
+    [TestCategory("Partition")]
     public class StreamTests
     {
-        private void ReadFile(string fileName, Func<ulong, ulong> getValueAtOffset, ulong? overrideLength = null, bool forward = true, bool forceSeek = false)
+        internal static void ReadFile(string fileName, Func<ulong, ulong> getValueAtOffset, ulong? overrideLength = null, bool forward = true, bool forceSeek = false)
         {
             using (var testEnvironment = new TestEnvironment())
             {
                 var fs = new ExFatPartition(testEnvironment.PartitionStream);
-                using (var rootDirectory = fs.OpenDirectory(fs.RootDirectoryDataDescriptor))
+                ReadFile(fs, fileName, getValueAtOffset, overrideLength, forward, forceSeek);
+            }
+        }
+
+        internal static void ReadFile(ExFatPartition partition, string fileName, Func<ulong, ulong> getValueAtOffset, ulong? overrideLength = null, bool forward = true,
+            bool forceSeek = false)
+        {
+            using (var rootDirectory = partition.OpenDirectory(partition.RootDirectoryDataDescriptor))
+            {
+                var fileEntry = rootDirectory.GetMetaEntries().Single(e => e.ExtensionsFileName == fileName);
+                var length = overrideLength ?? fileEntry.SecondaryStreamExtension.DataLength.Value;
+                var contiguous = fileEntry.SecondaryStreamExtension.GeneralSecondaryFlags.Value.HasFlag(ExFatGeneralSecondaryFlags.NoFatChain);
+                using (var stream = partition.OpenClusterStream(fileEntry.SecondaryStreamExtension.FirstCluster.Value, contiguous, FileAccess.Read, length))
                 {
-                    var fileEntry = rootDirectory.GetMetaEntries().Single(e => e.ExtensionsFileName == fileName);
-                    var length = overrideLength ?? fileEntry.SecondaryStreamExtension.DataLength.Value;
-                    var contiguous = fileEntry.SecondaryStreamExtension.GeneralSecondaryFlags.Value.HasFlag(ExFatGeneralSecondaryFlags.NoFatChain);
-                    using (var stream = fs.OpenClusterStream(fileEntry.SecondaryStreamExtension.FirstCluster.Value, contiguous, FileAccess.Read, length))
+                    var vb = new byte[sizeof(ulong)];
+                    var range = Enumerable.Range(0, (int) (length / sizeof(ulong))).Select(r => r * sizeof(ulong));
+                    if (!forward)
                     {
-                        var vb = new byte[sizeof(ulong)];
-                        var range = Enumerable.Range(0, (int)(length / sizeof(ulong))).Select(r => r * sizeof(ulong));
-                        if (!forward)
-                        {
-                            range = range.Reverse();
-                            forceSeek = true;
-                        }
-                        foreach (var offset in range)
-                        {
-                            if (forceSeek)
-                                stream.Seek(offset, SeekOrigin.Begin);
-                            if (offset == 512 * 256 - 8)
-                            {
-                            }
-                            stream.Read(vb, 0, vb.Length);
-                            var v = LittleEndian.ToUInt64(vb);
-                            Assert.AreEqual(v, getValueAtOffset((ulong)offset));
-                        }
-                        if (forward)
-                            Assert.AreEqual(0, stream.Read(vb, 0, vb.Length));
+                        range = range.Reverse();
+                        forceSeek = true;
                     }
+                    foreach (var offset in range)
+                    {
+                        if (forceSeek)
+                            stream.Seek(offset, SeekOrigin.Begin);
+                        stream.Read(vb, 0, vb.Length);
+                        var v = LittleEndian.ToUInt64(vb);
+                        Assert.AreEqual(v, getValueAtOffset((ulong) offset));
+                    }
+                    if (forward)
+                        Assert.AreEqual(0, stream.Read(vb, 0, vb.Length));
                 }
             }
         }
 
         [TestMethod]
+        [TestCategory("Read")]
         public void ReadLongContiguousFull()
         {
             ReadFile(DiskContent.LongContiguousFileName, DiskContent.GetLongContiguousFileNameOffsetValue);
         }
 
         [TestMethod]
+        [TestCategory("Read")]
         public void ReadLongContiguousFullBackwards()
         {
             ReadFile(DiskContent.LongContiguousFileName, DiskContent.GetLongContiguousFileNameOffsetValue, forward: false);
         }
 
         [TestMethod]
+        [TestCategory("Read")]
         public void ReadLongContiguousLimited()
         {
             var length = (DiskContent.LongFileSize / 3 * 2) & ~7ul;
@@ -67,18 +78,21 @@
         }
 
         [TestMethod]
+        [TestCategory("Read")]
         public void ReadLongSparseFull()
         {
             ReadFile(DiskContent.LongSparseFile1Name, DiskContent.GetLongSparseFile1NameOffsetValue);
         }
 
         [TestMethod]
+        [TestCategory("Read")]
         public void ReadLongSparseFullBackwards()
         {
             ReadFile(DiskContent.LongSparseFile1Name, DiskContent.GetLongSparseFile1NameOffsetValue, forward: false);
         }
 
         [TestMethod]
+        [TestCategory("Read")]
         public void ReadLongSparseLimited()
         {
             var length = (DiskContent.LongFileSize / 3 * 2) & ~7ul;

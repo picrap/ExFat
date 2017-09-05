@@ -1,4 +1,8 @@
-﻿namespace ExFat.Core.Buffers
+﻿// This is ExFat, an exFAT accessor written in pure C#
+// Released under MIT license
+// https://github.com/picrap/ExFat
+
+namespace ExFat.Buffers
 {
     using System.Collections.Generic;
     using System.Diagnostics;
@@ -28,12 +32,12 @@
 
         private static char ToChar(byte first, byte second)
         {
-            return (char)(first | second << 8);
+            return (char) (first | second << 8);
         }
 
         private static byte[] ToBytes(char c)
         {
-            return new[] { (byte)(c & 0xFF), (byte)(c >> 8) };
+            return new[] {(byte) (c & 0xFF), (byte) (c >> 8)};
         }
 
         /// <summary>

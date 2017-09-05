@@ -1,14 +1,20 @@
-﻿namespace ExFat.DiscUtils.Tests
+﻿// This is ExFat, an exFAT accessor written in pure C#
+// Released under MIT license
+// https://github.com/picrap/ExFat
+
+namespace ExFat.DiscUtils.Tests
 {
     using System.Linq;
-    using Core;
-    using Core.Entries;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using Partition;
+    using Partition.Entries;
 
     [TestClass]
+    [TestCategory("Partition")]
     public class StructureTests
     {
         [TestMethod]
+        [TestCategory("Structure")]
         public void DirectoryEntries()
         {
             using (var testEnvironment = new TestEnvironment())
@@ -23,6 +29,7 @@
         }
 
         [TestMethod]
+        [TestCategory("Structure")]
         public void ValidGroupedEntries()
         {
             using (var testEnvironment = new TestEnvironment())
@@ -37,6 +44,7 @@
         }
 
         [TestMethod]
+        [TestCategory("Structure")]
         public void CheckHashes()
         {
             using (var testEnvironment = new TestEnvironment())
@@ -57,6 +65,7 @@
         }
 
         [TestMethod]
+        [TestCategory("Structure")]
         public void CheckChecksums()
         {
             using (var testEnvironment = new TestEnvironment())
@@ -77,6 +86,7 @@
         }
 
         [TestMethod]
+        [TestCategory("Structure")]
         public void AllocationBitmapExists()
         {
             using (var testEnvironment = new TestEnvironment())

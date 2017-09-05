@@ -1,4 +1,8 @@
-﻿namespace ExFat.Core.Entries
+﻿// This is ExFat, an exFAT accessor written in pure C#
+// Released under MIT license
+// https://github.com/picrap/ExFat
+
+namespace ExFat.Partition.Entries
 {
     using System;
     using System.Collections.Generic;
@@ -52,7 +56,7 @@
 
         public override void Update(ICollection<ExFatDirectoryEntry> secondaryEntries)
         {
-            SecondaryCount.Value = (Byte)secondaryEntries.Count;
+            SecondaryCount.Value = (Byte) secondaryEntries.Count;
             SetChecksum.Value = ComputeChecksum(secondaryEntries);
         }
 

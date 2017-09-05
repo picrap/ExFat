@@ -1,4 +1,8 @@
-﻿namespace ExFat.Core
+﻿// This is ExFat, an exFAT accessor written in pure C#
+// Released under MIT license
+// https://github.com/picrap/ExFat
+
+namespace ExFat
 {
     using System;
 
@@ -16,7 +20,7 @@
         {
             count += offset;
             for (int index = offset; index < count; index++)
-                checksum = (UInt16)(checksum.RotateRight() + bytes[index]);
+                checksum = (UInt16) (checksum.RotateRight() + bytes[index]);
             return checksum;
         }
     }

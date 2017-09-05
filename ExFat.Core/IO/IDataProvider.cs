@@ -1,6 +1,10 @@
-﻿namespace ExFat.Core.IO
+﻿// This is ExFat, an exFAT accessor written in pure C#
+// Released under MIT license
+// https://github.com/picrap/ExFat
+
+namespace ExFat.IO
 {
-    using Entries;
+    using Partition.Entries;
 
     /// <summary>
     /// When implemented by <see cref="ExFatDirectoryEntry"/>-derived classes, provides information about how to handle data streams

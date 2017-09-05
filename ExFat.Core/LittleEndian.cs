@@ -1,7 +1,12 @@
-﻿namespace ExFat.Core
+﻿// This is ExFat, an exFAT accessor written in pure C#
+// Released under MIT license
+// https://github.com/picrap/ExFat
+
+namespace ExFat
 {
     using System;
     using System.Collections.Generic;
+    using Buffer = Buffers.Buffer;
 
     public static class LittleEndian
     {
@@ -14,14 +19,14 @@
         /// <returns></returns>
         public static void GetBytes(UInt64 v, byte[] result, int offset = 0)
         {
-            result[offset] = (byte)(v & 0xFF);
-            result[offset + 1] = (byte)((v >> 8) & 0xFF);
-            result[offset + 2] = (byte)((v >> 16) & 0xFF);
-            result[offset + 3] = (byte)((v >> 24) & 0xFF);
-            result[offset + 4] = (byte)((v >> 32) & 0xFF);
-            result[offset + 5] = (byte)((v >> 40) & 0xFF);
-            result[offset + 6] = (byte)((v >> 48) & 0xFF);
-            result[offset + 7] = (byte)((v >> 56) & 0xFF);
+            result[offset] = (byte) (v & 0xFF);
+            result[offset + 1] = (byte) ((v >> 8) & 0xFF);
+            result[offset + 2] = (byte) ((v >> 16) & 0xFF);
+            result[offset + 3] = (byte) ((v >> 24) & 0xFF);
+            result[offset + 4] = (byte) ((v >> 32) & 0xFF);
+            result[offset + 5] = (byte) ((v >> 40) & 0xFF);
+            result[offset + 6] = (byte) ((v >> 48) & 0xFF);
+            result[offset + 7] = (byte) ((v >> 56) & 0xFF);
         }
 
         /// <summary>
@@ -29,7 +34,7 @@
         /// </summary>
         /// <param name="v">The value.</param>
         /// <param name="buffer">The buffer.</param>
-        public static void GetBytes(UInt64 v, Buffers.Buffer buffer)
+        public static void GetBytes(UInt64 v, Buffer buffer)
         {
             GetBytes(v, buffer.Bytes, buffer.Offset);
         }
@@ -55,10 +60,10 @@
         /// <returns></returns>
         public static void GetBytes(UInt32 v, byte[] result, int offset = 0)
         {
-            result[offset] = (byte)(v & 0xFF);
-            result[offset + 1] = (byte)((v >> 8) & 0xFF);
-            result[offset + 2] = (byte)((v >> 16) & 0xFF);
-            result[offset + 3] = (byte)((v >> 24) & 0xFF);
+            result[offset] = (byte) (v & 0xFF);
+            result[offset + 1] = (byte) ((v >> 8) & 0xFF);
+            result[offset + 2] = (byte) ((v >> 16) & 0xFF);
+            result[offset + 3] = (byte) ((v >> 24) & 0xFF);
         }
 
 
@@ -67,7 +72,7 @@
         /// </summary>
         /// <param name="v">The value.</param>
         /// <param name="buffer">The buffer.</param>
-        public static void GetBytes(UInt32 v, Buffers.Buffer buffer)
+        public static void GetBytes(UInt32 v, Buffer buffer)
         {
             GetBytes(v, buffer.Bytes, buffer.Offset);
         }
@@ -93,8 +98,8 @@
         /// <returns></returns>
         public static void GetBytes(UInt16 v, byte[] result, int offset = 0)
         {
-            result[offset] = (byte)(v & 0xFF);
-            result[offset + 1] = (byte)((v >> 8) & 0xFF);
+            result[offset] = (byte) (v & 0xFF);
+            result[offset + 1] = (byte) ((v >> 8) & 0xFF);
         }
 
         /// <summary>
@@ -102,7 +107,7 @@
         /// </summary>
         /// <param name="v">The value.</param>
         /// <param name="buffer">The buffer.</param>
-        public static void GetBytes(UInt16 v, Buffers.Buffer buffer)
+        public static void GetBytes(UInt16 v, Buffer buffer)
         {
             GetBytes(v, buffer.Bytes, buffer.Offset);
         }
@@ -129,13 +134,13 @@
         public static UInt64 ToUInt64(IList<byte> bytes, int offset = 0)
         {
             return bytes[offset]
-                   | (UInt64)bytes[offset + 1] << 8
-                   | (UInt64)bytes[offset + 2] << 16
-                   | (UInt64)bytes[offset + 3] << 24
-                   | (UInt64)bytes[offset + 4] << 32
-                   | (UInt64)bytes[offset + 5] << 40
-                   | (UInt64)bytes[offset + 6] << 48
-                   | (UInt64)bytes[offset + 7] << 56;
+                   | (UInt64) bytes[offset + 1] << 8
+                   | (UInt64) bytes[offset + 2] << 16
+                   | (UInt64) bytes[offset + 3] << 24
+                   | (UInt64) bytes[offset + 4] << 32
+                   | (UInt64) bytes[offset + 5] << 40
+                   | (UInt64) bytes[offset + 6] << 48
+                   | (UInt64) bytes[offset + 7] << 56;
         }
 
         /// <summary>
@@ -143,7 +148,7 @@
         /// </summary>
         /// <param name="buffer">The buffer.</param>
         /// <returns></returns>
-        public static UInt64 ToUInt64(Buffers.Buffer buffer)
+        public static UInt64 ToUInt64(Buffer buffer)
         {
             return ToUInt64(buffer.Bytes, buffer.Offset);
         }
@@ -157,9 +162,9 @@
         public static UInt32 ToUInt32(IList<byte> bytes, int offset = 0)
         {
             return bytes[offset]
-                   | (UInt32)bytes[offset + 1] << 8
-                   | (UInt32)bytes[offset + 2] << 16
-                   | (UInt32)bytes[offset + 3] << 24;
+                   | (UInt32) bytes[offset + 1] << 8
+                   | (UInt32) bytes[offset + 2] << 16
+                   | (UInt32) bytes[offset + 3] << 24;
         }
 
 
@@ -168,10 +173,11 @@
         /// </summary>
         /// <param name="buffer">The buffer.</param>
         /// <returns></returns>
-        public static UInt32 ToUInt32(Buffers.Buffer buffer)
+        public static UInt32 ToUInt32(Buffer buffer)
         {
             return ToUInt32(buffer.Bytes, buffer.Offset);
         }
+
         /// <summary>
         /// Extracts an <see cref="UInt32"/> from bytes.
         /// </summary>
@@ -180,8 +186,8 @@
         /// <returns></returns>
         public static UInt16 ToUInt16(IList<byte> bytes, int offset = 0)
         {
-            return (UInt16)(bytes[offset]
-                   | bytes[offset + 1] << 8);
+            return (UInt16) (bytes[offset]
+                             | bytes[offset + 1] << 8);
         }
 
         /// <summary>
@@ -189,7 +195,7 @@
         /// </summary>
         /// <param name="buffer">The buffer.</param>
         /// <returns></returns>
-        public static UInt16 ToUInt16(Buffers.Buffer buffer)
+        public static UInt16 ToUInt16(Buffer buffer)
         {
             return ToUInt16(buffer.Bytes, buffer.Offset);
         }

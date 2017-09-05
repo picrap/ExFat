@@ -1,4 +1,8 @@
-﻿namespace ExFat.Core.Entries
+﻿// This is ExFat, an exFAT accessor written in pure C#
+// Released under MIT license
+// https://github.com/picrap/ExFat
+
+namespace ExFat.Partition.Entries
 {
     using System;
     using System.Collections.Generic;
@@ -12,12 +16,20 @@
         public IValueProvider<ExFatDirectoryEntryType> EntryType { get; }
 
         /// <summary>
-        /// Gets the offset in directory.
+        /// Gets the position in directory stream.
         /// </summary>
         /// <value>
         /// The offset.
         /// </value>
-        public long Offset { get; private set; }
+        public long Position { get; private set; }
+
+        /// <summary>
+        /// Gets the cluster.
+        /// </summary>
+        /// <value>
+        /// The cluster.
+        /// </value>
+        public long Cluster { get; private set; }
 
         /// <summary>
         /// Indicates if the entry is in use
@@ -51,19 +63,23 @@
         /// </summary>
         /// <param name="buffer">The buffer.</param>
         /// <param name="offset">The offset.</param>
+        /// <param name="cluster">The cluster.</param>
         /// <returns></returns>
         /// <exception cref="System.ArgumentOutOfRangeException"></exception>
-        public static ExFatDirectoryEntry Create(Buffer buffer, long offset)
+        public static ExFatDirectoryEntry Create(Buffer buffer, long offset, long cluster)
         {
             var entry = Create(buffer);
             if (entry != null)
-                entry.Offset = offset;
+            {
+                entry.Position = offset;
+                entry.Cluster = cluster;
+            }
             return entry;
         }
 
         private static ExFatDirectoryEntry Create(Buffer buffer)
         {
-            switch ((ExFatDirectoryEntryType)(buffer[0] & (byte)~ExFatDirectoryEntryType.InUse))
+            switch ((ExFatDirectoryEntryType) (buffer[0] & (byte) ~ExFatDirectoryEntryType.InUse))
             {
                 case 0:
                     return null;
@@ -85,8 +101,9 @@
             }
         }
 
-        public virtual void Update(ICollection<ExFatDirectoryEntry > secondaryEntries)
-        { }
+        public virtual void Update(ICollection<ExFatDirectoryEntry> secondaryEntries)
+        {
+        }
 
         /// <summary>
         /// Writes the instance to specified stream.

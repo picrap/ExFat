@@ -1,4 +1,8 @@
-﻿namespace ExFat.DiscUtils
+﻿// This is ExFat, an exFAT accessor written in pure C#
+// Released under MIT license
+// https://github.com/picrap/ExFat
+
+namespace ExFat.DiscUtils
 {
     using System;
     using System.IO;

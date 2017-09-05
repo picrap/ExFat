@@ -1,12 +1,19 @@
-﻿namespace ExFat.Core.IO
+﻿// This is ExFat, an exFAT accessor written in pure C#
+// Released under MIT license
+// https://github.com/picrap/ExFat
+
+namespace ExFat.IO
 {
     using System;
     using System.IO;
-    public class ClusterStream : Stream
+    using Partition;
+
+    public class ClusterStream : PartitionStream
     {
         private readonly IClusterReader _clusterReader;
         private readonly IClusterWriter _clusterWriter;
         private readonly long _startCluster;
+        private readonly long? _lastContiguousCluster; // filled for contiguous files
         private bool _contiguous;
         private readonly Action _onDisposed;
         private long? _length;
@@ -47,6 +54,22 @@
             set { Seek(value, SeekOrigin.Begin); }
         }
 
+        public override long ClusterPosition
+        {
+            get
+            {
+                // TODO: something less lazy, because this may consume resources
+                // invoking GetCurrentCluster with readonly mode will allow to actually seek current cluster
+                // unwanted side-effect: it may read it (which is harmless, but may be useless)
+                GetCurrentCluster(false);
+                if (CurrentClusterIndexFromPosition == _currentClusterDataIndex)
+                    return _currentCluster;
+                return -1;
+            }
+        }
+
+        public override int ClusterOffset => CurrentClusterOffset;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="ClusterStream" /> class.
         /// </summary>
@@ -68,6 +91,8 @@
             _contiguous = contiguous;
             _onDisposed = onDisposed;
             _length = (long?)length;
+            if (contiguous && _length.HasValue)
+                _lastContiguousCluster = _startCluster + (_length.Value + _clusterReader.BytesPerCluster - 1) / _clusterReader.BytesPerCluster - 1;
 
             _position = 0;
             _currentCluster = _startCluster;
@@ -96,7 +121,7 @@
         {
             if (_currentClusterDirty)
             {
-                _clusterWriter.WriteCluster(_currentCluster, _currentClusterBuffer);
+                _clusterWriter.WriteCluster(_currentCluster, _currentClusterBuffer, 0, _currentClusterBuffer.Length);
                 _currentClusterDirty = false;
             }
         }
@@ -141,7 +166,7 @@
 
         public override void SetLength(long value)
         {
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
         }
 
         /// <summary>
@@ -194,7 +219,7 @@
                 // optionnally flushes a pending change
                 FlushCurrentCluster();
 
-                _clusterReader.ReadCluster(currentCluster, _currentClusterBuffer);
+                _clusterReader.ReadCluster(currentCluster, _currentClusterBuffer, 0, _currentClusterBuffer.Length);
                 _currentClusterDataIndex = CurrentClusterIndexFromPosition;
                 _currentCluster = currentCluster;
             }
@@ -221,9 +246,14 @@
                 throw new ArgumentOutOfRangeException(nameof(cluster), "cluster must be >= 0");
 
             if (_contiguous)
-                return cluster + clustersCount;
+            {
+                var nextCluster = cluster + clustersCount;
+                if (nextCluster <= _lastContiguousCluster)
+                    return nextCluster;
+                return -1;
+            }
 
-            for (var index = 0; index < clustersCount; index++)
+            for (var index = 0; index < clustersCount && cluster >= 0; index++)
                 cluster = _clusterReader.GetNextCluster(cluster);
             return cluster;
         }
