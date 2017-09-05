@@ -12,7 +12,7 @@ Current build status: [![Build status](https://ci.appveyor.com/api/projects/stat
 Current features:
 - [X] Reading directories
 - [X] Reading files
-- [ ] Writing streams
+- [X] Writing streams
 - [ ] Creating directories
 - [ ] Creating files
 - [ ] Deleting files/directories
