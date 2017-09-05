@@ -1,6 +1,8 @@
 ﻿namespace ExFat.Core
 {
     using System;
+    using System.Globalization;
+    using System.Linq;
 
     public static class DateTimeUtility
     {
@@ -38,6 +40,37 @@
                 | dateTime.Second >> 1;
             var tenMs = dateTime.Millisecond / 10 + dateTime.Second % 2 * 100;
             return Tuple.Create((UInt32)timeStamp, (Byte)tenMs);
+        }
+
+        public static TimeZoneInfo FromTimeZoneOffset(Byte offset)
+        {
+            if (offset < 0x80)
+                return null;
+            double hoursOffset;
+            if (offset < 0xD0)
+                hoursOffset = (offset - 0x80) * 0.25;
+            else
+                hoursOffset = (offset - 0x100) * 0.25;
+            var timeSpanOffset = TimeSpan.FromHours(hoursOffset);
+            var existingZone = TimeZoneInfo.GetSystemTimeZones().FirstOrDefault(z => z.BaseUtcOffset == timeSpanOffset);
+            if (existingZone != null)
+                return existingZone;
+            return TimeZoneInfo.CreateCustomTimeZone(hoursOffset.ToString(CultureInfo.InvariantCulture), timeSpanOffset, "", "");
+        }
+
+        /// <summary>
+        /// Converts a <see cref="TimeZoneInfo"/> to time zone offset byte.
+        /// </summary>
+        /// <param name="timeZoneInfo">The time zone information.</param>
+        /// <returns></returns>
+        public static Byte ToTimeZoneOffset(this TimeZoneInfo timeZoneInfo)
+        {
+            if (timeZoneInfo == null)
+                return 0;
+            var quartersOffset = (int)timeZoneInfo.BaseUtcOffset.TotalHours * 4;
+            if (quartersOffset < 0)
+                return (byte)(0x100 + quartersOffset);
+            return (byte)(0x80 + quartersOffset);
         }
     }
 }

@@ -52,6 +52,7 @@
     <Compile Include="DateTimeUtility.cs" />
     <Compile Include="Entries\AllocationBitmapFlags.cs" />
     <Compile Include="Entries\EntryDateTime.cs" />
+    <Compile Include="Entries\EntryTimeZone.cs" />
     <Compile Include="ExFatAllocationBitmap.cs" />
     <Compile Include="ExFatUpCaseTable.cs" />
     <Compile Include="IClusterWriter.cs" />
