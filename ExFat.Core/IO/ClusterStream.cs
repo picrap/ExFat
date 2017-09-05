@@ -15,7 +15,7 @@ namespace ExFat.IO
         private readonly long _startCluster;
         private readonly long? _lastContiguousCluster; // filled for contiguous files
         private bool _contiguous;
-        private readonly Action _onDisposed;
+        private readonly Action<DataDescriptor> _onDisposed;
         private long? _length;
         private long _position;
 
@@ -78,9 +78,9 @@ namespace ExFat.IO
         /// <param name="startCluster">The start cluster.</param>
         /// <param name="contiguous">if set to <c>true</c> [contiguous].</param>
         /// <param name="length">The length.</param>
-        /// <param name="onDisposed">The on disposed.</param>
+        /// <param name="onDisposed">Method invoked when stream is disposed.</param>
         /// <exception cref="ArgumentException">If contiguous is true, the length must be specified</exception>
-        public ClusterStream(IClusterReader clusterReader, IClusterWriter clusterWriter, ulong startCluster, bool contiguous, ulong? length, Action onDisposed)
+        public ClusterStream(IClusterReader clusterReader, IClusterWriter clusterWriter, ulong startCluster, bool contiguous, ulong? length, Action<DataDescriptor> onDisposed)
         {
             if (contiguous && !length.HasValue)
                 throw new ArgumentException("If contiguous is true, the length must be specified");
@@ -103,7 +103,7 @@ namespace ExFat.IO
             FlushCurrentCluster();
             base.Dispose(disposing);
             if (disposing && _onDisposed != null)
-                _onDisposed();
+                _onDisposed(new DataDescriptor((ulong)_startCluster, _contiguous, (ulong?)_length));
         }
 
         /// <summary>

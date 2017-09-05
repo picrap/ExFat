@@ -28,7 +28,7 @@ namespace ExFat.Partition.Entries
 
         public IValueProvider<UInt64> DataLength { get; }
 
-        public DataDescriptor DataDescriptor => new DataDescriptor(FirstCluster.Value, GeneralSecondaryFlags.Value.HasFlag(ExFatGeneralSecondaryFlags.NoFatChain), DataLength.Value);
+        public DataDescriptor DataDescriptor => new DataDescriptor(FirstCluster.Value, GeneralSecondaryFlags.Value.HasAny(ExFatGeneralSecondaryFlags.NoFatChain), DataLength.Value);
 
         public StreamExtensionExFatDirectoryEntry(Buffer buffer) : base(buffer)
         {

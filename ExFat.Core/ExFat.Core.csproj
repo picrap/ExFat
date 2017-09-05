@@ -50,6 +50,8 @@
     <Compile Include="Buffers\ShiftValueProvider.cs" />
     <Compile Include="BytesExtension.cs" />
     <Compile Include="DateTimeUtility.cs" />
+    <Compile Include="EnumUtility.cs" />
+    <Compile Include="Filesystem\ExFatFilesystemFlags.cs" />
     <Compile Include="Partition\Entries\AllocationBitmapFlags.cs" />
     <Compile Include="Partition\Entries\EntryDateTime.cs" />
     <Compile Include="Partition\Entries\EntryTimeZone.cs" />

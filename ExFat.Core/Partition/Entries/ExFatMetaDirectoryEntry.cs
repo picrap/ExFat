@@ -74,6 +74,10 @@ namespace ExFat.Partition.Entries
             Entries.AddRange(entries);
         }
 
+        /// <summary>
+        /// Writes entries to stream.
+        /// </summary>
+        /// <param name="stream">The stream.</param>
         public void Write(Stream stream)
         {
             Primary.Update(Secondaries.ToList());

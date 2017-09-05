@@ -31,7 +31,7 @@ namespace ExFat.DiscUtils.Tests
             {
                 var fileEntry = rootDirectory.GetMetaEntries().Single(e => e.ExtensionsFileName == fileName);
                 var length = overrideLength ?? fileEntry.SecondaryStreamExtension.DataLength.Value;
-                var contiguous = fileEntry.SecondaryStreamExtension.GeneralSecondaryFlags.Value.HasFlag(ExFatGeneralSecondaryFlags.NoFatChain);
+                var contiguous = fileEntry.SecondaryStreamExtension.GeneralSecondaryFlags.Value.HasAny(ExFatGeneralSecondaryFlags.NoFatChain);
                 using (var stream = partition.OpenClusterStream(fileEntry.SecondaryStreamExtension.FirstCluster.Value, contiguous, FileAccess.Read, length))
                 {
                     var vb = new byte[sizeof(ulong)];

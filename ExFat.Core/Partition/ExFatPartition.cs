@@ -22,7 +22,7 @@ namespace ExFat.Partition
 
         public ExFatBootSector BootSector { get; }
 
-        public int BytesPerCluster => (int) (BootSector.SectorsPerCluster.Value * BootSector.BytesPerSector.Value);
+        public int BytesPerCluster => (int)(BootSector.SectorsPerCluster.Value * BootSector.BytesPerSector.Value);
 
         public DataDescriptor RootDirectoryDataDescriptor => new DataDescriptor(BootSector.RootDirectoryCluster.Value, false, null);
 
@@ -63,14 +63,14 @@ namespace ExFat.Partition
             return (BootSector.ClusterOffsetSector.Value + (clusterIndex - 2) * BootSector.SectorsPerCluster.Value) * BootSector.BytesPerSector.Value;
         }
 
-        private void SeekCluster(long clusterIndex)
+        private void SeekCluster(long clusterIndex, long offset = 0)
         {
-            _partitionStream.Seek(GetClusterOffset(clusterIndex), SeekOrigin.Begin);
+            _partitionStream.Seek(GetClusterOffset(clusterIndex) + offset, SeekOrigin.Begin);
         }
 
         public long GetSectorOffset(long sectorIndex)
         {
-            return sectorIndex * (int) BootSector.BytesPerSector.Value;
+            return sectorIndex * (int)BootSector.BytesPerSector.Value;
         }
 
         private void SeekSector(long sectorIndex)
@@ -82,7 +82,7 @@ namespace ExFat.Partition
         private byte[] _fatPage;
         private bool _fatPageDirty;
         private const int SectorsPerFatPage = 1;
-        private int FatPageSize => (int) BootSector.BytesPerSector.Value * SectorsPerFatPage;
+        private int FatPageSize => (int)BootSector.BytesPerSector.Value * SectorsPerFatPage;
         private int ClustersPerFatPage => FatPageSize / sizeof(Int32);
 
         private byte[] GetFatPage(long cluster)
@@ -120,11 +120,11 @@ namespace ExFat.Partition
             lock (_streamLock)
             {
                 var fatPage = GetFatPage(cluster);
-                var clusterIndex = (int) (cluster % ClustersPerFatPage);
+                var clusterIndex = (int)(cluster % ClustersPerFatPage);
                 var nextCluster = LittleEndian.ToUInt32(fatPage, clusterIndex * sizeof(Int32));
                 // consider this as signed
                 if (nextCluster >= 0xFFFFFFF7)
-                    return (int) nextCluster;
+                    return (int)nextCluster;
                 // otherwise, it's the raw unsigned cluster number, extended to long
                 return nextCluster;
             }
@@ -135,8 +135,8 @@ namespace ExFat.Partition
             lock (_streamLock)
             {
                 var fatPage = GetFatPage(cluster);
-                var clusterIndex = (int) (cluster % ClustersPerFatPage);
-                LittleEndian.GetBytes((UInt32) nextCluster, fatPage, clusterIndex * sizeof(Int32));
+                var clusterIndex = (int)(cluster % ClustersPerFatPage);
+                LittleEndian.GetBytes((UInt32)nextCluster, fatPage, clusterIndex * sizeof(Int32));
                 _fatPageDirty = true;
             }
         }
@@ -194,7 +194,7 @@ namespace ExFat.Partition
             lock (_streamLock)
             {
                 SeekSector(sector);
-                _partitionStream.Read(sectorBuffer, 0, (int) BootSector.BytesPerSector.Value * sectorCount);
+                _partitionStream.Read(sectorBuffer, 0, (int)BootSector.BytesPerSector.Value * sectorCount);
             }
         }
 
@@ -203,7 +203,7 @@ namespace ExFat.Partition
             lock (_streamLock)
             {
                 SeekSector(sector);
-                _partitionStream.Write(sectorBuffer, 0, (int) BootSector.BytesPerSector.Value * sectorCount);
+                _partitionStream.Write(sectorBuffer, 0, (int)BootSector.BytesPerSector.Value * sectorCount);
             }
         }
 
@@ -220,8 +220,8 @@ namespace ExFat.Partition
             {
                 // TODO use Up case table
                 var uc = upCaseTable.ToUpper(c);
-                hash = (UInt16) (hash.RotateRight() + (uc & 0xFF));
-                hash = (UInt16) (hash.RotateRight() + (uc >> 8));
+                hash = (UInt16)(hash.RotateRight() + (uc & 0xFF));
+                hash = (UInt16)(hash.RotateRight() + (uc >> 8));
             }
             return hash;
         }
@@ -233,9 +233,9 @@ namespace ExFat.Partition
         /// <param name="contiguous">if set to <c>true</c> all stream clusters are contiguous (allowing a faster seek).</param>
         /// <param name="fileAccess">The file access.</param>
         /// <param name="length">The length (optional for non-contiguous cluster streams).</param>
-        /// <param name="onDisposed">The on disposed.</param>
+        /// <param name="onDisposed">Method invoked when stream is disposed.</param>
         /// <returns></returns>
-        public ClusterStream OpenClusterStream(ulong firstCluster, bool contiguous, FileAccess fileAccess, ulong? length = null, Action onDisposed = null)
+        public ClusterStream OpenClusterStream(ulong firstCluster, bool contiguous, FileAccess fileAccess, ulong? length = null, Action<DataDescriptor> onDisposed = null)
         {
             if (fileAccess == FileAccess.Read)
                 return new ClusterStream(this, null, firstCluster, contiguous, length, onDisposed);
@@ -248,12 +248,13 @@ namespace ExFat.Partition
         /// </summary>
         /// <param name="dataDescriptor">The data descriptor.</param>
         /// <param name="fileAccess">The file access.</param>
+        /// <param name="onDisposed">Method invoked when stream is disposed.</param>
         /// <returns></returns>
-        public ClusterStream OpenDataStream(DataDescriptor dataDescriptor, FileAccess fileAccess)
+        public ClusterStream OpenDataStream(DataDescriptor dataDescriptor, FileAccess fileAccess, Action<DataDescriptor> onDisposed = null)
         {
             if (dataDescriptor == null)
                 return null;
-            return OpenClusterStream(dataDescriptor.FirstCluster, dataDescriptor.Contiguous, fileAccess, dataDescriptor.Length);
+            return OpenClusterStream(dataDescriptor.FirstCluster, dataDescriptor.Contiguous, fileAccess, dataDescriptor.Length, onDisposed);
         }
 
         /// <summary>
@@ -302,11 +303,21 @@ namespace ExFat.Partition
             {
                 _allocationBitmap = new ExFatAllocationBitmap();
                 var allocationBitmapEntry = FindRootDirectoryEntries<AllocationBitmapExFatDirectoryEntry>()
-                    .First(b => !b.BitmapFlags.Value.HasFlag(AllocationBitmapFlags.SecondClusterBitmap));
+                    .First(b => !b.BitmapFlags.Value.HasAny(AllocationBitmapFlags.SecondClusterBitmap));
                 var allocationBitmapStream = OpenDataStream(allocationBitmapEntry.DataDescriptor, FileAccess.Read);
                 _allocationBitmap.Open(allocationBitmapStream, allocationBitmapEntry.FirstCluster.Value, BootSector.ClusterCount.Value);
             }
             return _allocationBitmap;
+        }
+
+        public void UpdateEntry(ExFatMetaDirectoryEntry entry)
+        {
+            lock (_streamLock)
+            {
+                var offset = entry.Primary.Position % BytesPerCluster;
+                SeekCluster(entry.Primary.Cluster, offset);
+                entry.Write(_partitionStream);
+            }
         }
     }
 }
