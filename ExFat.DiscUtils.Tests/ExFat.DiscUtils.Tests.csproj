@@ -41,6 +41,9 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\ExFat.Core\Properties\ProductInfo.cs">
+      <Link>Properties\ProductInfo.cs</Link>
+    </Compile>
     <Compile Include="Tests\ClustersTests.cs" />
     <Compile Include="DiskContent.cs" />
     <Compile Include="Tests\DateTests.cs" />
