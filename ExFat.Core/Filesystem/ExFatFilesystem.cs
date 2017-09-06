@@ -117,6 +117,7 @@ namespace ExFat.Filesystem
             {
                 now = DateTime.Now;
                 file.LastAccessTime.Value = now.Value;
+                file.LastAccessTimeZone.Value = TimeZoneInfo.Local;
             }
 
             // when it was open for writing, its characteristics may have changed, so we update them
@@ -124,6 +125,7 @@ namespace ExFat.Filesystem
             {
                 now = now ?? DateTime.Now;
                 file.LastWriteTime.Value = now.Value;
+                file.LastWriteTimeZone.Value = TimeZoneInfo.Local;
                 var stream = entry.Entry.SecondaryStreamExtension;
                 if (dataDescriptor.Contiguous)
                     stream.GeneralSecondaryFlags.Value |= ExFatGeneralSecondaryFlags.NoFatChain;
