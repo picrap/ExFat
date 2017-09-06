@@ -8,6 +8,7 @@ namespace ExFat.Partition.Entries
     using System.Collections.Generic;
     using System.IO;
     using Buffers;
+    using IO;
     using Buffer = Buffers.Buffer;
 
     public class ExFatDirectoryEntry

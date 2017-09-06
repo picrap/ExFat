@@ -100,9 +100,9 @@ namespace ExFat.Partition
 
                 long availableSlot = -1;
                 int availableCount = 0;
-                _directoryStream.Seek(0, SeekOrigin.Begin);
                 for (var offset = 0L; ; offset += 32)
                 {
+                    _directoryStream.Seek(offset, SeekOrigin.Begin);
                     var typeByte = _directoryStream.ReadByte();
                     // when we reach the end, we can append from here
                     if (typeByte == -1)

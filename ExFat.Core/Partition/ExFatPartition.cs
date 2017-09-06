@@ -24,7 +24,7 @@ namespace ExFat.Partition
 
         public int BytesPerCluster => (int)(BootSector.SectorsPerCluster.Value * BootSector.BytesPerSector.Value);
 
-        public DataDescriptor RootDirectoryDataDescriptor => new DataDescriptor(BootSector.RootDirectoryCluster.Value, false, null);
+        public DataDescriptor RootDirectoryDataDescriptor => new DataDescriptor(BootSector.RootDirectoryCluster.Value, false, long.MaxValue);
 
         public ExFatPartition(Stream partitionStream)
         {
@@ -40,6 +40,12 @@ namespace ExFat.Partition
         public void Dispose()
         {
             Flush();
+            DisposeAllocationBitmap();
+        }
+
+        private void DisposeAllocationBitmap()
+        {
+            _allocationBitmap?.Dispose();
         }
 
         /// <summary>
@@ -48,6 +54,18 @@ namespace ExFat.Partition
         public void Flush()
         {
             FlushFatPage();
+            FlushAllocationBitmap();
+            // because .Flush() is not implemented in DiscUtils :)
+            try
+            {
+                _partitionStream.Flush();
+            }
+            catch (NotImplementedException) { }
+        }
+
+        private void FlushAllocationBitmap()
+        {
+            _allocationBitmap?.Flush();
         }
 
         public static ExFatBootSector ReadBootSector(Stream partitionStream)
@@ -262,7 +280,7 @@ namespace ExFat.Partition
         /// <returns></returns>
         public ClusterStream CreateDataStream(Action<DataDescriptor> onDisposed = null)
         {
-            return OpenClusterStream(new DataDescriptor(~0ul, true, 0), FileAccess.ReadWrite, onDisposed);
+            return OpenClusterStream(new DataDescriptor(0, true, 0), FileAccess.ReadWrite, onDisposed);
         }
 
         /// <summary>
@@ -312,7 +330,7 @@ namespace ExFat.Partition
                 _allocationBitmap = new ExFatAllocationBitmap();
                 var allocationBitmapEntry = FindRootDirectoryEntries<AllocationBitmapExFatDirectoryEntry>()
                     .First(b => !b.BitmapFlags.Value.HasAny(AllocationBitmapFlags.SecondClusterBitmap));
-                var allocationBitmapStream = OpenDataStream(allocationBitmapEntry.DataDescriptor, FileAccess.Read);
+                var allocationBitmapStream = OpenDataStream(allocationBitmapEntry.DataDescriptor, FileAccess.ReadWrite);
                 _allocationBitmap.Open(allocationBitmapStream, allocationBitmapEntry.FirstCluster.Value, BootSector.ClusterCount.Value);
             }
             return _allocationBitmap;

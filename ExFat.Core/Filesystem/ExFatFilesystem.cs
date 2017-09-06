@@ -7,6 +7,7 @@ namespace ExFat.Filesystem
     using System;
     using System.Collections.Generic;
     using System.IO;
+    using Buffers;
     using IO;
     using Partition;
     using Partition.Entries;
@@ -15,6 +16,7 @@ namespace ExFat.Filesystem
     {
         private readonly ExFatFilesystemFlags _flags;
         private readonly ExFatPartition _partition;
+        private object _lock = new object();
 
         private ExFatFilesystemEntry _rootDirectory;
 
@@ -68,7 +70,7 @@ namespace ExFat.Filesystem
 
         private ExFatDirectory OpenDirectory(ExFatFilesystemEntry entry)
         {
-            return new ExFatDirectory(_partition.OpenDataStream(entry.DataDescriptor, FileAccess.Read), true);
+            return new ExFatDirectory(OpenData(entry, FileAccess.ReadWrite), true);
         }
 
         public ExFatFilesystemEntry FindChild(ExFatFilesystemEntry directoryEntry, string name)
@@ -104,11 +106,19 @@ namespace ExFat.Filesystem
             if (fileEntry.IsDirectory)
                 throw new InvalidOperationException();
 
+            return OpenData(fileEntry, access);
+        }
+
+        private PartitionStream OpenData(ExFatFilesystemEntry fileEntry, FileAccess access)
+        {
             return _partition.OpenDataStream(fileEntry.DataDescriptor, access, d => OnDisposed(fileEntry, access, d));
         }
 
         private void OnDisposed(ExFatFilesystemEntry entry, FileAccess descriptor, DataDescriptor dataDescriptor)
         {
+            if (entry?.Entry == null)
+                return;
+
             DateTimeOffset? now = null;
             var file = (FileExFatDirectoryEntry)entry.Entry.Primary;
 
@@ -129,6 +139,7 @@ namespace ExFat.Filesystem
                     stream.GeneralSecondaryFlags.Value |= ExFatGeneralSecondaryFlags.NoFatChain;
                 else
                     stream.GeneralSecondaryFlags.Value &= ~ExFatGeneralSecondaryFlags.NoFatChain;
+                stream.FirstCluster.Value = dataDescriptor.FirstCluster == ~0ul ? ~0u : (UInt32)dataDescriptor.FirstCluster;
                 stream.ValidDataLength.Value = dataDescriptor.Length.Value;
                 stream.DataLength.Value = dataDescriptor.Length.Value;
             }
@@ -137,6 +148,82 @@ namespace ExFat.Filesystem
             if (now.HasValue)
             {
                 _partition.UpdateEntry(entry.Entry);
+            }
+        }
+
+        /// <summary>
+        /// Creates a <see cref="ExFatFilesystemEntry"/>.
+        /// </summary>
+        /// <param name="name">The name.</param>
+        /// <param name="attributes">The attributes.</param>
+        /// <returns></returns>
+        private ExFatFilesystemEntry CreateEntry(string name, FileAttributes attributes)
+        {
+            var now = DateTimeOffset.Now;
+            var entries = new List<ExFatDirectoryEntry>
+            {
+                new FileExFatDirectoryEntry(new Buffers.Buffer(new byte[32]))
+                {
+                    EntryType = { Value = ExFatDirectoryEntryType.File},
+                    FileAttributes = {Value = (ExFatFileAttributes) attributes},
+                    CreationDateTimeOffset = {Value = now},
+                    LastWriteDateTimeOffset = {Value = now},
+                    LastAccessDateTimeOffset = {Value = now},
+                },
+                new StreamExtensionExFatDirectoryEntry(new Buffers.Buffer(new byte[32]))
+                {
+                    EntryType = { Value = ExFatDirectoryEntryType.Stream},
+                    GeneralSecondaryFlags = {Value = ExFatGeneralSecondaryFlags.ClusterAllocationPossible},
+                    NameLength = {Value = (byte) name.Length},
+                    NameHash = {Value = _partition.ComputeNameHash(name)},
+                }
+            };
+            for (int nameIndex = 0; nameIndex < name.Length; nameIndex += 15)
+            {
+                var namePart = name.Substring(nameIndex, Math.Min(15, name.Length - nameIndex));
+                entries.Add(new FileNameExtensionExFatDirectoryEntry(new Buffers.Buffer(new byte[32]))
+                {
+                    EntryType = { Value = ExFatDirectoryEntryType.FileName },
+                    FileName = { Value = namePart }
+                });
+            }
+            var metaEntry = new ExFatMetaDirectoryEntry(entries);
+            var entry = new ExFatFilesystemEntry(metaEntry);
+            return entry;
+        }
+
+        /// <summary>
+        /// Creates a directory or returns the existing.
+        /// </summary>
+        /// <param name="parentDirectory">The parent directory.</param>
+        /// <param name="directoryName">Name of the directory.</param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        /// <exception cref="IOException"></exception>
+        public ExFatFilesystemEntry CreateDirectory(ExFatFilesystemEntry parentDirectory, string directoryName)
+        {
+            if (!parentDirectory.IsDirectory)
+                throw new InvalidOperationException();
+
+            lock (_lock)
+            {
+                var existingEntry = FindChild(parentDirectory, directoryName);
+                if (existingEntry != null)
+                {
+                    if (!existingEntry.IsDirectory)
+                        throw new IOException();
+                    return existingEntry;
+                }
+
+                var directoryEntry = CreateEntry(directoryName, FileAttributes.Directory);
+                using (var directory = OpenDirectory(parentDirectory))
+                    directory.AddEntry(directoryEntry.Entry);
+                using (var directoryStream = OpenData(directoryEntry, FileAccess.ReadWrite))
+                {
+                    var emptyEntry = new byte[32];
+                    directoryStream.Write(emptyEntry, 0, emptyEntry.Length);
+                }
+                return directoryEntry;
             }
         }
     }

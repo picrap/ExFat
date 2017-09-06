@@ -44,13 +44,26 @@ namespace ExFat.Partition
             Length = length;
         }
 
+        public void Flush()
+        {
+            _dataStream.Seek(0, SeekOrigin.Begin);
+            _dataStream.Write(_bitmap, 0, _bitmap.Length);
+            _dataStream.Flush();
+        }
+
+        public void Dispose()
+        {
+            Flush();
+            _dataStream.Dispose();
+        }
+
         public bool GetAt(long cluster)
         {
             if (cluster < _firstCluster || cluster >= Length)
                 throw new ArgumentOutOfRangeException(nameof(cluster));
             cluster -= _firstCluster;
-            var byteIndex = (int) cluster / 8;
-            var bitMask = 1 << (int) (cluster & 7);
+            var byteIndex = (int)cluster / 8;
+            var bitMask = 1 << (int)(cluster & 7);
             return (_bitmap[byteIndex] & bitMask) != 0;
         }
 
@@ -59,12 +72,15 @@ namespace ExFat.Partition
             if (cluster < _firstCluster || cluster >= Length)
                 throw new ArgumentOutOfRangeException(nameof(cluster));
             cluster -= _firstCluster;
-            var byteIndex = (int) cluster / 8;
-            var bitMask = 1 << (int) (cluster & 7);
+            var byteIndex = (int)cluster / 8;
+            var bitMask = 1 << (int)(cluster & 7);
             if (allocated)
-                _bitmap[byteIndex] |= (byte) bitMask;
+                _bitmap[byteIndex] |= (byte)bitMask;
             else
-                _bitmap[byteIndex] &= (byte) ~bitMask;
+                _bitmap[byteIndex] &= (byte)~bitMask;
+            // for some unknown reason, this does not work on DiscUtils, so the Flush() handle all problems
+            _dataStream.Seek(byteIndex, SeekOrigin.Begin);
+            _dataStream.Write(_bitmap, byteIndex, 1);
         }
 
         public long FindUnallocated(int contiguous = 1)

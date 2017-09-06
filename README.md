@@ -14,7 +14,7 @@ Current features:
 - [X] Reading files
 - [X] Writing streams
 - [X] Writing files
-- [ ] Creating directories
+- [X] Creating directories
 - [ ] Creating files
 - [ ] Deleting files/directories
 - [ ] Partition formatting

@@ -46,5 +46,16 @@ namespace ExFat.IO
             Contiguous = contiguous;
             Length = length;
         }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DataDescriptor"/> class.
+        /// </summary>
+        /// <param name="firstCluster">The first cluster.</param>
+        /// <param name="contiguous">if set to <c>true</c> [contiguous].</param>
+        /// <param name="length">The length.</param>
+        internal DataDescriptor(UInt32 firstCluster, bool contiguous, ulong? length)
+            : this(firstCluster == 0 || firstCluster == ~0u ? ~0ul : firstCluster, contiguous, length)
+        {
+        }
     }
 }

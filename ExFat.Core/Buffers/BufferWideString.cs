@@ -32,12 +32,12 @@ namespace ExFat.Buffers
 
         private static char ToChar(byte first, byte second)
         {
-            return (char) (first | second << 8);
+            return (char)(first | second << 8);
         }
 
         private static byte[] ToBytes(char c)
         {
-            return new[] {(byte) (c & 0xFF), (byte) (c >> 8)};
+            return new[] { (byte)(c & 0xFF), (byte)(c >> 8) };
         }
 
         /// <summary>
@@ -51,18 +51,18 @@ namespace ExFat.Buffers
             get { return new string(GetZeroChars().ToArray()); }
             set
             {
-                for (int index = 0; index < _buffer.Length; index++)
+                for (int byteIndex = 0, charIndex = 0; byteIndex < _buffer.Length; byteIndex += 2, charIndex++)
                 {
-                    var t = ToBytes(value[index]);
-                    if (index < value.Length)
+                    if (charIndex < value.Length)
                     {
-                        _buffer[index] = t[0];
-                        _buffer[index + 1] = t[1];
+                        var t = ToBytes(value[charIndex]);
+                        _buffer[byteIndex] = t[0];
+                        _buffer[byteIndex + 1] = t[1];
                     }
                     else
                     {
-                        _buffer[index] = 0;
-                        _buffer[index + 1] = 0;
+                        _buffer[byteIndex] = 0;
+                        _buffer[byteIndex + 1] = 0;
                     }
                 }
             }
