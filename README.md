@@ -13,7 +13,7 @@ Current features:
 - [X] Reading directories
 - [X] Reading files
 - [X] Writing streams
-- [ ] Writing files
+- [X] Writing files
 - [ ] Creating directories
 - [ ] Creating files
 - [ ] Deleting files/directories
