@@ -25,9 +25,9 @@ namespace ExFat.Partition.Entries
         public IValueProvider<Byte> LastWriteTimeZoneOffset { get; }
         public IValueProvider<Byte> LastAccessTimeZoneOffset { get; }
 
-        public IValueProvider<DateTime> CreationDate { get; }
+        public IValueProvider<DateTime> CreationTime { get; }
         public IValueProvider<DateTime> LastWriteTime { get; }
-        public IValueProvider<DateTime> LastAccessDateTime { get; }
+        public IValueProvider<DateTime> LastAccessTime { get; }
 
         public IValueProvider<TimeZoneInfo> CreationTimeZone { get; }
         public IValueProvider<TimeZoneInfo> LastWriteTimeZone { get; }
@@ -46,9 +46,9 @@ namespace ExFat.Partition.Entries
             CreationTimeZoneOffset = new BufferUInt8(buffer, 22);
             LastWriteTimeZoneOffset = new BufferUInt8(buffer, 23);
             LastAccessTimeZoneOffset = new BufferUInt8(buffer, 24);
-            CreationDate = new EntryDateTime(CreationTimeStamp, Creation10msIncrement);
+            CreationTime = new EntryDateTime(CreationTimeStamp, Creation10msIncrement);
             LastWriteTime = new EntryDateTime(LastWriteTimeStamp, LastWrite10msIncrement);
-            LastAccessDateTime = new EntryDateTime(LastAccessTimeStamp);
+            LastAccessTime = new EntryDateTime(LastAccessTimeStamp);
             CreationTimeZone = new EntryTimeZone(CreationTimeZoneOffset);
             LastWriteTimeZone = new EntryTimeZone(LastWriteTimeZoneOffset);
             LastAccessDateTimeZone = new EntryTimeZone(LastAccessTimeZoneOffset);

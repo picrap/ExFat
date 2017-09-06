@@ -101,7 +101,7 @@ namespace ExFat.Filesystem
         /// <exception cref="InvalidOperationException"></exception>
         public Stream Open(ExFatFilesystemEntry fileEntry, FileAccess access)
         {
-            if (!fileEntry.IsDirectory)
+            if (fileEntry.IsDirectory)
                 throw new InvalidOperationException();
 
             return _partition.OpenDataStream(fileEntry.DataDescriptor, access, d => OnDisposed(fileEntry, access, d));
@@ -116,7 +116,7 @@ namespace ExFat.Filesystem
             if (descriptor.HasAny(FileAccess.Read) && _flags.HasAny(ExFatFilesystemFlags.UpdateLastAccessTime))
             {
                 now = DateTime.Now;
-                file.LastAccessDateTime.Value = now.Value;
+                file.LastAccessTime.Value = now.Value;
             }
 
             // when it was open for writing, its characteristics may have changed, so we update them

@@ -4,6 +4,7 @@
 
 namespace ExFat.Filesystem
 {
+    using System;
     using System.Diagnostics;
     using System.IO;
     using IO;
@@ -61,6 +62,30 @@ namespace ExFat.Filesystem
         /// The length.
         /// </value>
         public long Length => (long)Entry.SecondaryStreamExtension.DataLength.Value;
+
+        /// <summary>
+        /// Gets the creation date.
+        /// </summary>
+        /// <value>
+        /// The creation date.
+        /// </value>
+        public DateTime CreationDate => FileEntry.CreationTime.Value;
+
+        /// <summary>
+        /// Gets the last write time.
+        /// </summary>
+        /// <value>
+        /// The last write time.
+        /// </value>
+        public DateTime LastWriteTime => FileEntry.LastWriteTime.Value;
+
+        /// <summary>
+        /// Gets the last access time.
+        /// </summary>
+        /// <value>
+        /// The last access time.
+        /// </value>
+        public DateTime LastAccessTime => FileEntry.LastAccessTime.Value;
 
         /// <summary>
         /// Gets the data descriptor.
