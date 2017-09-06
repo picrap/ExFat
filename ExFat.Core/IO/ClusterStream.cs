@@ -189,7 +189,9 @@ namespace ExFat.IO
                     FlushCurrentCluster();
 
                     // allocate new cluster
-                    var newCluster = _clusterWriter.AllocateCluster(_currentCluster);
+                    var previousClusterIndex = CurrentClusterIndexFromPosition - 1;
+                    var previousCluster = _currentClusterDataIndex == previousClusterIndex ? _currentCluster : GetClusterFromIndex(previousClusterIndex);
+                    var newCluster = _clusterWriter.AllocateCluster(previousCluster);
                     // if this is the start cluster, handle differently
                     if (_startCluster == -1)
                     {
@@ -198,13 +200,13 @@ namespace ExFat.IO
                     }
                     else
                     {
-                        _clusterWriter.SetNextCluster(_currentCluster, newCluster);
+                        _clusterWriter.SetNextCluster(previousCluster, newCluster);
                         // from contiguous to sparse mode, make sure all clusters are linked
-                        if (_contiguous && newCluster != _currentCluster + 1)
+                        if (_contiguous && newCluster != previousCluster + 1)
                         {
                             _contiguous = false;
-                            for (int clusterIndex = 1; clusterIndex < CurrentClusterIndexFromPosition; clusterIndex++)
-                                _clusterWriter.SetNextCluster(_startCluster + clusterIndex - 1, _startCluster + clusterIndex);
+                            for (int clusterIndex = 0; clusterIndex < previousClusterIndex; clusterIndex++)
+                                _clusterWriter.SetNextCluster(_startCluster + clusterIndex, _startCluster + clusterIndex + 1);
                         }
                     }
                     _clusterWriter.SetNextCluster(newCluster, -1);
@@ -230,15 +232,19 @@ namespace ExFat.IO
 
         private long GetCurrentClusterFromPosition()
         {
-            var currentClusterIndexFromPosition = CurrentClusterIndexFromPosition;
-            if (currentClusterIndexFromPosition == 0)
+            return GetClusterFromIndex(CurrentClusterIndexFromPosition);
+        }
+
+        private long GetClusterFromIndex(long cluster)
+        {
+            if (cluster == 0)
                 return _startCluster;
             // -1 means buffer is new
             if (_currentClusterDataIndex == -1)
-                return GetNextCluster(_startCluster, currentClusterIndexFromPosition);
-            if (currentClusterIndexFromPosition > _currentClusterDataIndex)
-                return GetNextCluster(_currentCluster, currentClusterIndexFromPosition - _currentClusterDataIndex);
-            return GetNextCluster(_startCluster, currentClusterIndexFromPosition);
+                return GetNextCluster(_startCluster, cluster);
+            if (cluster > _currentClusterDataIndex)
+                return GetNextCluster(_currentCluster, cluster - _currentClusterDataIndex);
+            return GetNextCluster(_startCluster, cluster);
         }
 
         private long GetNextCluster(long cluster, long clustersCount)

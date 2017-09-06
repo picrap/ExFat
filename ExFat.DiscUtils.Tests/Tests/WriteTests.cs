@@ -15,16 +15,16 @@ namespace ExFat.DiscUtils.Tests
     [TestCategory("Partition")]
     public class WriteTests
     {
-        private static void AppendTest(string fileName, Func<ulong, ulong> getOffsetValue)
+        private static void OverwriteTest(string fileName, Func<ulong, ulong> getOffsetValue)
         {
             using (var testEnvironment = new TestEnvironment(true))
             {
                 using (var partition = new ExFatPartition(testEnvironment.PartitionStream))
-                    AppendTest(partition, fileName, getOffsetValue);
+                    OverwriteTest(partition, fileName, getOffsetValue);
             }
         }
 
-        private static void AppendTest(ExFatPartition partition, string fileName, Func<ulong, ulong> getOffsetValue)
+        private static void OverwriteTest(ExFatPartition partition, string fileName, Func<ulong, ulong> getOffsetValue)
         {
             using (var rootDirectory = partition.OpenDirectory(partition.RootDirectoryDataDescriptor))
             {
@@ -55,6 +55,64 @@ namespace ExFat.DiscUtils.Tests
         }
 
         [TestMethod]
+        [TestCategory("Overwrite")]
+        [TestCategory("Write")]
+        public void OverwriteSparseTest()
+        {
+            using (var testEnvironment = new TestEnvironment(true))
+            using (var partition = new ExFatPartition(testEnvironment.PartitionStream))
+            {
+                OverwriteTest(partition, DiskContent.LongSparseFile1Name, offset => offset / 7);
+                // now check nothing was overwritten
+                ReadTests.ReadFile(partition, DiskContent.LongSparseFile2Name, DiskContent.GetLongSparseFile2NameOffsetValue);
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("Overwrite")]
+        [TestCategory("Write")]
+        public void OverwriteContiguousTest()
+        {
+            using (var testEnvironment = new TestEnvironment(true))
+            using (var partition = new ExFatPartition(testEnvironment.PartitionStream))
+            {
+                OverwriteTest(partition, DiskContent.LongContiguousFileName, offset => offset / 7);
+                // now check nothing was overwritten
+                ReadTests.ReadFile(partition, DiskContent.LongSparseFile1Name, DiskContent.GetLongSparseFile1NameOffsetValue);
+                ReadTests.ReadFile(partition, DiskContent.LongSparseFile2Name, DiskContent.GetLongSparseFile2NameOffsetValue);
+            }
+        }
+
+        private static void AppendTest(ExFatPartition partition, string fileName, Func<ulong, ulong> getOffsetValue)
+        {
+            using (var rootDirectory = partition.OpenDirectory(partition.RootDirectoryDataDescriptor))
+            {
+                var fileEntry = rootDirectory.GetMetaEntries().Single(e => e.ExtensionsFileName == fileName);
+                var buffer = new Byte[8];
+                var dataDescriptor = fileEntry.DataDescriptor;
+                using (var append = partition.OpenDataStream(dataDescriptor, FileAccess.ReadWrite))
+                {
+                    var offset = (ulong)append.Seek(0, SeekOrigin.End);
+                    LittleEndian.GetBytes(getOffsetValue(offset), buffer);
+                    append.Write(buffer, 0, 8);
+                }
+
+                using (var read = partition.OpenDataStream(new DataDescriptor(dataDescriptor.FirstCluster, false, DiskContent.LongFileSize + 8), FileAccess.Read))
+                {
+                    for (ulong offset = 0; offset < DiskContent.LongFileSize + 8; offset += 8)
+                    {
+                        var bytesRead = read.Read(buffer, 0, buffer.Length);
+                        Assert.AreEqual(bytesRead, buffer.Length);
+                        var readValue = LittleEndian.ToUInt64(buffer);
+                        var expectedValue = getOffsetValue(offset);
+                        Assert.AreEqual(expectedValue, readValue);
+                    }
+                    Assert.AreEqual(0, read.Read(buffer, 0, buffer.Length));
+                }
+            }
+        }
+
+        [TestMethod]
         [TestCategory("Append")]
         [TestCategory("Write")]
         public void AppendSparseTest()
@@ -62,7 +120,7 @@ namespace ExFat.DiscUtils.Tests
             using (var testEnvironment = new TestEnvironment(true))
             using (var partition = new ExFatPartition(testEnvironment.PartitionStream))
             {
-                AppendTest(partition, DiskContent.LongSparseFile1Name, offset => offset / 7);
+                AppendTest(partition, DiskContent.LongSparseFile1Name, DiskContent.GetLongSparseFile1NameOffsetValue);
                 // now check nothing was overwritten
                 ReadTests.ReadFile(partition, DiskContent.LongSparseFile2Name, DiskContent.GetLongSparseFile2NameOffsetValue);
             }
@@ -76,7 +134,7 @@ namespace ExFat.DiscUtils.Tests
             using (var testEnvironment = new TestEnvironment(true))
             using (var partition = new ExFatPartition(testEnvironment.PartitionStream))
             {
-                AppendTest(partition, DiskContent.LongContiguousFileName, offset => offset / 7);
+                AppendTest(partition, DiskContent.LongContiguousFileName, DiskContent.GetLongContiguousFileNameOffsetValue);
                 // now check nothing was overwritten
                 ReadTests.ReadFile(partition, DiskContent.LongSparseFile1Name, DiskContent.GetLongSparseFile1NameOffsetValue);
                 ReadTests.ReadFile(partition, DiskContent.LongSparseFile2Name, DiskContent.GetLongSparseFile2NameOffsetValue);
@@ -84,7 +142,7 @@ namespace ExFat.DiscUtils.Tests
         }
 
         [TestMethod]
-        [TestCategory("Append")]
+        [TestCategory("Create")]
         [TestCategory("Write")]
         public void CreateStreamTest()
         {
