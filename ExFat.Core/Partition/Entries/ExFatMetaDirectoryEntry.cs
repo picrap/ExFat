@@ -85,7 +85,7 @@ namespace ExFat.Partition.Entries
             foreach (var entry in Entries)
             {
                 if (partitionStream != null)
-                    entry.SetPosition(partitionStream.Position, partitionStream.ClusterPosition);
+                    entry.SetPosition(partitionStream.Position, partitionStream.Cluster);
                 entry.Write(partitionStream ?? simpleStream);
             }
         }

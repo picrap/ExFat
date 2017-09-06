@@ -167,7 +167,7 @@ namespace ExFat.Filesystem
                     stream.GeneralSecondaryFlags.Value |= ExFatGeneralSecondaryFlags.NoFatChain;
                 else
                     stream.GeneralSecondaryFlags.Value &= ~ExFatGeneralSecondaryFlags.NoFatChain;
-                stream.FirstCluster.Value = dataDescriptor.FirstCluster == ~0ul ? ~0u : (UInt32)dataDescriptor.FirstCluster;
+                stream.FirstCluster.Value = (UInt32)dataDescriptor.FirstCluster.Value;
                 stream.ValidDataLength.Value = dataDescriptor.Length.Value;
                 stream.DataLength.Value = dataDescriptor.Length.Value;
             }

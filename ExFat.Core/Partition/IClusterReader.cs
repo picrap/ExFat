@@ -27,20 +27,20 @@ namespace ExFat.Partition
         /// <param name="clusterBuffer">The cluster buffer. It must be large enough to contain full cluster</param>
         /// <param name="offset"></param>
         /// <param name="length"></param>
-        void ReadCluster(long cluster, byte[] clusterBuffer, int offset, int length);
+        void ReadCluster(Cluster cluster, byte[] clusterBuffer, int offset, int length);
 
         /// <summary>
         /// Gets the next item for a given cluster.
         /// </summary>
         /// <param name="cluster">The cluster.</param>
         /// <returns></returns>
-        long GetNextCluster(long cluster);
+        Cluster GetNextCluster(Cluster cluster);
 
         /// <summary>
         /// Gets the clusters described by the <see cref="DataDescriptor"/>.
         /// </summary>
         /// <param name="dataDescriptor">The data descriptor.</param>
         /// <returns></returns>
-        IEnumerable<long> GetClusters(DataDescriptor dataDescriptor);
+        IEnumerable<Cluster> GetClusters(DataDescriptor dataDescriptor);
     }
 }

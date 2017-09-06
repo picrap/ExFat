@@ -76,14 +76,14 @@ namespace ExFat.Partition
             return bootSector;
         }
 
-        public long GetClusterOffset(long clusterIndex)
+        public long GetClusterOffset(Cluster cluster)
         {
-            return (BootSector.ClusterOffsetSector.Value + (clusterIndex - 2) * BootSector.SectorsPerCluster.Value) * BootSector.BytesPerSector.Value;
+            return (BootSector.ClusterOffsetSector.Value + (cluster.Value - 2) * BootSector.SectorsPerCluster.Value) * BootSector.BytesPerSector.Value;
         }
 
-        private void SeekCluster(long clusterIndex, long offset = 0)
+        private void SeekCluster(Cluster cluster, long offset = 0)
         {
-            _partitionStream.Seek(GetClusterOffset(clusterIndex) + offset, SeekOrigin.Begin);
+            _partitionStream.Seek(GetClusterOffset(cluster) + offset, SeekOrigin.Begin);
         }
 
         public long GetSectorOffset(long sectorIndex)
@@ -103,12 +103,12 @@ namespace ExFat.Partition
         private int FatPageSize => (int)BootSector.BytesPerSector.Value * SectorsPerFatPage;
         private int ClustersPerFatPage => FatPageSize / sizeof(Int32);
 
-        private byte[] GetFatPage(long cluster)
+        private byte[] GetFatPage(Cluster cluster)
         {
             if (_fatPage == null)
                 _fatPage = new byte[FatPageSize];
 
-            var fatPageIndex = cluster / ClustersPerFatPage;
+            var fatPageIndex = cluster.Value / ClustersPerFatPage;
             if (fatPageIndex != _fatPageIndex)
             {
                 FlushFatPage();
@@ -132,18 +132,14 @@ namespace ExFat.Partition
             }
         }
 
-        public long GetNextCluster(long cluster)
+        public Cluster GetNextCluster(Cluster cluster)
         {
             // TODO: optimize?
             lock (_streamLock)
             {
                 var fatPage = GetFatPage(cluster);
-                var clusterIndex = (int)(cluster % ClustersPerFatPage);
+                var clusterIndex = (int)(cluster.Value % ClustersPerFatPage);
                 var nextCluster = LittleEndian.ToUInt32(fatPage, clusterIndex * sizeof(Int32));
-                // consider this as signed
-                if (nextCluster >= 0xFFFFFFF7)
-                    return (int)nextCluster;
-                // otherwise, it's the raw unsigned cluster number, extended to long
                 return nextCluster;
             }
         }
@@ -154,52 +150,61 @@ namespace ExFat.Partition
         /// </summary>
         /// <param name="dataDescriptor">The data descriptor.</param>
         /// <returns></returns>
-        public IEnumerable<long> GetClusters(DataDescriptor dataDescriptor)
+        public IEnumerable<Cluster> GetClusters(DataDescriptor dataDescriptor)
         {
-            var cluster = (long)dataDescriptor.FirstCluster;
+            var cluster = dataDescriptor.FirstCluster;
             var length = (long?)dataDescriptor.Length ?? long.MaxValue;
             for (long offset = 0; offset < length; offset += BytesPerCluster)
             {
-                if (cluster == -1)
+                if (cluster.IsLast)
                     yield break;
                 yield return cluster;
                 if (dataDescriptor.Contiguous)
-                    cluster++;
+                    cluster = cluster + 1;
                 else
                     cluster = GetNextCluster(cluster);
             }
         }
 
-        public void SetNextCluster(long cluster, long nextCluster)
+        public void SetNextCluster(Cluster cluster, Cluster nextCluster)
         {
             lock (_streamLock)
             {
                 var fatPage = GetFatPage(cluster);
-                var clusterIndex = (int)(cluster % ClustersPerFatPage);
-                LittleEndian.GetBytes((UInt32)nextCluster, fatPage, clusterIndex * sizeof(Int32));
+                var clusterIndex = (int)(cluster.Value % ClustersPerFatPage);
+                LittleEndian.GetBytes((UInt32)nextCluster.Value, fatPage, clusterIndex * sizeof(Int32));
                 _fatPageDirty = true;
             }
         }
 
+        /// <inheritdoc />
         /// <summary>
         /// Allocates a cluster.
         /// </summary>
         /// <param name="previousCluster">The previous cluster.</param>
         /// <returns></returns>
-        public long AllocateCluster(long previousCluster)
+        public Cluster AllocateCluster(Cluster previousCluster)
         {
             var allocationBitmap = GetAllocationBitmap();
             lock (_streamLock)
             {
-                var cluster = previousCluster + 1;
-                if (previousCluster < 0 || allocationBitmap[cluster])
+                Cluster cluster;
+                // no data? anything else is good
+                if (!previousCluster.IsData)
                     cluster = allocationBitmap.FindUnallocated();
+                else
+                {
+                    // try next
+                    cluster = previousCluster + 1;
+                    if (allocationBitmap[cluster])
+                        cluster = allocationBitmap.FindUnallocated();
+                }
                 allocationBitmap[cluster] = true;
                 return cluster;
             }
         }
 
-        public void ReadCluster(long cluster, byte[] clusterBuffer, int offset, int length)
+        public void ReadCluster(Cluster cluster, byte[] clusterBuffer, int offset, int length)
         {
             if (length + offset > BytesPerCluster)
                 throw new ArgumentOutOfRangeException(nameof(length));
@@ -214,7 +219,7 @@ namespace ExFat.Partition
             }
         }
 
-        public void WriteCluster(long cluster, byte[] clusterBuffer, int offset, int length)
+        public void WriteCluster(Cluster cluster, byte[] clusterBuffer, int offset, int length)
         {
             if (length + offset > BytesPerCluster)
                 throw new ArgumentOutOfRangeException(nameof(length));

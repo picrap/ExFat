@@ -12,8 +12,8 @@ namespace ExFat.IO
     {
         private readonly IClusterReader _clusterReader;
         private readonly IClusterWriter _clusterWriter;
-        private long _startCluster;
-        private readonly long? _lastContiguousCluster; // filled for contiguous files
+        private Cluster _startCluster;
+        private readonly Cluster? _lastContiguousCluster; // filled for contiguous files
         private bool _contiguous;
         private readonly Action<DataDescriptor> _onDisposed;
         private long? _length;
@@ -22,7 +22,7 @@ namespace ExFat.IO
         private byte[] _currentClusterBuffer;
         private long _currentClusterDataIndex = -1;
         private long CurrentClusterIndexFromPosition => _position / _clusterReader.BytesPerCluster;
-        private long _currentCluster;
+        private Cluster _currentCluster;
         private bool _currentClusterDirty;
 
         private int CurrentClusterOffset => (int)_position % _clusterReader.BytesPerCluster;
@@ -54,7 +54,7 @@ namespace ExFat.IO
             set { Seek(value, SeekOrigin.Begin); }
         }
 
-        public override long ClusterPosition
+        public override Cluster Cluster
         {
             get
             {
@@ -64,7 +64,7 @@ namespace ExFat.IO
                 GetCurrentCluster(false);
                 if (CurrentClusterIndexFromPosition == _currentClusterDataIndex)
                     return _currentCluster;
-                return -1;
+                return Cluster.Last;
             }
         }
 
@@ -80,12 +80,12 @@ namespace ExFat.IO
         {
             _clusterReader = clusterReader;
             _clusterWriter = clusterWriter;
-            _startCluster = (long)dataDescriptor.FirstCluster;
+            _startCluster = dataDescriptor.FirstCluster;
             _contiguous = dataDescriptor.Contiguous;
             _onDisposed = onDisposed;
             _length = (long?)dataDescriptor.Length;
-            if (_contiguous && _length.HasValue)
-                _lastContiguousCluster = _startCluster + (_length.Value + _clusterReader.BytesPerCluster - 1) / _clusterReader.BytesPerCluster - 1;
+            if (_contiguous && (_length ?? 0) > 0)
+                _lastContiguousCluster = _startCluster + ((_length.Value + _clusterReader.BytesPerCluster - 1) / _clusterReader.BytesPerCluster - 1);
 
             _position = 0;
             _currentCluster = _startCluster;
@@ -96,7 +96,7 @@ namespace ExFat.IO
             FlushCurrentCluster();
             base.Dispose(disposing);
             if (disposing && _onDisposed != null)
-                _onDisposed(new DataDescriptor((ulong)_startCluster, _contiguous, (ulong?)_length));
+                _onDisposed(new DataDescriptor(_startCluster, _contiguous, (ulong?)_length));
         }
 
         /// <summary>
@@ -180,7 +180,7 @@ namespace ExFat.IO
             {
                 var currentCluster = GetCurrentClusterFromPosition();
                 // end of stream
-                if (currentCluster < 0)
+                if (!currentCluster.IsData)
                 {
                     if (!CanWrite || !append)
                         return null;
@@ -193,7 +193,7 @@ namespace ExFat.IO
                     var previousCluster = _currentClusterDataIndex == previousClusterIndex ? _currentCluster : GetClusterFromIndex(previousClusterIndex);
                     var newCluster = _clusterWriter.AllocateCluster(previousCluster);
                     // if this is the start cluster, handle differently
-                    if (_startCluster == -1)
+                    if (!_startCluster.IsData)
                     {
                         _startCluster = newCluster;
                         _contiguous = true;
@@ -209,7 +209,7 @@ namespace ExFat.IO
                                 _clusterWriter.SetNextCluster(_startCluster + clusterIndex, _startCluster + clusterIndex + 1);
                         }
                     }
-                    _clusterWriter.SetNextCluster(newCluster, -1);
+                    _clusterWriter.SetNextCluster(newCluster, Cluster.Last);
 
                     _currentCluster = newCluster;
                     //_currentClusterDirty = true;
@@ -230,24 +230,24 @@ namespace ExFat.IO
             return _currentClusterBuffer;
         }
 
-        private long GetCurrentClusterFromPosition()
+        private Cluster GetCurrentClusterFromPosition()
         {
             return GetClusterFromIndex(CurrentClusterIndexFromPosition);
         }
 
-        private long GetClusterFromIndex(long cluster)
+        private Cluster GetClusterFromIndex(long index)
         {
-            if (cluster == 0)
+            if (index == 0)
                 return _startCluster;
             // -1 means buffer is new
             if (_currentClusterDataIndex == -1)
-                return GetNextCluster(_startCluster, cluster);
-            if (cluster > _currentClusterDataIndex)
-                return GetNextCluster(_currentCluster, cluster - _currentClusterDataIndex);
-            return GetNextCluster(_startCluster, cluster);
+                return GetNextCluster(_startCluster, index);
+            if (index > _currentClusterDataIndex)
+                return GetNextCluster(_currentCluster, index - _currentClusterDataIndex);
+            return GetNextCluster(_startCluster, index);
         }
 
-        private long GetNextCluster(long cluster, long clustersCount)
+        private Cluster GetNextCluster(Cluster cluster, long clustersCount)
         {
             if (clustersCount < 0)
                 throw new ArgumentOutOfRangeException(nameof(cluster), "cluster must be >= 0");
@@ -255,12 +255,12 @@ namespace ExFat.IO
             if (_contiguous)
             {
                 var nextCluster = cluster + clustersCount;
-                if (nextCluster <= _lastContiguousCluster)
+                if (nextCluster.Value <= _lastContiguousCluster.Value.Value)
                     return nextCluster;
-                return -1;
+                return Cluster.Last;
             }
 
-            for (var index = 0; index < clustersCount && cluster >= 0; index++)
+            for (var index = 0; index < clustersCount && !cluster.IsLast; index++)
                 cluster = _clusterReader.GetNextCluster(cluster);
             return cluster;
         }

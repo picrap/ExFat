@@ -6,6 +6,7 @@ namespace ExFat.DiscUtils.Tests
 {
     using System.Collections.Generic;
     using System.Linq;
+    using IO;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Partition;
 
@@ -22,12 +23,12 @@ namespace ExFat.DiscUtils.Tests
             using (var rootDirectory = partition.OpenDirectory(partition.RootDirectoryDataDescriptor))
             {
                 var oneM = rootDirectory.GetMetaEntries().Single(e => e.ExtensionsFileName == DiskContent.LongSparseFile1Name);
-                var clusters = new List<long>();
-                for (long c = oneM.SecondaryStreamExtension.FirstCluster.Value; ; c = partition.GetNextCluster(c))
+                var clusters = new List<Cluster>();
+                for (Cluster c = oneM.SecondaryStreamExtension.FirstCluster.Value; ; c = partition.GetNextCluster(c))
                 {
-                    if (c < 0)
+                    if (c.IsLast)
                         break;
-                    if (c < 2)
+                    if (!c.IsData)
                         Assert.Fail("Found invalid cluster (o'brother, where art thou?)");
                     clusters.Add(c);
                 }

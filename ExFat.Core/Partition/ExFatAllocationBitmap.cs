@@ -6,6 +6,7 @@ namespace ExFat.Partition
 {
     using System;
     using System.IO;
+    using IO;
 
     public class ExFatAllocationBitmap
     {
@@ -23,7 +24,7 @@ namespace ExFat.Partition
         /// </value>
         /// <param name="cluster">The cluster.</param>
         /// <returns></returns>
-        public bool this[long cluster]
+        public bool this[Cluster cluster]
         {
             get { return GetAt(cluster); }
             set { SetAt(cluster, value); }
@@ -57,23 +58,23 @@ namespace ExFat.Partition
             _dataStream.Dispose();
         }
 
-        public bool GetAt(long cluster)
+        public bool GetAt(Cluster cluster)
         {
-            if (cluster < _firstCluster || cluster >= Length)
+            if (cluster.Value < _firstCluster || cluster.Value >= Length)
                 throw new ArgumentOutOfRangeException(nameof(cluster));
-            cluster -= _firstCluster;
-            var byteIndex = (int)cluster / 8;
-            var bitMask = 1 << (int)(cluster & 7);
+            var clusterIndex = cluster.Value - _firstCluster;
+            var byteIndex = (int)clusterIndex / 8;
+            var bitMask = 1 << (int)(clusterIndex & 7);
             return (_bitmap[byteIndex] & bitMask) != 0;
         }
 
-        public void SetAt(long cluster, bool allocated)
+        public void SetAt(Cluster cluster, bool allocated)
         {
-            if (cluster < _firstCluster || cluster >= Length)
+            if (cluster.Value < _firstCluster || cluster.Value >= Length)
                 throw new ArgumentOutOfRangeException(nameof(cluster));
-            cluster -= _firstCluster;
-            var byteIndex = (int)cluster / 8;
-            var bitMask = 1 << (int)(cluster & 7);
+            var clusterIndex = cluster.Value - _firstCluster;
+            var byteIndex = (int)clusterIndex / 8;
+            var bitMask = 1 << (int)(clusterIndex & 7);
             if (allocated)
                 _bitmap[byteIndex] |= (byte)bitMask;
             else
@@ -83,16 +84,16 @@ namespace ExFat.Partition
             _dataStream.Write(_bitmap, byteIndex, 1);
         }
 
-        public long FindUnallocated(int contiguous = 1)
+        public Cluster FindUnallocated(int contiguous = 1)
         {
-            long freeCluster = -1;
+            UInt32 freeCluster = 0;
             int unallocatedCount = 0;
-            for (long cluster = _firstCluster; cluster < Length;)
+            for (UInt32 cluster = _firstCluster; cluster < Length;)
             {
                 // special case: byte is filled, skip the block (and reset the search)
                 if (((cluster - _firstCluster) & 0x07) == 0 && _bitmap[cluster / 8] == 0xFF)
                 {
-                    freeCluster = -1;
+                    freeCluster = 0;
                     unallocatedCount = 0;
                     cluster += 8;
                     continue;
@@ -112,7 +113,7 @@ namespace ExFat.Partition
                 ++cluster;
             }
             // nothing found
-            return 0;
+            return Cluster.Free;
         }
     }
 }

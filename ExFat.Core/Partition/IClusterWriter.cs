@@ -4,6 +4,8 @@
 
 namespace ExFat.Partition
 {
+    using IO;
+
     /// <summary>
     /// Cluster writer
     /// </summary>
@@ -17,7 +19,7 @@ namespace ExFat.Partition
         /// <param name="clusterBuffer">The cluster buffer.</param>
         /// <param name="offset"></param>
         /// <param name="length"></param>
-        void WriteCluster(long cluster, byte[] clusterBuffer, int offset, int length);
+        void WriteCluster(Cluster cluster, byte[] clusterBuffer, int offset, int length);
 
         /// <summary>
         /// Sets the next cluster.
@@ -25,13 +27,13 @@ namespace ExFat.Partition
         /// <param name="cluster">The cluster.</param>
         /// <param name="nextCluster">The next cluster.</param>
         /// <returns></returns>
-        void SetNextCluster(long cluster, long nextCluster);
+        void SetNextCluster(Cluster cluster, Cluster nextCluster);
 
         /// <summary>
         /// Allocates a cluster.
         /// </summary>
         /// <param name="previousCluster">The previous cluster.</param>
         /// <returns></returns>
-        long AllocateCluster(long previousCluster);
+        Cluster AllocateCluster(Cluster previousCluster);
     }
 }

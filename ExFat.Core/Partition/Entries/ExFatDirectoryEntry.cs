@@ -30,7 +30,7 @@ namespace ExFat.Partition.Entries
         /// <value>
         /// The cluster.
         /// </value>
-        public long Cluster { get; private set; }
+        public Cluster Cluster { get; private set; }
 
         /// <summary>
         /// Indicates if the entry is in use
@@ -64,7 +64,7 @@ namespace ExFat.Partition.Entries
         /// </summary>
         /// <param name="position">The position.</param>
         /// <param name="cluster">The cluster.</param>
-        public void SetPosition(long position, long cluster)
+        public void SetPosition(long position, Cluster cluster)
         {
             Position = position;
             Cluster = cluster;
@@ -78,7 +78,7 @@ namespace ExFat.Partition.Entries
         /// <param name="cluster">The cluster.</param>
         /// <returns></returns>
         /// <exception cref="System.ArgumentOutOfRangeException"></exception>
-        public static ExFatDirectoryEntry Create(Buffer buffer, long offset, long cluster)
+        public static ExFatDirectoryEntry Create(Buffer buffer, long offset, Cluster cluster)
         {
             var entry = Create(buffer);
             if (entry != null)

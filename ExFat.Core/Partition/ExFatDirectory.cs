@@ -50,7 +50,7 @@ namespace ExFat.Partition
                 {
                     var entryBytes = new byte[32];
                     // cluster offset before reading data, since it's the start
-                    var clusterPosition = _directoryStream.ClusterPosition;
+                    var clusterPosition = _directoryStream.Cluster;
                     if (_directoryStream.Read(entryBytes, 0, entryBytes.Length) != 32)
                         break;
                     var directoryEntry = ExFatDirectoryEntry.Create(new Buffer(entryBytes), offset, clusterPosition);

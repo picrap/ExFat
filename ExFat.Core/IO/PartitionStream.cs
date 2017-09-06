@@ -14,6 +14,6 @@ namespace ExFat.IO
         /// <value>
         /// The cluster position.
         /// </value>
-        public abstract long ClusterPosition { get; }
+        public abstract Cluster Cluster { get; }
     }
 }
