@@ -29,12 +29,17 @@ namespace ExFat.Partition.Entries
         public IValueProvider<DateTime> LastWriteTime { get; }
         public IValueProvider<DateTime> LastAccessTime { get; }
 
-        public IValueProvider<TimeZoneInfo> CreationTimeZone { get; }
-        public IValueProvider<TimeZoneInfo> LastWriteTimeZone { get; }
-        public IValueProvider<TimeZoneInfo> LastAccessTimeZone { get; }
+        public IValueProvider<TimeSpan> CreationTimeOffset { get; }
+        public IValueProvider<TimeSpan> LastWriteTimeOffset { get; }
+        public IValueProvider<TimeSpan> LastAccessTimeOffset { get; }
+
+        public IValueProvider<DateTimeOffset> CreationDateTimeOffset { get; }
+        public IValueProvider<DateTimeOffset> LastWriteDateTimeOffset { get; }
+        public IValueProvider<DateTimeOffset> LastAccessDateTimeOffset { get; }
 
         public FileExFatDirectoryEntry(Buffer buffer) : base(buffer)
         {
+            // the raw
             SecondaryCount = new BufferUInt8(buffer, 1);
             SetChecksum = new BufferUInt16(buffer, 2);
             FileAttributes = new EnumValueProvider<ExFatFileAttributes, UInt16>(new BufferUInt16(buffer, 4));
@@ -46,17 +51,24 @@ namespace ExFat.Partition.Entries
             CreationTimeZoneOffset = new BufferUInt8(buffer, 22);
             LastWriteTimeZoneOffset = new BufferUInt8(buffer, 23);
             LastAccessTimeZoneOffset = new BufferUInt8(buffer, 24);
+
+            // the cooked
             CreationTime = new EntryDateTime(CreationTimeStamp, Creation10msIncrement);
             LastWriteTime = new EntryDateTime(LastWriteTimeStamp, LastWrite10msIncrement);
             LastAccessTime = new EntryDateTime(LastAccessTimeStamp);
-            CreationTimeZone = new EntryTimeZone(CreationTimeZoneOffset);
-            LastWriteTimeZone = new EntryTimeZone(LastWriteTimeZoneOffset);
-            LastAccessTimeZone = new EntryTimeZone(LastAccessTimeZoneOffset);
+
+            CreationTimeOffset = new EntryTimeZone(CreationTimeZoneOffset);
+            LastWriteTimeOffset = new EntryTimeZone(LastWriteTimeZoneOffset);
+            LastAccessTimeOffset = new EntryTimeZone(LastAccessTimeZoneOffset);
+
+            CreationDateTimeOffset = new EntryDateTimeOffset(CreationTime, CreationTimeOffset);
+            LastWriteDateTimeOffset = new EntryDateTimeOffset(LastWriteTime, LastWriteTimeOffset);
+            LastAccessDateTimeOffset = new EntryDateTimeOffset(LastAccessTime, LastAccessTimeOffset);
         }
 
         public override void Update(ICollection<ExFatDirectoryEntry> secondaryEntries)
         {
-            SecondaryCount.Value = (Byte) secondaryEntries.Count;
+            SecondaryCount.Value = (Byte)secondaryEntries.Count;
             SetChecksum.Value = ComputeChecksum(secondaryEntries);
         }
 

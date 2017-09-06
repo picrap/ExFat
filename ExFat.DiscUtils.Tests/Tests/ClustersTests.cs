@@ -10,7 +10,7 @@ namespace ExFat.DiscUtils.Tests
     using Partition;
 
     [TestClass]
-    [TestCategory("TimeZoneInfo")]
+    [TestCategory("Structure")]
     public class ClustersTests
     {
         [TestMethod]

@@ -64,12 +64,20 @@ namespace ExFat.Filesystem
         public long Length => (long)Entry.SecondaryStreamExtension.DataLength.Value;
 
         /// <summary>
-        /// Gets the creation date.
+        /// Gets the creation time.
         /// </summary>
         /// <value>
         /// The creation date.
         /// </value>
-        public DateTime CreationDate => FileEntry.CreationTime.Value;
+        public DateTime CreationTime => FileEntry.CreationTime.Value;
+
+        /// <summary>
+        /// Gets the creation time, UTC.
+        /// </summary>
+        /// <value>
+        /// The creation date UTC.
+        /// </value>
+        public DateTime CreationTimeUtc => FileEntry.CreationDateTimeOffset.Value.UtcDateTime;
 
         /// <summary>
         /// Gets the last write time.
@@ -80,12 +88,28 @@ namespace ExFat.Filesystem
         public DateTime LastWriteTime => FileEntry.LastWriteTime.Value;
 
         /// <summary>
+        /// Gets the last write time, UTC.
+        /// </summary>
+        /// <value>
+        /// The last write time UTC.
+        /// </value>
+        public DateTime LastWriteTimeUtc => FileEntry.LastWriteDateTimeOffset.Value.UtcDateTime;
+
+        /// <summary>
         /// Gets the last access time.
         /// </summary>
         /// <value>
         /// The last access time.
         /// </value>
         public DateTime LastAccessTime => FileEntry.LastAccessTime.Value;
+
+        /// <summary>
+        /// Gets the last access time, UTC.
+        /// </summary>
+        /// <value>
+        /// The last access time UTC.
+        /// </value>
+        public DateTime LastAccessTimeUtc => FileEntry.LastAccessDateTimeOffset.Value.UtcDateTime;
 
         /// <summary>
         /// Gets the data descriptor.

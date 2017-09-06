@@ -109,23 +109,21 @@ namespace ExFat.Filesystem
 
         private void OnDisposed(ExFatFilesystemEntry entry, FileAccess descriptor, DataDescriptor dataDescriptor)
         {
-            DateTime? now = null;
+            DateTimeOffset? now = null;
             var file = (FileExFatDirectoryEntry)entry.Entry.Primary;
 
             // if file was open for reading and the flag is set, the entry is updated
             if (descriptor.HasAny(FileAccess.Read) && _flags.HasAny(ExFatFilesystemFlags.UpdateLastAccessTime))
             {
-                now = DateTime.Now;
-                file.LastAccessTime.Value = now.Value;
-                file.LastAccessTimeZone.Value = TimeZoneInfo.Local;
+                now = DateTimeOffset.Now;
+                file.LastAccessDateTimeOffset.Value = now.Value;
             }
 
             // when it was open for writing, its characteristics may have changed, so we update them
             if (descriptor.HasAny(FileAccess.Write))
             {
-                now = now ?? DateTime.Now;
-                file.LastWriteTime.Value = now.Value;
-                file.LastWriteTimeZone.Value = TimeZoneInfo.Local;
+                now = now ?? DateTimeOffset.Now;
+                file.LastWriteDateTimeOffset.Value = now.Value;
                 var stream = entry.Entry.SecondaryStreamExtension;
                 if (dataDescriptor.Contiguous)
                     stream.GeneralSecondaryFlags.Value |= ExFatGeneralSecondaryFlags.NoFatChain;

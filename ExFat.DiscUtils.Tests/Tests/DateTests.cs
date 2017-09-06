@@ -30,43 +30,35 @@ namespace ExFat.DiscUtils.Tests
         }
 
         [TestMethod]
-        [TestCategory("TimeZoneInfo")]
+        [TestCategory("DateTimeOffset")]
         public void TimeZoneInfoUtc()
         {
             var t = DateTimeUtility.FromTimeZoneOffset(0x80);
-            Assert.AreEqual(t.BaseUtcOffset, TimeSpan.FromHours(0));
+            Assert.AreEqual(t, TimeSpan.FromHours(0));
         }
 
         [TestMethod]
-        [TestCategory("TimeZoneInfo")]
+        [TestCategory("DateTimeOffset")]
         public void TimeZoneInfoDateLine()
         {
             var t = DateTimeUtility.FromTimeZoneOffset(0xD0);
-            Assert.AreEqual(t.BaseUtcOffset, TimeSpan.FromHours(-12));
+            Assert.AreEqual(t, TimeSpan.FromHours(-12));
         }
 
         [TestMethod]
-        [TestCategory("TimeZoneInfo")]
+        [TestCategory("DateTimeOffset")]
         public void TimeZoneInfoAzores()
         {
             var t = DateTimeUtility.FromTimeZoneOffset(0xFC);
-            Assert.AreEqual(t.BaseUtcOffset, TimeSpan.FromHours(-1));
+            Assert.AreEqual(t, TimeSpan.FromHours(-1));
         }
 
         [TestMethod]
-        [TestCategory("TimeZoneInfo")]
+        [TestCategory("DateTimeOffset")]
         public void TimeZoneInfoCustom()
         {
             var t = DateTimeUtility.FromTimeZoneOffset(0xF3);
-            Assert.AreEqual(t.BaseUtcOffset, TimeSpan.FromHours(-3.25));
-        }
-
-        [TestMethod]
-        [TestCategory("TimeZoneInfo")]
-        public void TimeZoneInfoToByteUtc()
-        {
-            var b = DateTimeUtility.ToTimeZoneOffset(TimeZoneInfo.Utc);
-            Assert.AreEqual(0x80, b);
+            Assert.AreEqual(t, TimeSpan.FromHours(-3.25));
         }
     }
 }

@@ -10,12 +10,12 @@ namespace ExFat.Partition.Entries
     /// <summary>
     /// Allows to specify time zones
     /// </summary>
-    /// <seealso cref="TimeZoneInfo" />
-    public class EntryTimeZone : IValueProvider<TimeZoneInfo>
+    /// <seealso cref="TimeSpan" />
+    public class EntryTimeZone : IValueProvider<TimeSpan>
     {
         private readonly IValueProvider<Byte> _timeZoneOffsetProvider;
 
-        public TimeZoneInfo Value
+        public TimeSpan Value
         {
             get { return DateTimeUtility.FromTimeZoneOffset(_timeZoneOffsetProvider.Value); }
             set { _timeZoneOffsetProvider.Value = value.ToTimeZoneOffset(); }

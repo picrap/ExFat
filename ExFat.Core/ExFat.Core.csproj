@@ -60,6 +60,7 @@
     <Compile Include="Filesystem\ExFatFilesystemFlags.cs" />
     <Compile Include="Partition\Entries\AllocationBitmapFlags.cs" />
     <Compile Include="Partition\Entries\EntryDateTime.cs" />
+    <Compile Include="Partition\Entries\EntryDateTimeOffset.cs" />
     <Compile Include="Partition\Entries\EntryTimeZone.cs" />
     <Compile Include="Partition\ExFatAllocationBitmap.cs" />
     <Compile Include="Filesystem\ExFatFilesystem.cs" />

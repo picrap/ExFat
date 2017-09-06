@@ -46,32 +46,27 @@ namespace ExFat
             return Tuple.Create((UInt32) timeStamp, (Byte) tenMs);
         }
 
-        public static TimeZoneInfo FromTimeZoneOffset(Byte offset)
+        public static TimeSpan FromTimeZoneOffset(Byte offset)
         {
             if (offset < 0x80)
-                return null;
+                return TimeSpan.Zero;
             double hoursOffset;
             if (offset < 0xD0)
                 hoursOffset = (offset - 0x80) * 0.25;
             else
                 hoursOffset = (offset - 0x100) * 0.25;
             var timeSpanOffset = TimeSpan.FromHours(hoursOffset);
-            var existingZone = TimeZoneInfo.GetSystemTimeZones().FirstOrDefault(z => z.BaseUtcOffset == timeSpanOffset);
-            if (existingZone != null)
-                return existingZone;
-            return TimeZoneInfo.CreateCustomTimeZone(hoursOffset.ToString(CultureInfo.InvariantCulture), timeSpanOffset, "", "");
+            return timeSpanOffset;
         }
 
         /// <summary>
-        /// Converts a <see cref="TimeZoneInfo"/> to time zone offset byte.
+        /// Converts a <see cref="TimeSpan" /> to time zone offset byte.
         /// </summary>
-        /// <param name="timeZoneInfo">The time zone information.</param>
+        /// <param name="timeSpanOffset">The time span offset.</param>
         /// <returns></returns>
-        public static Byte ToTimeZoneOffset(this TimeZoneInfo timeZoneInfo)
+        public static Byte ToTimeZoneOffset(this TimeSpan timeSpanOffset)
         {
-            if (timeZoneInfo == null)
-                return 0;
-            var quartersOffset = (int) timeZoneInfo.BaseUtcOffset.TotalHours * 4;
+            var quartersOffset = (int) timeSpanOffset.TotalHours * 4;
             if (quartersOffset < 0)
                 return (byte) (0x100 + quartersOffset);
             return (byte) (0x80 + quartersOffset);
