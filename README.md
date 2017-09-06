@@ -16,7 +16,10 @@ Current features:
 - [X] Writing files
 - [X] Creating directories
 - [X] Creating files
-- [ ] Deleting files/directories
+- [X] Deleting files/directories
+- [ ] Changing file length (Stream.SetLength)
+- [ ] Using paths instead of objets (less efficient but more convenient)
+- [ ] Check for thread safety
 - [ ] Partition formatting
 - [ ] Working with [DiscUtils](https://github.com/DiscUtils/DiscUtils)
 - [ ] Standalone Nuget package

@@ -4,6 +4,9 @@
 
 namespace ExFat.Partition
 {
+    using System.Collections.Generic;
+    using IO;
+
     /// <summary>
     /// Allows to access cluter information and data
     /// </summary>
@@ -32,5 +35,12 @@ namespace ExFat.Partition
         /// <param name="cluster">The cluster.</param>
         /// <returns></returns>
         long GetNextCluster(long cluster);
+
+        /// <summary>
+        /// Gets the clusters described by the <see cref="DataDescriptor"/>.
+        /// </summary>
+        /// <param name="dataDescriptor">The data descriptor.</param>
+        /// <returns></returns>
+        IEnumerable<long> GetClusters(DataDescriptor dataDescriptor);
     }
 }

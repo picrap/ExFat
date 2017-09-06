@@ -131,7 +131,7 @@ namespace ExFat.Filesystem
                 }
 
                 var fileEntry = CreateEntry(fileName, FileAttributes.Archive);
-                directory.AddEntry(fileEntry.Entry);
+                directory.AddEntry(fileEntry.MetaEntry);
                 return OpenData(fileEntry, FileAccess.ReadWrite);
             }
         }
@@ -143,11 +143,11 @@ namespace ExFat.Filesystem
 
         private void OnDisposed(ExFatFilesystemEntry entry, FileAccess descriptor, DataDescriptor dataDescriptor)
         {
-            if (entry?.Entry == null)
+            if (entry?.MetaEntry == null)
                 return;
 
             DateTimeOffset? now = null;
-            var file = (FileExFatDirectoryEntry)entry.Entry.Primary;
+            var file = (FileExFatDirectoryEntry)entry.MetaEntry.Primary;
 
             // if file was open for reading and the flag is set, the entry is updated
             if (descriptor.HasAny(FileAccess.Read) && _flags.HasAny(ExFatFilesystemFlags.UpdateLastAccessTime))
@@ -162,7 +162,7 @@ namespace ExFat.Filesystem
                 now = now ?? DateTimeOffset.Now;
                 file.FileAttributes.Value |= ExFatFileAttributes.Archive;
                 file.LastWriteDateTimeOffset.Value = now.Value;
-                var stream = entry.Entry.SecondaryStreamExtension;
+                var stream = entry.MetaEntry.SecondaryStreamExtension;
                 if (dataDescriptor.Contiguous)
                     stream.GeneralSecondaryFlags.Value |= ExFatGeneralSecondaryFlags.NoFatChain;
                 else
@@ -175,7 +175,7 @@ namespace ExFat.Filesystem
             // now has value only if it was used before, so we spare a flag :)
             if (now.HasValue)
             {
-                _partition.UpdateEntry(entry.Entry);
+                _partition.UpdateEntry(entry.MetaEntry);
             }
         }
 
@@ -246,7 +246,7 @@ namespace ExFat.Filesystem
                     }
 
                     var directoryEntry = CreateEntry(directoryName, FileAttributes.Directory);
-                    parentDirectory.AddEntry(directoryEntry.Entry);
+                    parentDirectory.AddEntry(directoryEntry.MetaEntry);
                     using (var directoryStream = OpenData(directoryEntry, FileAccess.ReadWrite))
                     {
                         var emptyEntry = new byte[32];
@@ -255,6 +255,14 @@ namespace ExFat.Filesystem
                     return directoryEntry;
                 }
             }
+        }
+
+        public void Delete(ExFatFilesystemEntry entry)
+        {
+            _partition.Deallocate(entry.DataDescriptor);
+            foreach (var e in entry.MetaEntry.Entries)
+                e.EntryType.Value &= ~ExFatDirectoryEntryType.InUse;
+            _partition.UpdateEntry(entry.MetaEntry);
         }
     }
 }

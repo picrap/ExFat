@@ -148,6 +148,28 @@ namespace ExFat.Partition
             }
         }
 
+        /// <inheritdoc />
+        /// <summary>
+        /// Gets all clusters from a <see cref="T:ExFat.IO.DataDescriptor" />.
+        /// </summary>
+        /// <param name="dataDescriptor">The data descriptor.</param>
+        /// <returns></returns>
+        public IEnumerable<long> GetClusters(DataDescriptor dataDescriptor)
+        {
+            var cluster = (long)dataDescriptor.FirstCluster;
+            var length = (long?)dataDescriptor.Length ?? long.MaxValue;
+            for (long offset = 0; offset < length; offset += BytesPerCluster)
+            {
+                if (cluster == -1)
+                    yield break;
+                yield return cluster;
+                if (dataDescriptor.Contiguous)
+                    cluster++;
+                else
+                    cluster = GetNextCluster(cluster);
+            }
+        }
+
         public void SetNextCluster(long cluster, long nextCluster)
         {
             lock (_streamLock)
@@ -344,6 +366,13 @@ namespace ExFat.Partition
                 SeekCluster(entry.Primary.Cluster, offset);
                 entry.Write(null, _partitionStream);
             }
+        }
+
+        public void Deallocate(DataDescriptor dataDescriptor)
+        {
+            var allocationBitmap = GetAllocationBitmap();
+            foreach (var cluster in GetClusters(dataDescriptor))
+                allocationBitmap[cluster] = false;
         }
     }
 }

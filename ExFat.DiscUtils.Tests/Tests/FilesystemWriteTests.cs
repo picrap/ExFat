@@ -91,5 +91,35 @@ namespace ExFat.DiscUtils.Tests
                 }
             }
         }
+
+        [TestMethod]
+        [TestCategory("Write")]
+        public void DeleteFileTest()
+        {
+            using (var testEnvironment = new TestEnvironment(true))
+            {
+                using (var filesystem = new ExFatFilesystem(testEnvironment.PartitionStream))
+                {
+                    var f = filesystem.FindChild(filesystem.RootDirectory, DiskContent.LongContiguousFileName);
+                    filesystem.Delete(f);
+                    Assert.IsNull(filesystem.FindChild(filesystem.RootDirectory, DiskContent.LongContiguousFileName));
+                }
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("Write")]
+        public void DeleteDirectoryTest()
+        {
+            using (var testEnvironment = new TestEnvironment(true))
+            {
+                using (var filesystem = new ExFatFilesystem(testEnvironment.PartitionStream))
+                {
+                    var f = filesystem.FindChild(filesystem.RootDirectory, DiskContent.EmptyRootFolderFileName);
+                    filesystem.Delete(f);
+                    Assert.IsNull(filesystem.FindChild(filesystem.RootDirectory, DiskContent.EmptyRootFolderFileName));
+                }
+            }
+        }
     }
 }

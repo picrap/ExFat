@@ -14,11 +14,11 @@ namespace ExFat.Filesystem
     public class ExFatFilesystemEntry
     {
         private readonly DataDescriptor _dataDescriptorOverride;
-        private FileExFatDirectoryEntry FileEntry => Entry.Primary as FileExFatDirectoryEntry;
+        private FileExFatDirectoryEntry FileEntry => MetaEntry.Primary as FileExFatDirectoryEntry;
         private readonly ExFatFileAttributes? _attributesOverride;
         private string DebugLiteral => Name + (IsDirectory ? "/" : "");
 
-        internal ExFatMetaDirectoryEntry Entry { get; }
+        internal ExFatMetaDirectoryEntry MetaEntry { get; }
 
         /// <summary>
         /// Gets the attributes.
@@ -53,7 +53,7 @@ namespace ExFat.Filesystem
         /// <value>
         /// The name.
         /// </value>
-        public string Name => Entry.ExtensionsFileName;
+        public string Name => MetaEntry.ExtensionsFileName;
 
         /// <summary>
         /// Gets the length.
@@ -61,7 +61,7 @@ namespace ExFat.Filesystem
         /// <value>
         /// The length.
         /// </value>
-        public long Length => (long)Entry.SecondaryStreamExtension.DataLength.Value;
+        public long Length => (long)MetaEntry.SecondaryStreamExtension.DataLength.Value;
 
         /// <summary>
         /// Gets the creation time.
@@ -117,12 +117,12 @@ namespace ExFat.Filesystem
         /// <value>
         /// The data descriptor.
         /// </value>
-        public DataDescriptor DataDescriptor => _dataDescriptorOverride ?? Entry.DataDescriptor;
+        public DataDescriptor DataDescriptor => _dataDescriptorOverride ?? MetaEntry.DataDescriptor;
 
-        internal ExFatFilesystemEntry(ExFatMetaDirectoryEntry entry = null, DataDescriptor dataDescriptorOverride = null, ExFatFileAttributes? attributesOverride = null)
+        internal ExFatFilesystemEntry(ExFatMetaDirectoryEntry metaEntry = null, DataDescriptor dataDescriptorOverride = null, ExFatFileAttributes? attributesOverride = null)
         {
             _dataDescriptorOverride = dataDescriptorOverride;
-            Entry = entry;
+            MetaEntry = metaEntry;
             _attributesOverride = attributesOverride;
         }
     }
