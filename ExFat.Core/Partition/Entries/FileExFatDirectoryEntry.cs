@@ -31,7 +31,7 @@ namespace ExFat.Partition.Entries
 
         public IValueProvider<TimeZoneInfo> CreationTimeZone { get; }
         public IValueProvider<TimeZoneInfo> LastWriteTimeZone { get; }
-        public IValueProvider<TimeZoneInfo> LastAccessDateTimeZone { get; }
+        public IValueProvider<TimeZoneInfo> LastAccessTimeZone { get; }
 
         public FileExFatDirectoryEntry(Buffer buffer) : base(buffer)
         {
@@ -51,7 +51,7 @@ namespace ExFat.Partition.Entries
             LastAccessTime = new EntryDateTime(LastAccessTimeStamp);
             CreationTimeZone = new EntryTimeZone(CreationTimeZoneOffset);
             LastWriteTimeZone = new EntryTimeZone(LastWriteTimeZoneOffset);
-            LastAccessDateTimeZone = new EntryTimeZone(LastAccessTimeZoneOffset);
+            LastAccessTimeZone = new EntryTimeZone(LastAccessTimeZoneOffset);
         }
 
         public override void Update(ICollection<ExFatDirectoryEntry> secondaryEntries)
