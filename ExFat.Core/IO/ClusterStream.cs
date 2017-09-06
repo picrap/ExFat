@@ -12,7 +12,7 @@ namespace ExFat.IO
     {
         private readonly IClusterReader _clusterReader;
         private readonly IClusterWriter _clusterWriter;
-        private readonly long _startCluster;
+        private long _startCluster;
         private readonly long? _lastContiguousCluster; // filled for contiguous files
         private bool _contiguous;
         private readonly Action<DataDescriptor> _onDisposed;
@@ -68,30 +68,23 @@ namespace ExFat.IO
             }
         }
 
-        public override int ClusterOffset => CurrentClusterOffset;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="ClusterStream" /> class.
         /// </summary>
         /// <param name="clusterReader">The cluster information reader.</param>
         /// <param name="clusterWriter">The cluster writer.</param>
-        /// <param name="startCluster">The start cluster.</param>
-        /// <param name="contiguous">if set to <c>true</c> [contiguous].</param>
-        /// <param name="length">The length.</param>
+        /// <param name="dataDescriptor">The data descriptor.</param>
         /// <param name="onDisposed">Method invoked when stream is disposed.</param>
         /// <exception cref="ArgumentException">If contiguous is true, the length must be specified</exception>
-        public ClusterStream(IClusterReader clusterReader, IClusterWriter clusterWriter, ulong startCluster, bool contiguous, ulong? length, Action<DataDescriptor> onDisposed)
+        public ClusterStream(IClusterReader clusterReader, IClusterWriter clusterWriter, DataDescriptor dataDescriptor, Action<DataDescriptor> onDisposed)
         {
-            if (contiguous && !length.HasValue)
-                throw new ArgumentException("If contiguous is true, the length must be specified");
-
             _clusterReader = clusterReader;
             _clusterWriter = clusterWriter;
-            _startCluster = (long)startCluster;
-            _contiguous = contiguous;
+            _startCluster = (long)dataDescriptor.FirstCluster;
+            _contiguous = dataDescriptor.Contiguous;
             _onDisposed = onDisposed;
-            _length = (long?)length;
-            if (contiguous && _length.HasValue)
+            _length = (long?)dataDescriptor.Length;
+            if (_contiguous && _length.HasValue)
                 _lastContiguousCluster = _startCluster + (_length.Value + _clusterReader.BytesPerCluster - 1) / _clusterReader.BytesPerCluster - 1;
 
             _position = 0;
@@ -197,19 +190,27 @@ namespace ExFat.IO
 
                     // allocate new cluster
                     var newCluster = _clusterWriter.AllocateCluster(_currentCluster);
-                    _clusterWriter.SetNextCluster(_currentCluster, newCluster);
+                    // if this is the start cluster, handle differently
+                    if (_startCluster == -1)
+                    {
+                        _startCluster = newCluster;
+                        _contiguous = true;
+                    }
+                    else
+                    {
+                        _clusterWriter.SetNextCluster(_currentCluster, newCluster);
+                        // from contiguous to sparse mode, make sure all clusters are linked
+                        if (_contiguous && newCluster != _currentCluster + 1)
+                        {
+                            _contiguous = false;
+                            for (int clusterIndex = 1; clusterIndex < CurrentClusterIndexFromPosition; clusterIndex++)
+                                _clusterWriter.SetNextCluster(_startCluster + clusterIndex - 1, _startCluster + clusterIndex);
+                        }
+                    }
                     _clusterWriter.SetNextCluster(newCluster, -1);
 
-                    // from contiguous to sparse mode, make sure all clusters are linked
-                    if (_contiguous && newCluster != _currentCluster + 1)
-                    {
-                        _contiguous = false;
-                        for (int clusterIndex = 1; clusterIndex < CurrentClusterIndexFromPosition; clusterIndex++)
-                            _clusterWriter.SetNextCluster(_startCluster + clusterIndex - 1, _startCluster + clusterIndex);
-                    }
-
                     _currentCluster = newCluster;
-                    _currentClusterDirty = true;
+                    //_currentClusterDirty = true;
                     // give something clean
                     Array.Clear(_currentClusterBuffer, 0, _currentClusterBuffer.Length);
                     _currentClusterDataIndex = CurrentClusterIndexFromPosition;

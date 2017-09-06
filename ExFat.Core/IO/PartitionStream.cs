@@ -15,13 +15,5 @@ namespace ExFat.IO
         /// The cluster position.
         /// </value>
         public abstract long ClusterPosition { get; }
-
-        /// <summary>
-        /// Gets the offset in current cluster.
-        /// </summary>
-        /// <value>
-        /// The cluster offset.
-        /// </value>
-        public abstract int ClusterOffset { get; }
     }
 }

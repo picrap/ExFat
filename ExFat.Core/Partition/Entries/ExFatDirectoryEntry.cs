@@ -59,6 +59,17 @@ namespace ExFat.Partition.Entries
         }
 
         /// <summary>
+        /// Sets the position (updated when writing).
+        /// </summary>
+        /// <param name="position">The position.</param>
+        /// <param name="cluster">The cluster.</param>
+        public void SetPosition(long position, long cluster)
+        {
+            Position = position;
+            Cluster = cluster;
+        }
+
+        /// <summary>
         /// Creates a <see cref="ExFatDirectoryEntry" /> given a buffer.
         /// </summary>
         /// <param name="buffer">The buffer.</param>
@@ -79,7 +90,7 @@ namespace ExFat.Partition.Entries
 
         private static ExFatDirectoryEntry Create(Buffer buffer)
         {
-            switch ((ExFatDirectoryEntryType) (buffer[0] & (byte) ~ExFatDirectoryEntryType.InUse))
+            switch ((ExFatDirectoryEntryType)(buffer[0] & (byte)~ExFatDirectoryEntryType.InUse))
             {
                 case 0:
                     return null;

@@ -7,13 +7,14 @@ namespace ExFat.DiscUtils.Tests
     using System;
     using System.IO;
     using System.Linq;
+    using IO;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Partition;
     using Partition.Entries;
 
     [TestClass]
     [TestCategory("Partition")]
-    public class StreamTests
+    public class ReadTests
     {
         internal static void ReadFile(string fileName, Func<ulong, ulong> getValueAtOffset, ulong? overrideLength = null, bool forward = true, bool forceSeek = false)
         {
@@ -32,10 +33,10 @@ namespace ExFat.DiscUtils.Tests
                 var fileEntry = rootDirectory.GetMetaEntries().Single(e => e.ExtensionsFileName == fileName);
                 var length = overrideLength ?? fileEntry.SecondaryStreamExtension.DataLength.Value;
                 var contiguous = fileEntry.SecondaryStreamExtension.GeneralSecondaryFlags.Value.HasAny(ExFatGeneralSecondaryFlags.NoFatChain);
-                using (var stream = partition.OpenClusterStream(fileEntry.SecondaryStreamExtension.FirstCluster.Value, contiguous, FileAccess.Read, length))
+                using (var stream = partition.OpenDataStream(new DataDescriptor(fileEntry.SecondaryStreamExtension.FirstCluster.Value, contiguous, length), FileAccess.Read))
                 {
                     var vb = new byte[sizeof(ulong)];
-                    var range = Enumerable.Range(0, (int) (length / sizeof(ulong))).Select(r => r * sizeof(ulong));
+                    var range = Enumerable.Range(0, (int)(length / sizeof(ulong))).Select(r => r * sizeof(ulong));
                     if (!forward)
                     {
                         range = range.Reverse();
@@ -47,7 +48,7 @@ namespace ExFat.DiscUtils.Tests
                             stream.Seek(offset, SeekOrigin.Begin);
                         stream.Read(vb, 0, vb.Length);
                         var v = LittleEndian.ToUInt64(vb);
-                        Assert.AreEqual(v, getValueAtOffset((ulong) offset));
+                        Assert.AreEqual(v, getValueAtOffset((ulong)offset));
                     }
                     if (forward)
                         Assert.AreEqual(0, stream.Read(vb, 0, vb.Length));

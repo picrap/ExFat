@@ -42,18 +42,21 @@ namespace ExFat.Partition
         /// <returns></returns>
         public IEnumerable<ExFatDirectoryEntry> GetEntries()
         {
-            if (_directoryStream.CanSeek)
-                _directoryStream.Seek(0, SeekOrigin.Begin);
-            for (var offset = 0L;; offset += 32)
+            lock (_directoryStream)
             {
-                var entryBytes = new byte[32];
-                // cluster offset before reading data, since it's the start
-                var clusterPosition = _directoryStream.ClusterPosition;
-                if (_directoryStream.Read(entryBytes, 0, entryBytes.Length) != 32)
-                    break;
-                var directoryEntry = ExFatDirectoryEntry.Create(new Buffer(entryBytes), offset, clusterPosition);
-                if (directoryEntry != null)
-                    yield return directoryEntry;
+                if (_directoryStream.CanSeek)
+                    _directoryStream.Seek(0, SeekOrigin.Begin);
+                for (var offset = 0L; ; offset += 32)
+                {
+                    var entryBytes = new byte[32];
+                    // cluster offset before reading data, since it's the start
+                    var clusterPosition = _directoryStream.ClusterPosition;
+                    if (_directoryStream.Read(entryBytes, 0, entryBytes.Length) != 32)
+                        break;
+                    var directoryEntry = ExFatDirectoryEntry.Create(new Buffer(entryBytes), offset, clusterPosition);
+                    if (directoryEntry != null)
+                        yield return directoryEntry;
+                }
             }
         }
 
@@ -83,16 +86,80 @@ namespace ExFat.Partition
                 yield return new ExFatMetaDirectoryEntry(entriesStack);
         }
 
-        public void UpdateEntry(ExFatDirectoryEntry entry)
+        /// <summary>
+        /// Finds the available slot.
+        /// </summary>
+        /// <param name="entriesCount">The entries count.</param>
+        /// <returns></returns>
+        private long FindAvailableSlot(int entriesCount)
         {
-            _directoryStream.Seek(entry.Position, SeekOrigin.Begin);
-            entry.Write(_directoryStream);
+            lock (_directoryStream)
+            {
+                if (!_directoryStream.CanSeek)
+                    throw new InvalidOperationException();
+
+                long availableSlot = -1;
+                int availableCount = 0;
+                _directoryStream.Seek(0, SeekOrigin.Begin);
+                for (var offset = 0L; ; offset += 32)
+                {
+                    var typeByte = _directoryStream.ReadByte();
+                    // when we reach the end, we can append from here
+                    if (typeByte == -1)
+                    {
+                        if (availableSlot == -1)
+                            availableSlot = offset;
+                        return availableSlot;
+                    }
+
+                    var type = (ExFatDirectoryEntryType)typeByte;
+                    if (type.HasAny(ExFatDirectoryEntryType.InUse))
+                    {
+                        availableSlot = -1;
+                    }
+                    else
+                    {
+                        if (availableSlot == -1)
+                        {
+                            availableSlot = offset;
+                            availableCount = 0;
+                        }
+                        if (++availableCount == entriesCount)
+                            return availableSlot;
+                    }
+                }
+            }
         }
 
-        public void UpdateEntry(ExFatMetaDirectoryEntry entry)
+        /// <summary>
+        /// Adds the entry to directory.
+        /// </summary>
+        /// <param name="metaEntry">The meta entry.</param>
+        public void AddEntry(ExFatMetaDirectoryEntry metaEntry)
         {
-            _directoryStream.Seek(entry.Primary.Position, SeekOrigin.Begin);
-            entry.Write(_directoryStream);
+            lock (_directoryStream)
+            {
+                var availableSlot = FindAvailableSlot(metaEntry.Entries.Count);
+                _directoryStream.Seek(availableSlot, SeekOrigin.Begin);
+                foreach (var entry in metaEntry.Entries)
+                    entry.EntryType.Value |= ExFatDirectoryEntryType.InUse;
+                metaEntry.Write(_directoryStream);
+            }
+        }
+
+        /// <summary>
+        /// Deletes the entry.
+        /// </summary>
+        /// <param name="metaEntry">The meta entry.</param>
+        public void DeleteEntry(ExFatMetaDirectoryEntry metaEntry)
+        {
+            lock (_directoryStream)
+            {
+                _directoryStream.Seek(metaEntry.Primary.Position, SeekOrigin.Begin);
+                foreach (var entry in metaEntry.Entries)
+                    entry.EntryType.Value &= ~ExFatDirectoryEntryType.InUse;
+                metaEntry.Write(_directoryStream);
+            }
         }
     }
 }

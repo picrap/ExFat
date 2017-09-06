@@ -77,12 +77,23 @@ namespace ExFat.Partition.Entries
         /// <summary>
         /// Writes entries to stream.
         /// </summary>
-        /// <param name="stream">The stream.</param>
-        public void Write(Stream stream)
+        /// <param name="partitionStream">The stream.</param>
+        /// <param name="simpleStream">The plain stream.</param>
+        internal void Write(PartitionStream partitionStream, Stream simpleStream)
         {
             Primary.Update(Secondaries.ToList());
             foreach (var entry in Entries)
-                entry.Write(stream);
+            {
+                if (partitionStream != null)
+                    entry.SetPosition(partitionStream.Position, partitionStream.ClusterPosition);
+                entry.Write(partitionStream ?? simpleStream);
+            }
         }
+
+        /// <summary>
+        /// Writes the entries to stream.
+        /// </summary>
+        /// <param name="partitionStream">The partition stream.</param>
+        public void Write(PartitionStream partitionStream) => Write(partitionStream, null);
     }
 }

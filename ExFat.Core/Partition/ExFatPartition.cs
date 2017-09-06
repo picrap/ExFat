@@ -152,7 +152,7 @@ namespace ExFat.Partition
             lock (_streamLock)
             {
                 var cluster = previousCluster + 1;
-                if (allocationBitmap[cluster])
+                if (previousCluster < 0 || allocationBitmap[cluster])
                     cluster = allocationBitmap.FindUnallocated();
                 allocationBitmap[cluster] = true;
                 return cluster;
@@ -229,18 +229,16 @@ namespace ExFat.Partition
         /// <summary>
         /// Opens a clusters stream.
         /// </summary>
-        /// <param name="firstCluster">The first cluster.</param>
-        /// <param name="contiguous">if set to <c>true</c> all stream clusters are contiguous (allowing a faster seek).</param>
+        /// <param name="dataDescriptor">The data descriptor.</param>
         /// <param name="fileAccess">The file access.</param>
-        /// <param name="length">The length (optional for non-contiguous cluster streams).</param>
         /// <param name="onDisposed">Method invoked when stream is disposed.</param>
         /// <returns></returns>
-        public ClusterStream OpenClusterStream(ulong firstCluster, bool contiguous, FileAccess fileAccess, ulong? length = null, Action<DataDescriptor> onDisposed = null)
+        private ClusterStream OpenClusterStream(DataDescriptor dataDescriptor, FileAccess fileAccess, Action<DataDescriptor> onDisposed = null)
         {
             if (fileAccess == FileAccess.Read)
-                return new ClusterStream(this, null, firstCluster, contiguous, length, onDisposed);
+                return new ClusterStream(this, null, dataDescriptor, onDisposed);
             // write and read/write will be the same
-            return new ClusterStream(this, this, firstCluster, contiguous, length, onDisposed);
+            return new ClusterStream(this, this, dataDescriptor, onDisposed);
         }
 
         /// <summary>
@@ -254,7 +252,17 @@ namespace ExFat.Partition
         {
             if (dataDescriptor == null)
                 return null;
-            return OpenClusterStream(dataDescriptor.FirstCluster, dataDescriptor.Contiguous, fileAccess, dataDescriptor.Length, onDisposed);
+            return OpenClusterStream(dataDescriptor, fileAccess, onDisposed);
+        }
+
+        /// <summary>
+        /// Creates the data stream.
+        /// </summary>
+        /// <param name="onDisposed">The on disposed.</param>
+        /// <returns></returns>
+        public ClusterStream CreateDataStream(Action<DataDescriptor> onDisposed = null)
+        {
+            return OpenClusterStream(new DataDescriptor(~0ul, true, 0), FileAccess.ReadWrite, onDisposed);
         }
 
         /// <summary>
@@ -316,7 +324,7 @@ namespace ExFat.Partition
             {
                 var offset = entry.Primary.Position % BytesPerCluster;
                 SeekCluster(entry.Primary.Cluster, offset);
-                entry.Write(_partitionStream);
+                entry.Write(null, _partitionStream);
             }
         }
     }

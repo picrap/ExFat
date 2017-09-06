@@ -64,7 +64,7 @@ namespace ExFat.DiscUtils.Tests
             {
                 AppendTest(partition, DiskContent.LongSparseFile1Name, offset => offset / 7);
                 // now check nothing was overwritten
-                StreamTests.ReadFile(partition, DiskContent.LongSparseFile2Name, DiskContent.GetLongSparseFile2NameOffsetValue);
+                ReadTests.ReadFile(partition, DiskContent.LongSparseFile2Name, DiskContent.GetLongSparseFile2NameOffsetValue);
             }
         }
 
@@ -78,8 +78,29 @@ namespace ExFat.DiscUtils.Tests
             {
                 AppendTest(partition, DiskContent.LongContiguousFileName, offset => offset / 7);
                 // now check nothing was overwritten
-                StreamTests.ReadFile(partition, DiskContent.LongSparseFile1Name, DiskContent.GetLongSparseFile1NameOffsetValue);
-                StreamTests.ReadFile(partition, DiskContent.LongSparseFile2Name, DiskContent.GetLongSparseFile2NameOffsetValue);
+                ReadTests.ReadFile(partition, DiskContent.LongSparseFile1Name, DiskContent.GetLongSparseFile1NameOffsetValue);
+                ReadTests.ReadFile(partition, DiskContent.LongSparseFile2Name, DiskContent.GetLongSparseFile2NameOffsetValue);
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("Append")]
+        [TestCategory("Write")]
+        public void CreateStreamTest()
+        {
+            using (var testEnvironment = new TestEnvironment(true))
+            using (var partition = new ExFatPartition(testEnvironment.PartitionStream))
+            {
+                DataDescriptor dataDescriptor = null;
+                using (var stream = partition.CreateDataStream(d => dataDescriptor = d))
+                {
+                    stream.WriteByte(1);
+                }
+                using (var s2 = partition.OpenDataStream(dataDescriptor, FileAccess.Read))
+                {
+                    Assert.AreEqual(1, s2.ReadByte());
+                    Assert.AreEqual(-1, s2.ReadByte());
+                }
             }
         }
     }
