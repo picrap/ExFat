@@ -15,7 +15,7 @@ Current features:
 - [X] Writing streams
 - [X] Writing files
 - [X] Creating directories
-- [ ] Creating files
+- [X] Creating files
 - [ ] Deleting files/directories
 - [ ] Partition formatting
 - [ ] Working with [DiscUtils](https://github.com/DiscUtils/DiscUtils)

@@ -16,7 +16,7 @@ namespace ExFat.Filesystem
     {
         private readonly ExFatFilesystemFlags _flags;
         private readonly ExFatPartition _partition;
-        private object _lock = new object();
+        private readonly object _lock = new object();
 
         private ExFatFilesystemEntry _rootDirectory;
 
@@ -79,18 +79,20 @@ namespace ExFat.Filesystem
                 throw new InvalidOperationException();
 
             // namehash is fun, but what efficiency do we gain?
-            var nameHash = _partition.ComputeNameHash(name);
             using (var directory = OpenDirectory(directoryEntry))
-            {
-                foreach (var metaEntry in directory.GetMetaEntries())
-                {
-                    var streamExtension = metaEntry.SecondaryStreamExtension;
-                    // keep only file entries
-                    if (streamExtension != null && streamExtension.NameHash.Value == nameHash && metaEntry.ExtensionsFileName == name)
-                        return new ExFatFilesystemEntry(metaEntry);
-                }
-            }
+                return FindChild(directory, name);
+        }
 
+        private ExFatFilesystemEntry FindChild(ExFatDirectory directory, string name)
+        {
+            var nameHash = _partition.ComputeNameHash(name);
+            foreach (var metaEntry in directory.GetMetaEntries())
+            {
+                var streamExtension = metaEntry.SecondaryStreamExtension;
+                // keep only file entries
+                if (streamExtension != null && streamExtension.NameHash.Value == nameHash && metaEntry.ExtensionsFileName == name)
+                    return new ExFatFilesystemEntry(metaEntry);
+            }
             return null;
         }
 
@@ -101,12 +103,37 @@ namespace ExFat.Filesystem
         /// <param name="access">The access.</param>
         /// <returns></returns>
         /// <exception cref="InvalidOperationException"></exception>
-        public Stream Open(ExFatFilesystemEntry fileEntry, FileAccess access)
+        public Stream OpenFile(ExFatFilesystemEntry fileEntry, FileAccess access)
         {
             if (fileEntry.IsDirectory)
                 throw new InvalidOperationException();
 
             return OpenData(fileEntry, access);
+        }
+
+        /// <summary>
+        /// Creates the file.
+        /// </summary>
+        /// <param name="parentDirectory">The parent directory.</param>
+        /// <param name="fileName">Name of the file.</param>
+        /// <returns></returns>
+        public Stream CreateFile(ExFatFilesystemEntry parentDirectory, string fileName)
+        {
+            if (!parentDirectory.IsDirectory)
+                throw new InvalidOperationException();
+
+            using (var directory = OpenDirectory(parentDirectory))
+            {
+                var existingFile = FindChild(directory, fileName);
+                if (existingFile != null)
+                {
+                    throw new NotImplementedException();
+                }
+
+                var fileEntry = CreateEntry(fileName, FileAttributes.Archive);
+                directory.AddEntry(fileEntry.Entry);
+                return OpenData(fileEntry, FileAccess.ReadWrite);
+            }
         }
 
         private PartitionStream OpenData(ExFatFilesystemEntry fileEntry, FileAccess access)
@@ -133,6 +160,7 @@ namespace ExFat.Filesystem
             if (descriptor.HasAny(FileAccess.Write))
             {
                 now = now ?? DateTimeOffset.Now;
+                file.FileAttributes.Value |= ExFatFileAttributes.Archive;
                 file.LastWriteDateTimeOffset.Value = now.Value;
                 var stream = entry.Entry.SecondaryStreamExtension;
                 if (dataDescriptor.Contiguous)
@@ -195,35 +223,37 @@ namespace ExFat.Filesystem
         /// <summary>
         /// Creates a directory or returns the existing.
         /// </summary>
-        /// <param name="parentDirectory">The parent directory.</param>
+        /// <param name="parentDirectoryEntry">The parent directory.</param>
         /// <param name="directoryName">Name of the directory.</param>
         /// <returns></returns>
         /// <exception cref="InvalidOperationException"></exception>
         /// <exception cref="IOException"></exception>
-        public ExFatFilesystemEntry CreateDirectory(ExFatFilesystemEntry parentDirectory, string directoryName)
+        public ExFatFilesystemEntry CreateDirectory(ExFatFilesystemEntry parentDirectoryEntry, string directoryName)
         {
-            if (!parentDirectory.IsDirectory)
+            if (!parentDirectoryEntry.IsDirectory)
                 throw new InvalidOperationException();
 
             lock (_lock)
             {
-                var existingEntry = FindChild(parentDirectory, directoryName);
-                if (existingEntry != null)
+                using (var parentDirectory = OpenDirectory(parentDirectoryEntry))
                 {
-                    if (!existingEntry.IsDirectory)
-                        throw new IOException();
-                    return existingEntry;
-                }
+                    var existingEntry = FindChild(parentDirectory, directoryName);
+                    if (existingEntry != null)
+                    {
+                        if (!existingEntry.IsDirectory)
+                            throw new IOException();
+                        return existingEntry;
+                    }
 
-                var directoryEntry = CreateEntry(directoryName, FileAttributes.Directory);
-                using (var directory = OpenDirectory(parentDirectory))
-                    directory.AddEntry(directoryEntry.Entry);
-                using (var directoryStream = OpenData(directoryEntry, FileAccess.ReadWrite))
-                {
-                    var emptyEntry = new byte[32];
-                    directoryStream.Write(emptyEntry, 0, emptyEntry.Length);
+                    var directoryEntry = CreateEntry(directoryName, FileAttributes.Directory);
+                    parentDirectory.AddEntry(directoryEntry.Entry);
+                    using (var directoryStream = OpenData(directoryEntry, FileAccess.ReadWrite))
+                    {
+                        var emptyEntry = new byte[32];
+                        directoryStream.Write(emptyEntry, 0, emptyEntry.Length);
+                    }
+                    return directoryEntry;
                 }
-                return directoryEntry;
             }
         }
     }
