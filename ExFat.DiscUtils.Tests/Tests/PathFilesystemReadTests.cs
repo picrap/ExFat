@@ -56,5 +56,17 @@ namespace ExFat.DiscUtils.Tests
                 Assert.IsTrue(entries.Contains($@"\{DiskContent.LongFolderFileName}"));
             }
         }
+
+        [TestMethod]
+        [TestCategory("Read")]
+        public void ReadSubFolderFilesTest()
+        {
+            using (var testEnvironment = new TestEnvironment())
+            using (var filesystem = new ExFatPathFilesystem(testEnvironment.PartitionStream))
+            {
+                var entries = filesystem.EnumerateFiles(DiskContent.LongFolderFileName).ToArray();
+                Assert.AreEqual(DiskContent.LongFolderEntriesCount, entries.Length);
+            }
+        }
     }
 }
