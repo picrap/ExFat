@@ -13,7 +13,6 @@ namespace ExFat.IO
         private readonly IClusterReader _clusterReader;
         private readonly IClusterWriter _clusterWriter;
         private Cluster _startCluster;
-        private readonly Cluster? _lastContiguousCluster; // filled for contiguous files
         private bool _contiguous;
         private readonly Action<DataDescriptor> _onDisposed;
         private long? _length;
@@ -84,8 +83,6 @@ namespace ExFat.IO
             _contiguous = dataDescriptor.Contiguous;
             _onDisposed = onDisposed;
             _length = (long?)dataDescriptor.Length;
-            if (_contiguous && (_length ?? 0) > 0)
-                _lastContiguousCluster = _startCluster + ((_length.Value + _clusterReader.BytesPerCluster - 1) / _clusterReader.BytesPerCluster - 1);
 
             _position = 0;
             _currentCluster = _startCluster;
@@ -157,9 +154,41 @@ namespace ExFat.IO
             return _position;
         }
 
+        /// <inheritdoc />
+        /// <summary>
+        /// Sets the length of the current stream.
+        /// </summary>
+        /// <param name="value">The desired length of the current stream in bytes.</param>
+        /// <exception cref="T:System.NotImplementedException"></exception>
         public override void SetLength(long value)
         {
-            throw new NotImplementedException();
+            if (!CanWrite || !CanSeek)
+                throw new NotSupportedException();
+
+            // first part: go to end, pushing limits if necessary
+            var cluster = _startCluster;
+            var position = Position;
+            for (int offset = 0; offset < value; offset += _clusterReader.BytesPerCluster)
+            {
+                Seek(offset, SeekOrigin.Begin);
+                // we read the current cluster, which is pointless
+                // however this allocates a new one when necessary
+                GetCurrentCluster(true);
+                cluster = _currentCluster;
+            }
+            _length = value;
+            // second part: trim excess (if any)
+            while (cluster.IsData)
+            {
+                var nextCluster = GetNextCluster(cluster, 1);
+                if (nextCluster.IsData)
+                    _clusterWriter.FreeCluster(nextCluster);
+                _clusterWriter.SetNextCluster(cluster, Cluster.Last);
+                cluster = nextCluster;
+            }
+
+            // adjust position if necessary
+            Seek(position, SeekOrigin.Begin);
         }
 
         /// <summary>
@@ -212,19 +241,19 @@ namespace ExFat.IO
                     _clusterWriter.SetNextCluster(newCluster, Cluster.Last);
 
                     _currentCluster = newCluster;
-                    //_currentClusterDirty = true;
                     // give something clean
                     Array.Clear(_currentClusterBuffer, 0, _currentClusterBuffer.Length);
                     _currentClusterDataIndex = CurrentClusterIndexFromPosition;
+                    _currentClusterDirty = true;
                     return _currentClusterBuffer;
                 }
 
                 // optionnally flushes a pending change
                 FlushCurrentCluster();
 
-                _clusterReader.ReadCluster(currentCluster, _currentClusterBuffer, 0, _currentClusterBuffer.Length);
-                _currentClusterDataIndex = CurrentClusterIndexFromPosition;
                 _currentCluster = currentCluster;
+                _clusterReader.ReadCluster(_currentCluster, _currentClusterBuffer, 0, _currentClusterBuffer.Length);
+                _currentClusterDataIndex = CurrentClusterIndexFromPosition;
             }
 
             return _currentClusterBuffer;
@@ -255,7 +284,8 @@ namespace ExFat.IO
             if (_contiguous)
             {
                 var nextCluster = cluster + clustersCount;
-                if (nextCluster.Value <= _lastContiguousCluster.Value.Value)
+                var lastContiguousCluster = _startCluster + ((_length.Value + _clusterReader.BytesPerCluster - 1) / _clusterReader.BytesPerCluster - 1);
+                if (nextCluster.Value <= lastContiguousCluster.Value)
                     return nextCluster;
                 return Cluster.Last;
             }

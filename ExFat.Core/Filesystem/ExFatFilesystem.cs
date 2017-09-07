@@ -127,7 +127,9 @@ namespace ExFat.Filesystem
                 var existingFile = FindChild(directory, fileName);
                 if (existingFile != null)
                 {
-                    throw new NotImplementedException();
+                    var stream = OpenData(existingFile, FileAccess.ReadWrite);
+                    stream.SetLength(0);
+                    return stream;
                 }
 
                 var fileEntry = CreateEntry(fileName, FileAttributes.Archive);

@@ -32,8 +32,14 @@ namespace ExFat.Partition
         /// <summary>
         /// Allocates a cluster.
         /// </summary>
-        /// <param name="previousCluster">The previous cluster.</param>
+        /// <param name="previousClusterHint">A hint about the previous cluster, this allows to allocate the next one, if available</param>
         /// <returns></returns>
-        Cluster AllocateCluster(Cluster previousCluster);
+        Cluster AllocateCluster(Cluster previousClusterHint);
+
+        /// <summary>
+        /// Frees the cluster.
+        /// </summary>
+        /// <param name="cluster">The cluster.</param>
+        void FreeCluster(Cluster cluster);
     }
 }

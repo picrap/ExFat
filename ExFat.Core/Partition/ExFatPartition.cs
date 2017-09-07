@@ -181,26 +181,39 @@ namespace ExFat.Partition
         /// <summary>
         /// Allocates a cluster.
         /// </summary>
-        /// <param name="previousCluster">The previous cluster.</param>
+        /// <param name="previousClusterHint">A hint about the previous cluster, this allows to allocate the next one, if available</param>
         /// <returns></returns>
-        public Cluster AllocateCluster(Cluster previousCluster)
+        public Cluster AllocateCluster(Cluster previousClusterHint)
         {
             var allocationBitmap = GetAllocationBitmap();
             lock (_streamLock)
             {
                 Cluster cluster;
                 // no data? anything else is good
-                if (!previousCluster.IsData)
+                if (!previousClusterHint.IsData)
                     cluster = allocationBitmap.FindUnallocated();
                 else
                 {
                     // try next
-                    cluster = previousCluster + 1;
+                    cluster = previousClusterHint + 1;
                     if (allocationBitmap[cluster])
                         cluster = allocationBitmap.FindUnallocated();
                 }
                 allocationBitmap[cluster] = true;
                 return cluster;
+            }
+        }
+
+        /// <inheritdoc />
+        /// <summary>
+        /// Frees the cluster.
+        /// </summary>
+        /// <param name="cluster">The cluster.</param>
+        public void FreeCluster(Cluster cluster)
+        {
+            lock (_streamLock)
+            {
+                GetAllocationBitmap()[cluster] = false;
             }
         }
 
@@ -263,7 +276,6 @@ namespace ExFat.Partition
             var upCaseTable = GetUpCaseTable();
             foreach (var c in name)
             {
-                // TODO use Up case table
                 var uc = upCaseTable.ToUpper(c);
                 hash = (UInt16)(hash.RotateRight() + (uc & 0xFF));
                 hash = (UInt16)(hash.RotateRight() + (uc >> 8));

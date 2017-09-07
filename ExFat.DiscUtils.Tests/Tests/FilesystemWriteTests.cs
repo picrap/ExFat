@@ -121,5 +121,51 @@ namespace ExFat.DiscUtils.Tests
                 }
             }
         }
+
+        [TestMethod]
+        [TestCategory("Write")]
+        public void TruncateFileTest()
+        {
+            using (var testEnvironment = new TestEnvironment(true))
+            {
+                using (var filesystem = new ExFatFilesystem(testEnvironment.PartitionStream))
+                {
+                    var f = filesystem.FindChild(filesystem.RootDirectory, DiskContent.LongContiguousFileName);
+                    using (var s = filesystem.OpenFile(f, FileAccess.ReadWrite))
+                    {
+                        s.SetLength(16);
+                        s.Seek(0, SeekOrigin.Begin);
+                        var b = new byte[8];
+                        Assert.AreEqual(8, s.Read(b, 0, b.Length));
+                        Assert.AreEqual(DiskContent.GetLongContiguousFileNameOffsetValue(0), LittleEndian.ToUInt64(b));
+                        Assert.AreEqual(8, s.Read(b, 0, b.Length));
+                        Assert.AreEqual(DiskContent.GetLongContiguousFileNameOffsetValue(8), LittleEndian.ToUInt64(b));
+                        Assert.AreEqual(0, s.Read(b, 0, b.Length));
+                    }
+                }
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("Write")]
+        public void LengthenFileTest()
+        {
+            using (var testEnvironment = new TestEnvironment(true))
+            {
+                using (var filesystem = new ExFatFilesystem(testEnvironment.PartitionStream))
+                {
+                    using (var s = filesystem.CreateFile(filesystem.RootDirectory, "newlong"))
+                    {
+                        var length = 200000;
+                        s.SetLength(length);
+                        s.Seek(-1, SeekOrigin.End);
+                        s.WriteByte(12);
+                        Assert.AreEqual(length, s.Length);
+                        s.WriteByte(34);
+                        Assert.AreEqual(length + 1, s.Length);
+                    }
+                }
+            }
+        }
     }
 }
