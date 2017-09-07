@@ -88,6 +88,21 @@ namespace ExFat.Filesystem
             return directory;
         }
 
+        private ExFatFilesystemEntry GetSafeEntry(string path)
+        {
+            var entry = GetEntry(path);
+            if (entry == null)
+                throw new FileNotFoundException();
+            return entry;
+        }
+
+        private void UpdateSafeEntry(string path, Action<ExFatFilesystemEntry> update)
+        {
+            var entry = GetSafeEntry(path);
+            update(entry);
+            _entryFilesystem.Update(entry);
+        }
+
         public IEnumerable<string> EnumerateFiles(string directoryPath)
         {
             directoryPath = CleanupPath(directoryPath);
@@ -108,5 +123,19 @@ namespace ExFat.Filesystem
             var directory = GetSafeDirectory(directoryPath);
             return _entryFilesystem.EnumerateFileSystemEntries(directory).Select(e => GetPath(directoryPath, e));
         }
+
+        public DateTime GetCreationTime(string path) => GetSafeEntry(path).CreationTime;
+        public DateTime GetCreationTimeUtc(string path) => GetSafeEntry(path).CreationTimeUtc;
+        public DateTime GetLastWriteTime(string path) => GetSafeEntry(path).LastWriteTime;
+        public DateTime GetLastWriteTimeUtc(string path) => GetSafeEntry(path).LastWriteTimeUtc;
+        public DateTime GetLastAccessTime(string path) => GetSafeEntry(path).LastAccessTime;
+        public DateTime GetLastAccessTimeUtc(string path) => GetSafeEntry(path).LastAccessTimeUtc;
+
+        public void SetCreationTime(string path, DateTime creationTime) => UpdateSafeEntry(path, e => e.CreationDateTimeOffset = creationTime.ToLocalTime());
+        public void SetCreationTimeUtc(string path, DateTime creationTime) => UpdateSafeEntry(path, e => e.CreationDateTimeOffset = creationTime.ToUniversalTime());
+        public void SetLastWriteTime(string path, DateTime lastWriteTime) => UpdateSafeEntry(path, e => e.LastWriteDateTimeOffset = lastWriteTime.ToLocalTime());
+        public void SetLastWriteTimeUtc(string path, DateTime lastWriteTime) => UpdateSafeEntry(path, e => e.LastWriteDateTimeOffset = lastWriteTime.ToUniversalTime());
+        public void SetLastAccessTime(string path, DateTime lastAccessTime) => UpdateSafeEntry(path, e => e.LastAccessDateTimeOffset = lastAccessTime.ToLocalTime());
+        public void SetLastAccessTimeUtc(string path, DateTime lastAccessTime) => UpdateSafeEntry(path, e => e.LastAccessDateTimeOffset = lastAccessTime.ToUniversalTime());
     }
 }

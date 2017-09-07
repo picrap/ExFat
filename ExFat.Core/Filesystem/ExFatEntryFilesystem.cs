@@ -281,5 +281,10 @@ namespace ExFat.Filesystem
                 e.EntryType.Value &= ~ExFatDirectoryEntryType.InUse;
             _partition.UpdateEntry(entry.MetaEntry);
         }
+
+        public void Update(ExFatFilesystemEntry entry)
+        {
+            _partition.UpdateEntry(entry.MetaEntry);
+        }
     }
 }

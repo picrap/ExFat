@@ -80,6 +80,18 @@ namespace ExFat.Filesystem
         public DateTime CreationTimeUtc => FileEntry.CreationDateTimeOffset.Value.UtcDateTime;
 
         /// <summary>
+        /// Gets or sets the creation date time offset.
+        /// </summary>
+        /// <value>
+        /// The creation date time offset.
+        /// </value>
+        public DateTimeOffset CreationDateTimeOffset
+        {
+            get { return FileEntry.CreationDateTimeOffset.Value; }
+            set { FileEntry.CreationDateTimeOffset.Value = value; }
+        }
+
+        /// <summary>
         /// Gets the last write time.
         /// </summary>
         /// <value>
@@ -96,6 +108,17 @@ namespace ExFat.Filesystem
         public DateTime LastWriteTimeUtc => FileEntry.LastWriteDateTimeOffset.Value.UtcDateTime;
 
         /// <summary>
+        /// Gets or sets the last write date time offset.
+        /// </summary>
+        /// <value>
+        /// </value>
+        public DateTimeOffset LastWriteDateTimeOffset
+        {
+            get { return FileEntry.LastWriteDateTimeOffset.Value; }
+            set { FileEntry.LastWriteDateTimeOffset.Value = value; }
+        }
+
+        /// <summary>
         /// Gets the last access time.
         /// </summary>
         /// <value>
@@ -110,6 +133,17 @@ namespace ExFat.Filesystem
         /// The last access time UTC.
         /// </value>
         public DateTime LastAccessTimeUtc => FileEntry.LastAccessDateTimeOffset.Value.UtcDateTime;
+
+        /// <summary>
+        /// Gets or sets the last write date time offset.
+        /// </summary>
+        /// <value>
+        /// </value>
+        public DateTimeOffset LastAccessDateTimeOffset
+        {
+            get { return FileEntry.LastAccessDateTimeOffset.Value; }
+            set { FileEntry.LastAccessDateTimeOffset.Value = value; }
+        }
 
         /// <summary>
         /// Gets the data descriptor.

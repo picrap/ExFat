@@ -47,6 +47,8 @@
       <Link>Properties\ProductInfo.cs</Link>
     </Compile>
     <Compile Include="ExFatFileSystem.cs" />
+    <Compile Include="ExFatFilesystemFactory.cs" />
+    <Compile Include="ExFatSetupHelper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

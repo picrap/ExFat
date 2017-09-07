@@ -6,6 +6,7 @@ namespace ExFat.DiscUtils
 {
     using System;
     using System.IO;
+    using System.Linq;
     using Filesystem;
     using global::DiscUtils;
     using global::DiscUtils.Streams;
@@ -13,11 +14,13 @@ namespace ExFat.DiscUtils
 
     public class ExFatFileSystem : DiscFileSystem
     {
+        public const string Name = "Microsoft exFAT";
+
         private readonly Stream _partitionStream;
         private ExFatBootSector _bootSector;
-        private ExFatPathFilesystem _filesystem;
+        private readonly ExFatPathFilesystem _filesystem;
 
-        public override string FriendlyName => "Microsoft exFAT";
+        public override string FriendlyName => Name;
 
         /// <inheritdoc />
         /// <summary>
@@ -29,6 +32,12 @@ namespace ExFat.DiscUtils
         public override long UsedSpace => throw new NotImplementedException();
         public override long AvailableSpace => throw new NotImplementedException();
 
+        /// <inheritdoc />
+        /// <summary>
+        /// Initializes a new instance of the <see cref="T:ExFat.DiscUtils.ExFatFileSystem" /> class.
+        /// </summary>
+        /// <param name="partitionStream">The partition stream.</param>
+        /// <exception cref="T:System.InvalidOperationException">Given stream is not exFAT volume</exception>
         public ExFatFileSystem(Stream partitionStream)
         {
             _filesystem = new ExFatPathFilesystem(partitionStream);
@@ -38,16 +47,25 @@ namespace ExFat.DiscUtils
             _partitionStream = partitionStream;
         }
 
+        /// <inheritdoc />
+        /// <summary>
+        /// Disposes of this instance.
+        /// </summary>
+        /// <param name="disposing">The value <c>true</c> if Disposing.</param>
         protected override void Dispose(bool disposing)
         {
             base.Dispose(disposing);
-            if(disposing)
+            if (disposing)
                 _filesystem.Dispose();
         }
 
+        /// <summary>
+        /// Detects the specified partition stream.
+        /// </summary>
+        /// <param name="partitionStream">The partition stream.</param>
+        /// <returns></returns>
         public static bool Detect(Stream partitionStream)
         {
-            var fs = new ExFatPartition(partitionStream);
             var bootSector = ExFatPartition.ReadBootSector(partitionStream);
             return bootSector.IsValid;
         }
@@ -98,8 +116,7 @@ namespace ExFat.DiscUtils
 
         public override string[] GetFileSystemEntries(string path)
         {
-            // TODO
-            throw new NotImplementedException();
+            return _filesystem.EnumerateEntries(path).ToArray();
         }
 
         public override string[] GetFileSystemEntries(string path, string searchPattern)
@@ -139,35 +156,32 @@ namespace ExFat.DiscUtils
 
         public override DateTime GetCreationTimeUtc(string path)
         {
-            throw new NotImplementedException();
+            return _filesystem.GetCreationTimeUtc(path);
         }
 
         public override void SetCreationTimeUtc(string path, DateTime newTime)
         {
-            // TODO
-            throw new NotImplementedException();
+            _filesystem.SetCreationTimeUtc(path, newTime);
         }
 
         public override DateTime GetLastAccessTimeUtc(string path)
         {
-            throw new NotImplementedException();
+            return _filesystem.GetLastAccessTimeUtc(path);
         }
 
         public override void SetLastAccessTimeUtc(string path, DateTime newTime)
         {
-            // TODO
-            throw new NotImplementedException();
+            _filesystem.SetLastAccessTimeUtc(path, newTime);
         }
 
         public override DateTime GetLastWriteTimeUtc(string path)
         {
-            throw new NotImplementedException();
+            return _filesystem.GetLastWriteTimeUtc(path);
         }
 
         public override void SetLastWriteTimeUtc(string path, DateTime newTime)
         {
-            // TODO
-            throw new NotImplementedException();
+            _filesystem.SetLastWriteTimeUtc(path, newTime);
         }
 
         public override long GetFileLength(string path)
