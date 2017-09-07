@@ -25,8 +25,7 @@ namespace ExFat.DiscUtils.Tests
             }
         }
 
-        internal static void ReadFile(ExFatPartition partition, string fileName, Func<ulong, ulong> getValueAtOffset, ulong? overrideLength = null, bool forward = true,
-            bool forceSeek = false)
+        internal static void ReadFile(ExFatPartition partition, string fileName, Func<ulong, ulong> getValueAtOffset, ulong? overrideLength = null, bool forward = true, bool forceSeek = false)
         {
             using (var rootDirectory = partition.OpenDirectory(partition.RootDirectoryDataDescriptor))
             {

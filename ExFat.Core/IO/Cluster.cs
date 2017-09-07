@@ -87,6 +87,13 @@ namespace ExFat.IO
             return new Cluster(cluster.Value + offset);
         }
 
+        public static Cluster operator -(Cluster cluster, long offset)
+        {
+            if (!cluster.IsData)
+                throw new InvalidOperationException();
+            return new Cluster(cluster.Value - offset);
+        }
+
         public static bool operator ==(Cluster a, Cluster b)
         {
             return a.Value == b.Value;

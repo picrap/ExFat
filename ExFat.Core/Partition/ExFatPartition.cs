@@ -53,8 +53,8 @@ namespace ExFat.Partition
         /// </summary>
         public void Flush()
         {
-            FlushFatPage();
             FlushAllocationBitmap();
+            FlushFatPage();
             // because .Flush() is not implemented in DiscUtils :)
             try
             {

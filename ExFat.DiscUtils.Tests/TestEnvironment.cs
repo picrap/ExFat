@@ -30,7 +30,7 @@ namespace ExFat.DiscUtils
                 if (allowDebugKeep)
                     fileOptions &= ~FileOptions.DeleteOnClose;
 #endif
-                var vhdxStream = File.Create(_vhdxPath, 1 << 20, fileOptions);
+                var vhdxStream = allowDebugKeep ? (Stream)File.Create(_vhdxPath, 1 << 20, fileOptions) : new MemoryStream();
                 gzipStream.CopyTo(vhdxStream);
 
                 _disk = new Disk(vhdxStream, Ownership.Dispose);
