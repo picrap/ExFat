@@ -19,6 +19,7 @@ Current features:
 - [X] Deleting files/directories
 - [X] Changing file length (`Stream.SetLength`)
 - [ ] Using paths instead of objets (less efficient but more convenient)
+- [ ] Handle second allocation bitmap
 - [ ] Check for thread safety
 - [ ] Partition formatting
 - [ ] Working with [DiscUtils](https://github.com/DiscUtils/DiscUtils)
