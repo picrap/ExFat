@@ -7,12 +7,11 @@ namespace ExFat.Filesystem
     using System;
     using System.Collections.Generic;
     using System.IO;
-    using Buffers;
     using IO;
     using Partition;
     using Partition.Entries;
 
-    public class ExFatFilesystem : IDisposable
+    public class ExFatEntryFilesystem : IDisposable
     {
         private readonly ExFatFilesystemFlags _flags;
         private readonly ExFatPartition _partition;
@@ -36,10 +35,26 @@ namespace ExFat.Filesystem
             }
         }
 
-        public ExFatFilesystem(Stream partitionStream, ExFatFilesystemFlags flags = ExFatFilesystemFlags.Default)
+        /// <inheritdoc />
+        /// <summary>
+        /// Initializes a new instance of the <see cref="T:ExFat.Filesystem.ExFatEntryFilesystem" /> class.
+        /// </summary>
+        /// <param name="partitionStream">The partition stream.</param>
+        /// <param name="flags">The flags.</param>
+        public ExFatEntryFilesystem(Stream partitionStream, ExFatFilesystemFlags flags = ExFatFilesystemFlags.Default)
+            : this(new ExFatPartition(partitionStream), flags)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ExFatEntryFilesystem"/> class.
+        /// </summary>
+        /// <param name="partition">The partition.</param>
+        /// <param name="flags">The flags.</param>
+        public ExFatEntryFilesystem(ExFatPartition partition, ExFatFilesystemFlags flags = ExFatFilesystemFlags.Default)
         {
             _flags = flags;
-            _partition = new ExFatPartition(partitionStream);
+            _partition = partition;
         }
 
         public void Dispose()

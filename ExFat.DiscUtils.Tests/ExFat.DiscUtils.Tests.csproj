@@ -47,9 +47,10 @@
     <Compile Include="Tests\ClustersTests.cs" />
     <Compile Include="DiskContent.cs" />
     <Compile Include="Tests\DateTests.cs" />
-    <Compile Include="Tests\FilesystemReadTests.cs" />
-    <Compile Include="Tests\FilesystemStructureTests.cs" />
-    <Compile Include="Tests\FilesystemWriteTests.cs" />
+    <Compile Include="Tests\EntryFilesystemReadTests.cs" />
+    <Compile Include="Tests\EntryFilesystemStructureTests.cs" />
+    <Compile Include="Tests\EntryFilesystemWriteTests.cs" />
+    <Compile Include="Tests\PathFilesystemReadTests.cs" />
     <Compile Include="Tests\ReadTests.cs" />
     <Compile Include="Tests\StructureTests.cs" />
     <Compile Include="TestEnvironment.cs" />

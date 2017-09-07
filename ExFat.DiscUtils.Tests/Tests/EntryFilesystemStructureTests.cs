@@ -9,15 +9,15 @@ namespace ExFat.DiscUtils.Tests
     using Microsoft.VisualStudio.TestTools.UnitTesting;
 
     [TestClass]
-    [TestCategory("Filesystem")]
-    public class FilesystemStructureTests
+    [TestCategory("EntryFilesystem")]
+    public class EntryFilesystemStructureTests
     {
         [TestMethod]
         [TestCategory("Read")]
         public void ReadFile()
         {
             using (var testEnvironment = new TestEnvironment())
-            using (var filesystem = new ExFatFilesystem(testEnvironment.PartitionStream))
+            using (var filesystem = new ExFatEntryFilesystem(testEnvironment.PartitionStream))
             {
                 var files = filesystem.EnumerateFileSystemEntries(filesystem.RootDirectory).ToArray();
                 Assert.IsTrue(files.Any(f => f.Name == DiskContent.LongContiguousFileName));

@@ -9,15 +9,15 @@ namespace ExFat.DiscUtils.Tests
     using Microsoft.VisualStudio.TestTools.UnitTesting;
 
     [TestClass]
-    [TestCategory("Filesystem")]
-    public class FilesystemReadTests
+    [TestCategory("EntryFilesystem")]
+    public class EntryFilesystemReadTests
     {
         [TestMethod]
         [TestCategory("Read")]
         public void FindFile()
         {
             using (var testEnvironment = new TestEnvironment())
-            using (var filesystem = new ExFatFilesystem(testEnvironment.PartitionStream))
+            using (var filesystem = new ExFatEntryFilesystem(testEnvironment.PartitionStream))
             {
                 var file = filesystem.FindChild(filesystem.RootDirectory, DiskContent.LongContiguousFileName);
                 Assert.IsNotNull(file);
@@ -29,7 +29,7 @@ namespace ExFat.DiscUtils.Tests
         public void ReadFile()
         {
             using (var testEnvironment = new TestEnvironment())
-            using (var filesystem = new ExFatFilesystem(testEnvironment.PartitionStream))
+            using (var filesystem = new ExFatEntryFilesystem(testEnvironment.PartitionStream))
             {
                 var file = filesystem.FindChild(filesystem.RootDirectory, DiskContent.LongContiguousFileName);
                 var vb = new byte[sizeof(ulong)];
@@ -50,7 +50,7 @@ namespace ExFat.DiscUtils.Tests
         public void UpdateLastAccessTime()
         {
             using (var testEnvironment = new TestEnvironment())
-            using (var filesystem = new ExFatFilesystem(testEnvironment.PartitionStream))
+            using (var filesystem = new ExFatEntryFilesystem(testEnvironment.PartitionStream))
             {
                 var file = filesystem.FindChild(filesystem.RootDirectory, DiskContent.LongContiguousFileName);
                 var access0 = file.LastAccessTime;

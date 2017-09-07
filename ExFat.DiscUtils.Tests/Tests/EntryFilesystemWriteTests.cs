@@ -4,22 +4,20 @@
 
 namespace ExFat.DiscUtils.Tests
 {
-    using System;
-    using System.CodeDom;
     using System.IO;
     using Filesystem;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
 
     [TestClass]
-    [TestCategory("Filesystem")]
-    public class FilesystemWriteTests
+    [TestCategory("EntryFilesystem")]
+    public class EntryFilesystemWriteTests
     {
         [TestMethod]
         [TestCategory("Write")]
         public void AppendTest()
         {
             using (var testEnvironment = new TestEnvironment(true))
-            using (var filesystem = new ExFatFilesystem(testEnvironment.PartitionStream))
+            using (var filesystem = new ExFatEntryFilesystem(testEnvironment.PartitionStream))
             {
                 var file = filesystem.FindChild(filesystem.RootDirectory, DiskContent.LongContiguousFileName);
                 using (var s = filesystem.OpenFile(file, FileAccess.ReadWrite))
@@ -43,7 +41,7 @@ namespace ExFat.DiscUtils.Tests
         {
             using (var testEnvironment = new TestEnvironment(true))
             {
-                using (var filesystem = new ExFatFilesystem(testEnvironment.PartitionStream))
+                using (var filesystem = new ExFatEntryFilesystem(testEnvironment.PartitionStream))
                 {
                     var directoryName = "Orphaaaan 1";
                     var s1 = filesystem.CreateDirectory(filesystem.RootDirectory, directoryName);
@@ -60,7 +58,7 @@ namespace ExFat.DiscUtils.Tests
         {
             using (var testEnvironment = new TestEnvironment(true))
             {
-                using (var filesystem = new ExFatFilesystem(testEnvironment.PartitionStream))
+                using (var filesystem = new ExFatEntryFilesystem(testEnvironment.PartitionStream))
                 {
                     var s1 = filesystem.CreateDirectory(filesystem.RootDirectory, "SubOne");
                     var n2 = "SubTwo";
@@ -77,7 +75,7 @@ namespace ExFat.DiscUtils.Tests
         {
             using (var testEnvironment = new TestEnvironment(true))
             {
-                using (var filesystem = new ExFatFilesystem(testEnvironment.PartitionStream))
+                using (var filesystem = new ExFatEntryFilesystem(testEnvironment.PartitionStream))
                 {
                     using (var s = filesystem.CreateFile(filesystem.RootDirectory, "a.txt"))
                         s.WriteByte(65);
@@ -98,7 +96,7 @@ namespace ExFat.DiscUtils.Tests
         {
             using (var testEnvironment = new TestEnvironment(true))
             {
-                using (var filesystem = new ExFatFilesystem(testEnvironment.PartitionStream))
+                using (var filesystem = new ExFatEntryFilesystem(testEnvironment.PartitionStream))
                 {
                     var f = filesystem.FindChild(filesystem.RootDirectory, DiskContent.LongContiguousFileName);
                     filesystem.Delete(f);
@@ -113,7 +111,7 @@ namespace ExFat.DiscUtils.Tests
         {
             using (var testEnvironment = new TestEnvironment(true))
             {
-                using (var filesystem = new ExFatFilesystem(testEnvironment.PartitionStream))
+                using (var filesystem = new ExFatEntryFilesystem(testEnvironment.PartitionStream))
                 {
                     var f = filesystem.FindChild(filesystem.RootDirectory, DiskContent.EmptyRootFolderFileName);
                     filesystem.Delete(f);
@@ -128,7 +126,7 @@ namespace ExFat.DiscUtils.Tests
         {
             using (var testEnvironment = new TestEnvironment(true))
             {
-                using (var filesystem = new ExFatFilesystem(testEnvironment.PartitionStream))
+                using (var filesystem = new ExFatEntryFilesystem(testEnvironment.PartitionStream))
                 {
                     var f = filesystem.FindChild(filesystem.RootDirectory, DiskContent.LongContiguousFileName);
                     using (var s = filesystem.OpenFile(f, FileAccess.ReadWrite))
@@ -152,7 +150,7 @@ namespace ExFat.DiscUtils.Tests
         {
             using (var testEnvironment = new TestEnvironment(true))
             {
-                using (var filesystem = new ExFatFilesystem(testEnvironment.PartitionStream))
+                using (var filesystem = new ExFatEntryFilesystem(testEnvironment.PartitionStream))
                 {
                     using (var s = filesystem.CreateFile(filesystem.RootDirectory, "newlong"))
                     {
