@@ -17,7 +17,7 @@ Current features:
 - [X] Creating directories
 - [X] Creating files
 - [X] Deleting files/directories
-- [ ] Changing file length (`Stream.SetLength`)
+- [X] Changing file length (`Stream.SetLength`)
 - [ ] Using paths instead of objets (less efficient but more convenient)
 - [ ] Check for thread safety
 - [ ] Partition formatting
