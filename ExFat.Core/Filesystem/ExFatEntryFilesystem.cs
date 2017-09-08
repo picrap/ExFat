@@ -268,6 +268,16 @@ namespace ExFat.Filesystem
             Update(entry);
         }
 
+        public void DeleteTree(ExFatFilesystemEntry entry)
+        {
+            if (entry.IsDirectory)
+            {
+                foreach (var childEntry in EnumerateFileSystemEntries(entry))
+                    DeleteTree(childEntry);
+            }
+            Delete(entry);
+        }
+
         public void Update(ExFatFilesystemEntry entry)
         {
             _partition.UpdateEntry(entry.ParentDataDescriptor, entry.MetaEntry);

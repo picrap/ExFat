@@ -157,7 +157,32 @@ namespace ExFat.Filesystem
 
         public void CreateDirectory(string path)
         {
-            CreateDirectoryEntry(CleanupPath(path));
+            CreateDirectoryEntry(path);
+        }
+
+        public void Delete(string path)
+        {
+            path = CleanupPath(path);
+            var entry = GetSafeEntry(path);
+            if (entry.IsDirectory)
+            {
+                if (_entryFilesystem.EnumerateFileSystemEntries(entry).Any())
+                    throw new IOException();
+            }
+            _entries[path] = null;
+            _entryFilesystem.Delete(entry);
+        }
+
+        public void DeleteTree(string path)
+        {
+            path = CleanupPath(path);
+            var entry = GetSafeEntry(path);
+            if (entry.IsDirectory)
+            {
+                foreach (var childPath in EnumerateEntries(path))
+                    DeleteTree(childPath);
+            }
+            Delete(path);
         }
     }
 }

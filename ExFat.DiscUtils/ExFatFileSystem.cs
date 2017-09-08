@@ -77,20 +77,17 @@ namespace ExFat.DiscUtils
 
         public override void CreateDirectory(string path)
         {
-            // TODO
-            throw new NotImplementedException();
+            _filesystem.CreateDirectory(path);
         }
 
         public override void DeleteDirectory(string path)
         {
-            // TODO
-            throw new NotImplementedException();
+            _filesystem.DeleteTree(path);
         }
 
         public override void DeleteFile(string path)
         {
-            // TODO
-            throw new NotImplementedException();
+            _filesystem.Delete(path);
         }
 
         public override bool DirectoryExists(string path)
