@@ -7,7 +7,7 @@
     <title>ExFat</title>
     <authors>picrap</authors>
     <owners>picrap</owners>
-    <licenseUrl>http://opensource.org/licenses/mit-license.php</licenseUrl>
+    <licenseUrl>https://opensource.org/licenses/MIT</licenseUrl>
     <projectUrl>https://github.com/picrap/ExFat</projectUrl>
     <iconUrl>https://raw.githubusercontent.com/picrap/ExFat/master/Icon/ExFat.png</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
@@ -19,7 +19,7 @@
     <developmentDependency>false</developmentDependency>
     <dependencies>
       <dependency id="ExFat.Core" version="0.1.0" />
-      <dependency id="DiscUtils.Core" />
+      <dependency id="DiscUtils.Core" version="0.13.0-alpha" />
     </dependencies>
   </metadata>
   <files>

@@ -22,7 +22,7 @@
     <developmentDependency>false</developmentDependency>
     <dependencies>
       <dependency id="ExFat.Core" version="<#=Version#>" />
-      <dependency id="DiscUtils.Core" />
+      <dependency id="DiscUtils.Core" version="0.13.0-alpha" />
     </dependencies>
   </metadata>
   <files>
