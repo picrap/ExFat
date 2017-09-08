@@ -18,6 +18,7 @@ namespace ExFat.Filesystem
         private readonly ExFatFileAttributes? _attributesOverride;
         private string DebugLiteral => Name + (IsDirectory ? "/" : "");
 
+        internal DataDescriptor ParentDataDescriptor { get; }
         internal ExFatMetaDirectoryEntry MetaEntry { get; }
 
         /// <summary>
@@ -53,7 +54,7 @@ namespace ExFat.Filesystem
         /// <value>
         /// The name.
         /// </value>
-        public string Name => MetaEntry.ExtensionsFileName;
+        public string Name => MetaEntry?.ExtensionsFileName ?? "";
 
         /// <summary>
         /// Gets the length.
@@ -153,9 +154,10 @@ namespace ExFat.Filesystem
         /// </value>
         public DataDescriptor DataDescriptor => _dataDescriptorOverride ?? MetaEntry.DataDescriptor;
 
-        internal ExFatFilesystemEntry(ExFatMetaDirectoryEntry metaEntry = null, DataDescriptor dataDescriptorOverride = null, ExFatFileAttributes? attributesOverride = null)
+        internal ExFatFilesystemEntry(DataDescriptor parentDataDescriptor, ExFatMetaDirectoryEntry metaEntry = null, DataDescriptor dataDescriptorOverride = null, ExFatFileAttributes? attributesOverride = null)
         {
             _dataDescriptorOverride = dataDescriptorOverride;
+            ParentDataDescriptor = parentDataDescriptor;
             MetaEntry = metaEntry;
             _attributesOverride = attributesOverride;
         }

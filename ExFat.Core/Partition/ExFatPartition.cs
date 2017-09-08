@@ -15,7 +15,7 @@ namespace ExFat.Partition
     /// The ExFAT filesystem.
     /// The class is a quite low-level accessor
     /// </summary>
-    public class ExFatPartition : IClusterWriter, IDisposable
+    public partial class ExFatPartition : IClusterWriter, IDisposable
     {
         private readonly Stream _partitionStream;
         private readonly object _streamLock = new object();
@@ -55,12 +55,25 @@ namespace ExFat.Partition
         {
             FlushAllocationBitmap();
             FlushFatPage();
+            FlushPartitionStream();
+        }
+
+        private byte[] _sector;
+
+        private void FlushPartitionStream()
+        {
             // because .Flush() is not implemented in DiscUtils :)
             try
             {
                 _partitionStream.Flush();
             }
-            catch (NotImplementedException) { }
+            catch (NotImplementedException)
+            {
+                if (_sector == null)
+                    _sector = new byte[BootSector.BytesPerSector.Value];
+                _partitionStream.Seek(0, SeekOrigin.Begin);
+                _partitionStream.Read(_sector, 0, _sector.Length);
+            }
         }
 
         private void FlushAllocationBitmap()
@@ -204,6 +217,18 @@ namespace ExFat.Partition
             }
         }
 
+        /// <summary>
+        /// Frees the specified <see cref="DataDescriptor"/> clusters.
+        /// </summary>
+        /// <param name="dataDescriptor">The data descriptor.</param>
+        public void Deallocate(DataDescriptor dataDescriptor)
+        {
+            var allocationBitmap = GetAllocationBitmap();
+            // TODO: optimize to write all only once
+            foreach (var cluster in GetClusters(dataDescriptor))
+                allocationBitmap[cluster] = false;
+        }
+
         /// <inheritdoc />
         /// <summary>
         /// Frees the cluster.
@@ -322,23 +347,10 @@ namespace ExFat.Partition
             return OpenClusterStream(new DataDescriptor(0, true, 0), FileAccess.ReadWrite, onDisposed);
         }
 
-        /// <summary>
-        /// Opens a directory.
-        /// Caution: this does not check that the given <see cref="DataDescriptor"/> matches a directory descriptor.
-        /// (You're at low-level, dude)
-        /// </summary>
-        /// <param name="dataDescriptor">The data descriptor.</param>
-        /// <returns></returns>
-        public ExFatDirectory OpenDirectory(DataDescriptor dataDescriptor)
-        {
-            return new ExFatDirectory(OpenDataStream(dataDescriptor, FileAccess.ReadWrite), true);
-        }
-
         private IEnumerable<TDirectoryEntry> FindRootDirectoryEntries<TDirectoryEntry>()
             where TDirectoryEntry : ExFatDirectoryEntry
         {
-            using (var rootDirectory = OpenDirectory(RootDirectoryDataDescriptor))
-                return rootDirectory.GetEntries().OfType<TDirectoryEntry>();
+            return GetEntries(RootDirectoryDataDescriptor).OfType<TDirectoryEntry>();
         }
 
         private ExFatUpCaseTable _upCaseTable;
@@ -373,23 +385,6 @@ namespace ExFat.Partition
                 _allocationBitmap.Open(allocationBitmapStream, allocationBitmapEntry.FirstCluster.Value, BootSector.ClusterCount.Value);
             }
             return _allocationBitmap;
-        }
-
-        public void UpdateEntry(ExFatMetaDirectoryEntry entry)
-        {
-            lock (_streamLock)
-            {
-                var offset = entry.Primary.Position % BytesPerCluster;
-                SeekCluster(entry.Primary.Cluster, offset);
-                entry.Write(null, _partitionStream);
-            }
-        }
-
-        public void Deallocate(DataDescriptor dataDescriptor)
-        {
-            var allocationBitmap = GetAllocationBitmap();
-            foreach (var cluster in GetClusters(dataDescriptor))
-                allocationBitmap[cluster] = false;
         }
     }
 }

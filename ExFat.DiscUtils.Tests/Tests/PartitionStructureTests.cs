@@ -11,7 +11,7 @@ namespace ExFat.DiscUtils.Tests
 
     [TestClass]
     [TestCategory("Partition")]
-    public class StructureTests
+    public class PartitionStructureTests
     {
         [TestMethod]
         [TestCategory("Structure")]
@@ -19,12 +19,9 @@ namespace ExFat.DiscUtils.Tests
         {
             using (var testEnvironment = new TestEnvironment())
             {
-                var fs = new ExFatPartition(testEnvironment.PartitionStream);
-                using (var rootDirectory = fs.OpenDirectory(fs.RootDirectoryDataDescriptor))
-                {
-                    var entries = rootDirectory.GetEntries().ToArray();
-                    Assert.IsTrue(entries.OfType<FileNameExtensionExFatDirectoryEntry>().Any(e => e.FileName.Value == DiskContent.LongContiguousFileName));
-                }
+                var partition = new ExFatPartition(testEnvironment.PartitionStream);
+                var entries = partition.GetEntries(partition.RootDirectoryDataDescriptor).ToArray();
+                Assert.IsTrue(entries.OfType<FileNameExtensionExFatDirectoryEntry>().Any(e => e.FileName.Value == DiskContent.LongContiguousFileName));
             }
         }
 
@@ -34,12 +31,9 @@ namespace ExFat.DiscUtils.Tests
         {
             using (var testEnvironment = new TestEnvironment())
             {
-                var fs = new ExFatPartition(testEnvironment.PartitionStream);
-                using (var rootDirectory = fs.OpenDirectory(fs.RootDirectoryDataDescriptor))
-                {
-                    var entries = rootDirectory.GetMetaEntries().ToArray();
-                    Assert.IsTrue(entries.Any(e => e.ExtensionsFileName == DiskContent.LongContiguousFileName));
-                }
+                var partition = new ExFatPartition(testEnvironment.PartitionStream);
+                var entries = partition.GetMetaEntries(partition.RootDirectoryDataDescriptor).ToArray();
+                Assert.IsTrue(entries.Any(e => e.ExtensionsFileName == DiskContent.LongContiguousFileName));
             }
         }
 
@@ -49,16 +43,13 @@ namespace ExFat.DiscUtils.Tests
         {
             using (var testEnvironment = new TestEnvironment())
             {
-                var fs = new ExFatPartition(testEnvironment.PartitionStream);
-                using (var rootDirectory = fs.OpenDirectory(fs.RootDirectoryDataDescriptor))
+                var partition = new ExFatPartition(testEnvironment.PartitionStream);
+                foreach (var entry in partition.GetMetaEntries(partition.RootDirectoryDataDescriptor))
                 {
-                    foreach (var entry in rootDirectory.GetMetaEntries())
+                    if (entry.Primary is FileExFatDirectoryEntry)
                     {
-                        if (entry.Primary is FileExFatDirectoryEntry)
-                        {
-                            var hash = fs.ComputeNameHash(entry.ExtensionsFileName);
-                            Assert.AreEqual(entry.SecondaryStreamExtension.NameHash.Value, hash);
-                        }
+                        var hash = partition.ComputeNameHash(entry.ExtensionsFileName);
+                        Assert.AreEqual(entry.SecondaryStreamExtension.NameHash.Value, hash);
                     }
                 }
             }
@@ -70,16 +61,13 @@ namespace ExFat.DiscUtils.Tests
         {
             using (var testEnvironment = new TestEnvironment())
             {
-                var fs = new ExFatPartition(testEnvironment.PartitionStream);
-                using (var rootDirectory = fs.OpenDirectory(fs.RootDirectoryDataDescriptor))
+                var partition = new ExFatPartition(testEnvironment.PartitionStream);
+                foreach (var entry in partition.GetMetaEntries(partition.RootDirectoryDataDescriptor))
                 {
-                    foreach (var entry in rootDirectory.GetMetaEntries())
+                    if (entry.Primary is FileExFatDirectoryEntry fileEntry)
                     {
-                        if (entry.Primary is FileExFatDirectoryEntry fileEntry)
-                        {
-                            var checksum = fileEntry.ComputeChecksum(entry.Secondaries);
-                            Assert.AreEqual(fileEntry.SetChecksum.Value, checksum);
-                        }
+                        var checksum = fileEntry.ComputeChecksum(entry.Secondaries);
+                        Assert.AreEqual(fileEntry.SetChecksum.Value, checksum);
                     }
                 }
             }

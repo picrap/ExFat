@@ -68,12 +68,12 @@
     <Compile Include="Partition\ExFatAllocationBitmap.cs" />
     <Compile Include="Filesystem\ExFatEntryFilesystem.cs" />
     <Compile Include="Filesystem\ExFatFilesystemEntry.cs" />
+    <Compile Include="Partition\ExFatPartition.Directory.cs" />
     <Compile Include="Partition\ExFatUpCaseTable.cs" />
     <Compile Include="Partition\IClusterWriter.cs" />
     <Compile Include="IO\DataDescriptor.cs" />
     <Compile Include="Partition\Entries\ExFatMetaDirectoryEntry.cs" />
     <Compile Include="IO\IDataProvider.cs" />
-    <Compile Include="Partition\ExFatDirectory.cs" />
     <Compile Include="Partition\Entries\AllocationBitmapExFatDirectoryEntry.cs" />
     <Compile Include="Partition\Entries\ExFatDirectoryEntry.cs" />
     <Compile Include="Partition\Entries\ExFatDirectoryEntryType.cs" />

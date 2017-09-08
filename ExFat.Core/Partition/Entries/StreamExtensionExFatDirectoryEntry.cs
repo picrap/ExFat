@@ -28,7 +28,19 @@ namespace ExFat.Partition.Entries
 
         public IValueProvider<UInt64> DataLength { get; }
 
-        public DataDescriptor DataDescriptor => new DataDescriptor(FirstCluster.Value, GeneralSecondaryFlags.Value.HasAny(ExFatGeneralSecondaryFlags.NoFatChain), DataLength.Value);
+        public DataDescriptor DataDescriptor
+        {
+            get { return new DataDescriptor(FirstCluster.Value, GeneralSecondaryFlags.Value.HasAny(ExFatGeneralSecondaryFlags.NoFatChain), DataLength.Value); }
+            set
+            {
+                FirstCluster.Value = value.FirstCluster.ToUInt32();
+                if (value.Contiguous)
+                    GeneralSecondaryFlags.Value |= ExFatGeneralSecondaryFlags.NoFatChain;
+                else
+                    GeneralSecondaryFlags.Value &= ~ExFatGeneralSecondaryFlags.NoFatChain;
+                DataLength.Value = DataDescriptor.Length.Value;
+            }
+        }
 
         public StreamExtensionExFatDirectoryEntry(Buffer buffer) : base(buffer)
         {

@@ -58,6 +58,14 @@
     <None Include="project.json" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\Bicolage\DiscUtils\Library\DiscUtils.Core\DiscUtils.Core.csproj">
+      <Project>{8443BC7A-91C2-4534-B1CE-2A6A620177F6}</Project>
+      <Name>DiscUtils.Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Bicolage\DiscUtils\Library\DiscUtils.Streams\DiscUtils.Streams.csproj">
+      <Project>{618C8263-FB6C-4C66-A842-E13921055C43}</Project>
+      <Name>DiscUtils.Streams</Name>
+    </ProjectReference>
     <ProjectReference Include="..\ExFat.Core\ExFat.Core.csproj">
       <Project>{694BBB9A-204F-41A3-927E-2BCB8AA9DADE}</Project>
       <Name>ExFat.Core</Name>

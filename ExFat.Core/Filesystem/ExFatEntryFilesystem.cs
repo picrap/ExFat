@@ -10,6 +10,7 @@ namespace ExFat.Filesystem
     using IO;
     using Partition;
     using Partition.Entries;
+    using Buffer = Buffers.Buffer;
 
     public class ExFatEntryFilesystem : IDisposable
     {
@@ -64,7 +65,8 @@ namespace ExFat.Filesystem
 
         private ExFatFilesystemEntry CreateRootDirectory()
         {
-            return new ExFatFilesystemEntry(dataDescriptorOverride: _partition.RootDirectoryDataDescriptor, attributesOverride: ExFatFileAttributes.Directory);
+            return new ExFatFilesystemEntry(_partition.RootDirectoryDataDescriptor, dataDescriptorOverride: _partition.RootDirectoryDataDescriptor,
+                attributesOverride: ExFatFileAttributes.Directory);
         }
 
         public IEnumerable<ExFatFilesystemEntry> EnumerateFileSystemEntries(ExFatFilesystemEntry directoryEntry)
@@ -72,20 +74,12 @@ namespace ExFat.Filesystem
             if (!directoryEntry.IsDirectory)
                 throw new InvalidOperationException();
 
-            using (var directory = OpenDirectory(directoryEntry))
+            foreach (var metaEntry in _partition.GetMetaEntries(directoryEntry.DataDescriptor))
             {
-                foreach (var metaEntry in directory.GetMetaEntries())
-                {
-                    // keep only file entries
-                    if (metaEntry.Primary is FileExFatDirectoryEntry)
-                        yield return new ExFatFilesystemEntry(metaEntry);
-                }
+                // keep only file entries
+                if (metaEntry.Primary is FileExFatDirectoryEntry)
+                    yield return new ExFatFilesystemEntry(directoryEntry.DataDescriptor, metaEntry);
             }
-        }
-
-        private ExFatDirectory OpenDirectory(ExFatFilesystemEntry entry)
-        {
-            return new ExFatDirectory(OpenData(entry, FileAccess.ReadWrite), true);
         }
 
         public ExFatFilesystemEntry FindChild(ExFatFilesystemEntry directoryEntry, string name)
@@ -93,20 +87,13 @@ namespace ExFat.Filesystem
             if (!directoryEntry.IsDirectory)
                 throw new InvalidOperationException();
 
-            // namehash is fun, but what efficiency do we gain?
-            using (var directory = OpenDirectory(directoryEntry))
-                return FindChild(directory, name);
-        }
-
-        private ExFatFilesystemEntry FindChild(ExFatDirectory directory, string name)
-        {
             var nameHash = _partition.ComputeNameHash(name);
-            foreach (var metaEntry in directory.GetMetaEntries())
+            foreach (var metaEntry in _partition.GetMetaEntries(directoryEntry.DataDescriptor))
             {
                 var streamExtension = metaEntry.SecondaryStreamExtension;
                 // keep only file entries
                 if (streamExtension != null && streamExtension.NameHash.Value == nameHash && metaEntry.ExtensionsFileName == name)
-                    return new ExFatFilesystemEntry(metaEntry);
+                    return new ExFatFilesystemEntry(directoryEntry.DataDescriptor, metaEntry);
             }
             return null;
         }
@@ -137,28 +124,26 @@ namespace ExFat.Filesystem
             if (!parentDirectory.IsDirectory)
                 throw new InvalidOperationException();
 
-            using (var directory = OpenDirectory(parentDirectory))
+            var existingFile = FindChild(parentDirectory, fileName);
+            if (existingFile != null)
             {
-                var existingFile = FindChild(directory, fileName);
-                if (existingFile != null)
-                {
-                    var stream = OpenData(existingFile, FileAccess.ReadWrite);
-                    stream.SetLength(0);
-                    return stream;
-                }
-
-                var fileEntry = CreateEntry(fileName, FileAttributes.Archive);
-                directory.AddEntry(fileEntry.MetaEntry);
-                return OpenData(fileEntry, FileAccess.ReadWrite);
+                var stream = OpenData(existingFile, FileAccess.ReadWrite);
+                stream.SetLength(0);
+                return stream;
             }
+
+            var fileEntry = CreateEntry(parentDirectory, fileName, FileAttributes.Archive);
+            var updatedDataDescriptor = _partition.AddEntry(parentDirectory.DataDescriptor, fileEntry.MetaEntry);
+            UpdateEntry(parentDirectory, FileAccess.Write, updatedDataDescriptor);
+            return OpenData(fileEntry, FileAccess.ReadWrite);
         }
 
         private PartitionStream OpenData(ExFatFilesystemEntry fileEntry, FileAccess access)
         {
-            return _partition.OpenDataStream(fileEntry.DataDescriptor, access, d => OnDisposed(fileEntry, access, d));
+            return _partition.OpenDataStream(fileEntry.DataDescriptor, access, d => UpdateEntry(fileEntry, access, d));
         }
 
-        private void OnDisposed(ExFatFilesystemEntry entry, FileAccess descriptor, DataDescriptor dataDescriptor)
+        private void UpdateEntry(ExFatFilesystemEntry entry, FileAccess descriptor, DataDescriptor dataDescriptor)
         {
             if (entry?.MetaEntry == null)
                 return;
@@ -192,32 +177,34 @@ namespace ExFat.Filesystem
             // now has value only if it was used before, so we spare a flag :)
             if (now.HasValue)
             {
-                _partition.UpdateEntry(entry.MetaEntry);
+                Update(entry);
             }
         }
 
         /// <summary>
-        /// Creates a <see cref="ExFatFilesystemEntry"/>.
+        /// Creates a <see cref="ExFatFilesystemEntry" />.
         /// </summary>
+        /// <param name="parent">The parent.</param>
         /// <param name="name">The name.</param>
         /// <param name="attributes">The attributes.</param>
         /// <returns></returns>
-        private ExFatFilesystemEntry CreateEntry(string name, FileAttributes attributes)
+        private ExFatFilesystemEntry CreateEntry(ExFatFilesystemEntry parent, string name, FileAttributes attributes)
         {
             var now = DateTimeOffset.Now;
             var entries = new List<ExFatDirectoryEntry>
             {
-                new FileExFatDirectoryEntry(new Buffers.Buffer(new byte[32]))
+                new FileExFatDirectoryEntry(new Buffer(new byte[32]))
                 {
-                    EntryType = { Value = ExFatDirectoryEntryType.File},
+                    EntryType = {Value = ExFatDirectoryEntryType.File},
                     FileAttributes = {Value = (ExFatFileAttributes) attributes},
                     CreationDateTimeOffset = {Value = now},
                     LastWriteDateTimeOffset = {Value = now},
                     LastAccessDateTimeOffset = {Value = now},
                 },
-                new StreamExtensionExFatDirectoryEntry(new Buffers.Buffer(new byte[32]))
+                new StreamExtensionExFatDirectoryEntry(new Buffer(new byte[32]))
                 {
-                    EntryType = { Value = ExFatDirectoryEntryType.Stream},
+                    FirstCluster = {Value = 0},
+                    EntryType = {Value = ExFatDirectoryEntryType.Stream},
                     GeneralSecondaryFlags = {Value = ExFatGeneralSecondaryFlags.ClusterAllocationPossible},
                     NameLength = {Value = (byte) name.Length},
                     NameHash = {Value = _partition.ComputeNameHash(name)},
@@ -226,14 +213,14 @@ namespace ExFat.Filesystem
             for (int nameIndex = 0; nameIndex < name.Length; nameIndex += 15)
             {
                 var namePart = name.Substring(nameIndex, Math.Min(15, name.Length - nameIndex));
-                entries.Add(new FileNameExtensionExFatDirectoryEntry(new Buffers.Buffer(new byte[32]))
+                entries.Add(new FileNameExtensionExFatDirectoryEntry(new Buffer(new byte[32]))
                 {
                     EntryType = { Value = ExFatDirectoryEntryType.FileName },
                     FileName = { Value = namePart }
                 });
             }
             var metaEntry = new ExFatMetaDirectoryEntry(entries);
-            var entry = new ExFatFilesystemEntry(metaEntry);
+            var entry = new ExFatFilesystemEntry(parent.DataDescriptor, metaEntry);
             return entry;
         }
 
@@ -252,25 +239,24 @@ namespace ExFat.Filesystem
 
             lock (_lock)
             {
-                using (var parentDirectory = OpenDirectory(parentDirectoryEntry))
+                var existingEntry = FindChild(parentDirectoryEntry, directoryName);
+                if (existingEntry != null)
                 {
-                    var existingEntry = FindChild(parentDirectory, directoryName);
-                    if (existingEntry != null)
-                    {
-                        if (!existingEntry.IsDirectory)
-                            throw new IOException();
-                        return existingEntry;
-                    }
-
-                    var directoryEntry = CreateEntry(directoryName, FileAttributes.Directory);
-                    parentDirectory.AddEntry(directoryEntry.MetaEntry);
-                    using (var directoryStream = OpenData(directoryEntry, FileAccess.ReadWrite))
-                    {
-                        var emptyEntry = new byte[32];
-                        directoryStream.Write(emptyEntry, 0, emptyEntry.Length);
-                    }
-                    return directoryEntry;
+                    if (!existingEntry.IsDirectory)
+                        throw new IOException();
+                    return existingEntry;
                 }
+
+                var directoryEntry = CreateEntry(parentDirectoryEntry, directoryName, FileAttributes.Directory);
+                var updatedDataDescriptor = _partition.AddEntry(parentDirectoryEntry.DataDescriptor, directoryEntry.MetaEntry);
+                using (var directoryStream = OpenData(directoryEntry, FileAccess.ReadWrite))
+                {
+                    // at least one empty entry, otherwise CHKDSK doesn't understand (the dumbass)
+                    var empty = new byte[32];
+                    directoryStream.Write(empty, 0, empty.Length);
+                }
+                UpdateEntry(parentDirectoryEntry, FileAccess.Write, updatedDataDescriptor);
+                return directoryEntry;
             }
         }
 
@@ -279,12 +265,12 @@ namespace ExFat.Filesystem
             _partition.Deallocate(entry.DataDescriptor);
             foreach (var e in entry.MetaEntry.Entries)
                 e.EntryType.Value &= ~ExFatDirectoryEntryType.InUse;
-            _partition.UpdateEntry(entry.MetaEntry);
+            Update(entry);
         }
 
         public void Update(ExFatFilesystemEntry entry)
         {
-            _partition.UpdateEntry(entry.MetaEntry);
+            _partition.UpdateEntry(entry.ParentDataDescriptor, entry.MetaEntry);
         }
     }
 }

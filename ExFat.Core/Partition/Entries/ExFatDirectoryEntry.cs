@@ -8,7 +8,6 @@ namespace ExFat.Partition.Entries
     using System.Collections.Generic;
     using System.IO;
     using Buffers;
-    using IO;
     using Buffer = Buffers.Buffer;
 
     public class ExFatDirectoryEntry
@@ -17,20 +16,12 @@ namespace ExFat.Partition.Entries
         public IValueProvider<ExFatDirectoryEntryType> EntryType { get; }
 
         /// <summary>
-        /// Gets the position in directory stream.
+        /// Gets the position in directory.
         /// </summary>
         /// <value>
-        /// The offset.
+        /// The directory position.
         /// </value>
-        public long Position { get; private set; }
-
-        /// <summary>
-        /// Gets the cluster.
-        /// </summary>
-        /// <value>
-        /// The cluster.
-        /// </value>
-        public Cluster Cluster { get; private set; }
+        public long DirectoryPosition { get; private set; }
 
         /// <summary>
         /// Indicates if the entry is in use
@@ -60,32 +51,17 @@ namespace ExFat.Partition.Entries
         }
 
         /// <summary>
-        /// Sets the position (updated when writing).
-        /// </summary>
-        /// <param name="position">The position.</param>
-        /// <param name="cluster">The cluster.</param>
-        public void SetPosition(long position, Cluster cluster)
-        {
-            Position = position;
-            Cluster = cluster;
-        }
-
-        /// <summary>
         /// Creates a <see cref="ExFatDirectoryEntry" /> given a buffer.
         /// </summary>
         /// <param name="buffer">The buffer.</param>
-        /// <param name="offset">The offset.</param>
-        /// <param name="cluster">The cluster.</param>
+        /// <param name="directoryPosition">The directory position.</param>
         /// <returns></returns>
         /// <exception cref="System.ArgumentOutOfRangeException"></exception>
-        public static ExFatDirectoryEntry Create(Buffer buffer, long offset, Cluster cluster)
+        public static ExFatDirectoryEntry Create(Buffer buffer, long directoryPosition)
         {
             var entry = Create(buffer);
             if (entry != null)
-            {
-                entry.Position = offset;
-                entry.Cluster = cluster;
-            }
+                entry.DirectoryPosition = directoryPosition;
             return entry;
         }
 
@@ -123,6 +99,7 @@ namespace ExFat.Partition.Entries
         /// <param name="stream">The stream.</param>
         public void Write(Stream stream)
         {
+            DirectoryPosition = stream.Position;
             stream.Write(Buffer.Bytes, 0, Buffer.Bytes.Length);
         }
     }

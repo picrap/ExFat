@@ -50,13 +50,18 @@ namespace ExFat.Filesystem
             if (_entries.TryGetValue(path, out var entry))
                 return entry;
 
-            var separatorIndex = path.LastIndexOf(Separator);
-            if (separatorIndex < 0)
-                entry = GetEntry("", path);
-            else
-                entry = GetEntry(path.Substring(0, separatorIndex), path.Substring(separatorIndex + 1));
+            var pn = GetParentAndName(path);
+            entry = GetEntry(pn.Item1, pn.Item2);
             _entries[path] = entry;
             return entry;
+        }
+
+        private static Tuple<string, string> GetParentAndName(string path)
+        {
+            var separatorIndex = path.LastIndexOf(Separator);
+            if (separatorIndex < 0)
+                return Tuple.Create("", path);
+            return Tuple.Create(path.Substring(0, separatorIndex), path.Substring(separatorIndex + 1));
         }
 
         private static string CleanupPath(string path)
@@ -137,5 +142,22 @@ namespace ExFat.Filesystem
         public void SetLastWriteTimeUtc(string path, DateTime lastWriteTime) => UpdateSafeEntry(path, e => e.LastWriteDateTimeOffset = lastWriteTime.ToUniversalTime());
         public void SetLastAccessTime(string path, DateTime lastAccessTime) => UpdateSafeEntry(path, e => e.LastAccessDateTimeOffset = lastAccessTime.ToLocalTime());
         public void SetLastAccessTimeUtc(string path, DateTime lastAccessTime) => UpdateSafeEntry(path, e => e.LastAccessDateTimeOffset = lastAccessTime.ToUniversalTime());
+
+        private ExFatFilesystemEntry CreateDirectoryEntry(string path)
+        {
+            var existingDirectory = GetEntry(path);
+            if (existingDirectory != null)
+                return existingDirectory;
+            var pn = GetParentAndName(path);
+            var parentDirectory = CreateDirectoryEntry(pn.Item1);
+            var directoryEntry = _entryFilesystem.CreateDirectory(parentDirectory, pn.Item2);
+            _entries[path] = directoryEntry;
+            return directoryEntry;
+        }
+
+        public void CreateDirectory(string path)
+        {
+            CreateDirectoryEntry(CleanupPath(path));
+        }
     }
 }

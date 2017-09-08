@@ -5,6 +5,7 @@
 namespace ExFat.IO
 {
     using System;
+    using System.Collections.Generic;
     using System.Diagnostics;
 
     /// <summary>
@@ -52,6 +53,18 @@ namespace ExFat.IO
             FirstCluster = firstCluster;
             Contiguous = contiguous;
             Length = length;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (!(obj is DataDescriptor other))
+                return false;
+            return FirstCluster == other.FirstCluster && Contiguous == other.Contiguous && Length == other.Length;
+        }
+
+        public override int GetHashCode()
+        {
+            return FirstCluster.Value.GetHashCode() ^ Contiguous.GetHashCode() ^ Length.GetHashCode();
         }
     }
 }

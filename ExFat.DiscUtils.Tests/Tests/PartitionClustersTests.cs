@@ -12,7 +12,7 @@ namespace ExFat.DiscUtils.Tests
 
     [TestClass]
     [TestCategory("Structure")]
-    public class ClustersTests
+    public class PartitionClustersTests
     {
         [TestMethod]
         [TestCategory("Structure")]
@@ -20,9 +20,8 @@ namespace ExFat.DiscUtils.Tests
         {
             using (var testEnvironment = new TestEnvironment())
             using (var partition = new ExFatPartition(testEnvironment.PartitionStream))
-            using (var rootDirectory = partition.OpenDirectory(partition.RootDirectoryDataDescriptor))
             {
-                var oneM = rootDirectory.GetMetaEntries().Single(e => e.ExtensionsFileName == DiskContent.LongSparseFile1Name);
+                var oneM = partition.GetMetaEntries(partition.RootDirectoryDataDescriptor).Single(e => e.ExtensionsFileName == DiskContent.LongSparseFile1Name);
                 var clusters = new List<Cluster>();
                 for (Cluster c = oneM.SecondaryStreamExtension.FirstCluster.Value; ; c = partition.GetNextCluster(c))
                 {

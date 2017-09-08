@@ -14,7 +14,7 @@ namespace ExFat.DiscUtils.Tests
 
     [TestClass]
     [TestCategory("Partition")]
-    public class ReadTests
+    public class PartitionReadTests
     {
         internal static void ReadFile(string fileName, Func<ulong, ulong> getValueAtOffset, ulong? overrideLength = null, bool forward = true, bool forceSeek = false)
         {
@@ -27,9 +27,7 @@ namespace ExFat.DiscUtils.Tests
 
         internal static void ReadFile(ExFatPartition partition, string fileName, Func<ulong, ulong> getValueAtOffset, ulong? overrideLength = null, bool forward = true, bool forceSeek = false)
         {
-            using (var rootDirectory = partition.OpenDirectory(partition.RootDirectoryDataDescriptor))
-            {
-                var fileEntry = rootDirectory.GetMetaEntries().Single(e => e.ExtensionsFileName == fileName);
+                var fileEntry = partition.GetMetaEntries(partition.RootDirectoryDataDescriptor).Single(e => e.ExtensionsFileName == fileName);
                 var length = overrideLength ?? fileEntry.SecondaryStreamExtension.DataLength.Value;
                 var contiguous = fileEntry.SecondaryStreamExtension.GeneralSecondaryFlags.Value.HasAny(ExFatGeneralSecondaryFlags.NoFatChain);
                 using (var stream = partition.OpenDataStream(new DataDescriptor(fileEntry.SecondaryStreamExtension.FirstCluster.Value, contiguous, length), FileAccess.Read))
@@ -52,7 +50,6 @@ namespace ExFat.DiscUtils.Tests
                     if (forward)
                         Assert.AreEqual(0, stream.Read(vb, 0, vb.Length));
                 }
-            }
         }
 
         [TestMethod]

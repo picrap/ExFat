@@ -63,6 +63,11 @@ namespace ExFat.IO
             Value = cluster;
         }
 
+        public UInt32 ToUInt32()
+        {
+            return (UInt32)Value;
+        }
+
         /// <summary>
         /// Performs an implicit conversion from <see cref="UInt32"/> to <see cref="Cluster"/>.
         /// </summary>

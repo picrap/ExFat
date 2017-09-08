@@ -68,5 +68,16 @@ namespace ExFat.DiscUtils.Tests
                 Assert.AreEqual(DiskContent.LongFolderEntriesCount, entries.Length);
             }
         }
+
+        [TestMethod]
+        [TestCategory("Read")]
+        public void ReadDatesTest()
+        {
+            using (var testEnvironment = new TestEnvironment())
+            using (var filesystem = new ExFatPathFilesystem(testEnvironment.PartitionStream))
+            {
+                var c = filesystem.GetCreationTime(DiskContent.LongContiguousFileName);
+            }
+        }
     }
 }
