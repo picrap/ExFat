@@ -21,7 +21,7 @@
     <tags>exfat filesystem partition discutils</tags>
     <developmentDependency>false</developmentDependency>
     <dependencies>
-      <dependency id="ExFat.Core" version="<#=Version#>" />
+      <dependency id="ExFat.Core" version="<#=Version#><#=PreVersion#>" />
       <dependency id="DiscUtils.Core" version="0.13.0-alpha" />
     </dependencies>
   </metadata>
