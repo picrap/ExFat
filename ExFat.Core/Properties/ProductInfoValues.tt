@@ -13,7 +13,7 @@ var PreVersion = "-dev";
 
 var Title = "ExFat";
 var Company = "picrap";
-var LicenseUrl = "http://opensource.org/licenses/mit-license.php";
+var LicenseUrl = "https://opensource.org/licenses/MIT";
 var Description = "ExFat allows to manage exFAT partitions at different levels: "
 + "partition, file system entry or full path.";
 #>

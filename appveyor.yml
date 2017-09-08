@@ -43,6 +43,7 @@ build:
 
 artifacts:
   - path: 'ExFat.Core\bin\$(configuration)\*.nupkg'
+  - path: 'ExFat.DiscUtils\bin\$(configuration)\*.nupkg'
 
 deploy:
   provider: NuGet

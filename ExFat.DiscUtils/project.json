@@ -1,7 +1,6 @@
 ﻿{
   "dependencies": {
-    "DiscUtils.Core": "0.13.0-alpha",
-    "DiscUtils.Streams": "0.13.0-alpha"
+    "DiscUtils.Core": "0.13.0-alpha"
   },
   "frameworks": {
     "net40-client": {}
