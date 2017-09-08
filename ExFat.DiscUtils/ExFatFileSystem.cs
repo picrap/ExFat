@@ -136,20 +136,23 @@ namespace ExFat.DiscUtils
 
         public override SparseStream OpenFile(string path, FileMode mode, FileAccess access)
         {
-            // TODO
-            throw new NotImplementedException();
+            return SparseStream.FromStream(_filesystem.Open(path, mode, access), Ownership.Dispose);
         }
 
         public override FileAttributes GetAttributes(string path)
         {
-            // TODO
-            throw new NotImplementedException();
+            var information = _filesystem.GetInformation(path);
+            if (information == null)
+                throw new FileNotFoundException();
+            return information.Attributes;
         }
 
         public override void SetAttributes(string path, FileAttributes newValue)
         {
-            // TODO
-            throw new NotImplementedException();
+            var information = _filesystem.GetInformation(path);
+            if (information == null)
+                throw new FileNotFoundException();
+            information.Attributes = newValue;
         }
 
         public override DateTime GetCreationTimeUtc(string path)

@@ -15,7 +15,7 @@ namespace ExFat.Filesystem
     {
         private readonly DataDescriptor _dataDescriptorOverride;
         private FileExFatDirectoryEntry FileEntry => MetaEntry.Primary as FileExFatDirectoryEntry;
-        private readonly ExFatFileAttributes? _attributesOverride;
+        private ExFatFileAttributes? _attributesOverride;
         private string DebugLiteral => Name + (IsDirectory ? "/" : "");
 
         internal DataDescriptor ParentDataDescriptor { get; }
@@ -37,6 +37,22 @@ namespace ExFat.Filesystem
                 if (FileEntry != null)
                     return (FileAttributes)FileEntry.FileAttributes.Value;
                 return 0;
+            }
+            set
+            {
+                // this one won't change, it would be baaaad.
+                value &= ~FileAttributes.Directory;
+                if (_attributesOverride.HasValue)
+                {
+                    _attributesOverride = (ExFatFileAttributes)value;
+                    return;
+                }
+                if (FileEntry != null)
+                {
+                    FileEntry.FileAttributes.Value = (ExFatFileAttributes)value;
+                    return;
+                }
+                throw new IOException();
             }
         }
 

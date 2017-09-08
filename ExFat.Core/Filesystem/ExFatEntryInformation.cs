@@ -21,6 +21,7 @@ namespace ExFat.Filesystem
         public FileAttributes Attributes
         {
             get { return _entry.Attributes; }
+            set { _entry.Attributes = value; Update(); }
         }
 
         /// <summary>

@@ -5,6 +5,7 @@
 namespace ExFat.DiscUtils.Tests
 {
     using System;
+    using System.IO;
     using System.Linq;
     using Filesystem;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -65,6 +66,26 @@ namespace ExFat.DiscUtils.Tests
                 {
                     filesystem.DeleteTree(DiskContent.LongFolderFileName);
                     Assert.IsFalse(filesystem.EnumerateDirectories("").Contains($@"\{DiskContent.LongFolderFileName}"));
+                }
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("Write")]
+        public void CreateFileTree()
+        {
+            using (var testEnvironment = new TestEnvironment(true))
+            {
+                using (var filesystem = new ExFatPathFilesystem(testEnvironment.PartitionStream))
+                {
+                    filesystem.CreateDirectory("a");
+                    using (var s = filesystem.Open(@"a\b.txt", FileMode.Create, FileAccess.ReadWrite))
+                        s.WriteByte(66);
+                    using (var r = filesystem.Open(@"a\b.txt", FileMode.Open, FileAccess.Read))
+                    {
+                        Assert.AreEqual(66, r.ReadByte());
+                        Assert.AreEqual(-1, r.ReadByte());
+                    }
                 }
             }
         }

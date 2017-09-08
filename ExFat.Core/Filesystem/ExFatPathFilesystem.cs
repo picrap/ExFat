@@ -197,5 +197,43 @@ namespace ExFat.Filesystem
                 return null;
             return new ExFatEntryInformation(_entryFilesystem, entry);
         }
+
+        /// <summary>
+        /// Opens or creates a file.
+        /// </summary>
+        /// <param name="path">The path.</param>
+        /// <param name="mode">The mode.</param>
+        /// <param name="access">The access.</param>
+        /// <returns></returns>
+        /// <exception cref="System.IO.DirectoryNotFoundException"></exception>
+        /// <exception cref="System.IO.FileNotFoundException"></exception>
+        /// <exception cref="System.IO.IOException">
+        /// </exception>
+        public Stream Open(string path, FileMode mode, FileAccess access)
+        {
+            var pn = GetParentAndName(path);
+            var parentEntry = GetEntry(pn.Item1);
+            if (parentEntry == null)
+                throw new DirectoryNotFoundException();
+            var child = _entryFilesystem.FindChild(parentEntry, pn.Item2);
+            // not existing?
+            if (child == null)
+            {
+                if (mode == FileMode.Append || mode == FileMode.Open || mode == FileMode.Truncate)
+                    throw new FileNotFoundException();
+                return _entryFilesystem.CreateFile(parentEntry, pn.Item2);
+            }
+
+            if (child.IsDirectory)
+                throw new IOException();
+            if (mode == FileMode.CreateNew)
+                throw new IOException();
+            var stream = _entryFilesystem.OpenFile(child, access);
+            if (mode == FileMode.Truncate)
+                stream.SetLength(0);
+            if (mode == FileMode.Append)
+                stream.Seek(0, SeekOrigin.End);
+            return stream;
+        }
     }
 }
