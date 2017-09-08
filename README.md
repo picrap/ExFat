@@ -7,7 +7,7 @@ An exFAT accessor library.
 **ExFat** allows to manipulate an exFAT formatted partition (provided as a `System.IO.Stream`).
 It comes with two packages:
 * The core package `ExFat.Core` available from [NuGet](https://www.nuget.org/packages/ExFat.Core), which allows simple exFAT management at three different levels (partition, entry and path).
-* The DiscUtils package [NuGet](https://www.nuget.org/packages/ExFat.DiscUtils), which depends on [DiscUtils](https://www.nuget.org/packages/DiscUtils) package.
+* The DiscUtils package `ExFat.DiscUtils` available from [NuGet](https://www.nuget.org/packages/ExFat.DiscUtils), which depends on [`DiscUtils`](https://www.nuget.org/packages/DiscUtils) package.
 
 Currently, `ExFat.Core` does what it says: files/directories manipulation at any level.
 DiscUtils support is on its way and should be released in the very next few days.
