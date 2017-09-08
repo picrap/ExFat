@@ -10,9 +10,25 @@ namespace ExFat.Partition.Entries
     using Buffers;
     using Buffer = Buffers.Buffer;
 
+    /// <summary>
+    /// Simple (raw) directory entry
+    /// </summary>
     public class ExFatDirectoryEntry
     {
+        /// <summary>
+        /// Gets the buffer.
+        /// </summary>
+        /// <value>
+        /// The buffer.
+        /// </value>
         protected internal Buffer Buffer { get; }
+
+        /// <summary>
+        /// Gets or sets the type of the entry.
+        /// </summary>
+        /// <value>
+        /// The type of the entry.
+        /// </value>
         public IValueProvider<ExFatDirectoryEntryType> EntryType { get; }
 
         /// <summary>
@@ -41,9 +57,25 @@ namespace ExFat.Partition.Entries
             }
         }
 
+        /// <summary>
+        /// Gets a value indicating whether this instance is secondary.
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if this instance is secondary; otherwise, <c>false</c>.
+        /// </value>
         public bool IsSecondary => (EntryType.Value & ExFatDirectoryEntryType.Secondary) != 0;
+        /// <summary>
+        /// Gets a value indicating whether this instance is benign.
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if this instance is benign; otherwise, <c>false</c>.
+        /// </value>
         public bool IsBenign => (EntryType.Value & ExFatDirectoryEntryType.Benign) != 0;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ExFatDirectoryEntry"/> class.
+        /// </summary>
+        /// <param name="buffer">The buffer.</param>
         protected ExFatDirectoryEntry(Buffer buffer)
         {
             Buffer = buffer;
@@ -89,6 +121,10 @@ namespace ExFat.Partition.Entries
             }
         }
 
+        /// <summary>
+        /// Updates this entry using the specified secondary entries.
+        /// </summary>
+        /// <param name="secondaryEntries">The secondary entries.</param>
         public virtual void Update(ICollection<ExFatDirectoryEntry> secondaryEntries)
         {
         }

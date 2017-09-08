@@ -5,7 +5,6 @@
 namespace ExFat.IO
 {
     using System;
-    using System.Collections.Generic;
     using System.Diagnostics;
 
     /// <summary>
@@ -55,6 +54,13 @@ namespace ExFat.IO
             Length = length;
         }
 
+        /// <summary>
+        /// Determines whether the specified <see cref="System.Object" />, is equal to this instance.
+        /// </summary>
+        /// <param name="obj">The <see cref="System.Object" /> to compare with this instance.</param>
+        /// <returns>
+        ///   <c>true</c> if the specified <see cref="System.Object" /> is equal to this instance; otherwise, <c>false</c>.
+        /// </returns>
         public override bool Equals(object obj)
         {
             if (!(obj is DataDescriptor other))
@@ -62,6 +68,12 @@ namespace ExFat.IO
             return FirstCluster == other.FirstCluster && Contiguous == other.Contiguous && Length == other.Length;
         }
 
+        /// <summary>
+        /// Returns a hash code for this instance.
+        /// </summary>
+        /// <returns>
+        /// A hash code for this instance, suitable for use in hashing algorithms and data structures like a hash table. 
+        /// </returns>
         public override int GetHashCode()
         {
             return FirstCluster.Value.GetHashCode() ^ Contiguous.GetHashCode() ^ Length.GetHashCode();

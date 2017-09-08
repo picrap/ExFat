@@ -5,9 +5,10 @@
 namespace ExFat
 {
     using System;
-    using System.Globalization;
-    using System.Linq;
 
+    /// <summary>
+    /// Utility for <see cref="DateTime"/>
+    /// </summary>
     public static class DateTimeUtility
     {
         /// <summary>
@@ -46,6 +47,11 @@ namespace ExFat
             return Tuple.Create((UInt32) timeStamp, (Byte) tenMs);
         }
 
+        /// <summary>
+        /// Converts an exFAT time offset to <see cref="TimeSpan"/>.
+        /// </summary>
+        /// <param name="offset">The offset.</param>
+        /// <returns></returns>
         public static TimeSpan FromTimeZoneOffset(Byte offset)
         {
             if (offset < 0x80)

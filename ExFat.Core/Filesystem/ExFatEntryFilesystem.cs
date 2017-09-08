@@ -12,6 +12,11 @@ namespace ExFat.Filesystem
     using Partition.Entries;
     using Buffer = Buffers.Buffer;
 
+    /// <summary>
+    /// Filesystem access at low-level: entry manipulation
+    /// (high level is <see cref="ExFatPathFilesystem"/> which works with paths)
+    /// </summary>
+    /// <seealso cref="System.IDisposable" />
     public class ExFatEntryFilesystem : IDisposable
     {
         private readonly ExFatFilesystemFlags _flags;
@@ -58,6 +63,9 @@ namespace ExFat.Filesystem
             _partition = partition;
         }
 
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// </summary>
         public void Dispose()
         {
             _partition.Dispose();
@@ -69,6 +77,12 @@ namespace ExFat.Filesystem
                 attributesOverride: ExFatFileAttributes.Directory);
         }
 
+        /// <summary>
+        /// Enumerates the file system entries.
+        /// </summary>
+        /// <param name="directoryEntry">The directory entry.</param>
+        /// <returns></returns>
+        /// <exception cref="System.InvalidOperationException"></exception>
         public IEnumerable<ExFatFilesystemEntry> EnumerateFileSystemEntries(ExFatFilesystemEntry directoryEntry)
         {
             if (!directoryEntry.IsDirectory)
@@ -82,6 +96,13 @@ namespace ExFat.Filesystem
             }
         }
 
+        /// <summary>
+        /// Finds a child with given name.
+        /// </summary>
+        /// <param name="directoryEntry">The directory entry.</param>
+        /// <param name="name">The name.</param>
+        /// <returns></returns>
+        /// <exception cref="System.InvalidOperationException"></exception>
         public ExFatFilesystemEntry FindChild(ExFatFilesystemEntry directoryEntry, string name)
         {
             if (!directoryEntry.IsDirectory)
@@ -260,6 +281,10 @@ namespace ExFat.Filesystem
             }
         }
 
+        /// <summary>
+        /// Deletes the specified entry.
+        /// </summary>
+        /// <param name="entry">The entry.</param>
         public void Delete(ExFatFilesystemEntry entry)
         {
             _partition.Deallocate(entry.DataDescriptor);
@@ -268,6 +293,10 @@ namespace ExFat.Filesystem
             Update(entry);
         }
 
+        /// <summary>
+        /// Deletes the tree for specified entry.
+        /// </summary>
+        /// <param name="entry">The entry.</param>
         public void DeleteTree(ExFatFilesystemEntry entry)
         {
             if (entry.IsDirectory)
@@ -278,6 +307,10 @@ namespace ExFat.Filesystem
             Delete(entry);
         }
 
+        /// <summary>
+        /// Writes entry to partition (after changes).
+        /// </summary>
+        /// <param name="entry">The entry.</param>
         public void Update(ExFatFilesystemEntry entry)
         {
             _partition.UpdateEntry(entry.ParentDataDescriptor, entry.MetaEntry);

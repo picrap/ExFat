@@ -15,12 +15,22 @@ namespace ExFat.Partition.Entries
     {
         private readonly IValueProvider<Byte> _timeZoneOffsetProvider;
 
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
+        /// <value>
+        /// The value.
+        /// </value>
         public TimeSpan Value
         {
             get { return DateTimeUtility.FromTimeZoneOffset(_timeZoneOffsetProvider.Value); }
             set { _timeZoneOffsetProvider.Value = value.ToTimeZoneOffset(); }
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="EntryTimeZone"/> class.
+        /// </summary>
+        /// <param name="timeZoneOffsetProvider">The time zone offset provider.</param>
         public EntryTimeZone(IValueProvider<Byte> timeZoneOffsetProvider)
         {
             _timeZoneOffsetProvider = timeZoneOffsetProvider;

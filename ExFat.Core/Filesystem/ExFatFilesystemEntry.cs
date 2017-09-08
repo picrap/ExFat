@@ -10,6 +10,10 @@ namespace ExFat.Filesystem
     using IO;
     using Partition.Entries;
 
+    /// <summary>
+    /// Entry for <see cref="ExFatEntryFilesystem"/>.
+    /// Links to <see cref="ExFatMetaDirectoryEntry"/> for partition-level manipulation
+    /// </summary>
     [DebuggerDisplay("{" + nameof(DebugLiteral) + "}")]
     public class ExFatFilesystemEntry
     {

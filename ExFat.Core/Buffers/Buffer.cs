@@ -7,6 +7,9 @@ namespace ExFat.Buffers
     using System;
     using System.Collections.Generic;
 
+    /// <summary>
+    /// Represents a byte buffer. May be a part of a bigger buffer.
+    /// </summary>
     public class Buffer
     {
         /// <summary>
@@ -73,6 +76,11 @@ namespace ExFat.Buffers
             return bytes;
         }
 
+        /// <summary>
+        /// Sets the specified bytes to the buffer.
+        /// </summary>
+        /// <param name="bytes">The bytes.</param>
+        /// <exception cref="System.ArgumentException">bytes</exception>
         public void Set(IList<byte> bytes)
         {
             if (bytes.Count > Length)
