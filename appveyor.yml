@@ -37,6 +37,9 @@ build:
   verbosity: minimal
   project: ExFat.sln
 
+artifacts:
+  - path: 'ExFat\bin\$(configuration)\*.nupkg'
+
 deploy:
   provider: NuGet
   api_key:

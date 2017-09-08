@@ -1,0 +1,17 @@
+﻿<#@ template debug="false" hostspecific="false" language="C#" #>
+<#@ output extension=".cs" #>
+<#@ include file="ProductInfoValues.tt" #>
+// This is ExFat, an exFAT accessor written in pure C#
+// Released under MIT license
+// https://github.com/picrap/ExFat
+
+using System.Reflection;
+
+[assembly: AssemblyCompany("<#=Company#>")]
+[assembly: AssemblyProduct("<#=Title#>")]
+[assembly: AssemblyCopyright("MIT license <#=LicenseUrl#>")]
+[assembly: AssemblyTrademark("")]
+[assembly: AssemblyCulture("")]
+
+[assembly: AssemblyVersion("<#=Version#>")]
+[assembly: AssemblyFileVersion("<#=Version#>")]

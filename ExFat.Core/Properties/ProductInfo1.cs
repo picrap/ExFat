@@ -7,7 +7,7 @@ using System.Reflection;
 
 [assembly: AssemblyCompany("picrap")]
 [assembly: AssemblyProduct("ExFat")]
-[assembly: AssemblyCopyright("MIT license http://opensource.org/licenses/mit-license.php")]
+[assembly: AssemblyCopyright("Copyright © Pascal Craponne - Released under MIT license")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
