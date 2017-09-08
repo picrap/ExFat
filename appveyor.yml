@@ -38,7 +38,7 @@ build:
   project: ExFat.sln
 
 artifacts:
-  - path: 'ExFat\bin\$(configuration)\*.nupkg'
+  - path: 'ExFat.Core\bin\$(configuration)\*.nupkg'
 
 deploy:
   provider: NuGet
