@@ -22,9 +22,9 @@
     <developmentDependency>false</developmentDependency>
   </metadata>
   <files>
-    <file src="..\bin\$ConfigurationName$\ExFat.dll" target="lib\net40-client"/>
-    <file src="..\bin\$ConfigurationName$\ExFat.xml" target="lib\net40-client"/>
-    <file src="..\bin\$ConfigurationName$\ExFat.pdb" target="lib\net40-client"/>
+    <file src="bin\$ConfigurationName$\ExFat.Core.dll" target="lib\net40-client"/>
+    <file src="bin\$ConfigurationName$\ExFat.Core.xml" target="lib\net40-client"/>
+    <file src="bin\$ConfigurationName$\ExFat.Core.pdb" target="lib\net40-client"/>
     <file src="**\*.cs" target="src"/>
   </files>
 </package>

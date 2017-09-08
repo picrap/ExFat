@@ -9,7 +9,7 @@ var VersionMajor = "0";
 var VersionMinor = "1";
 var VersionPatch = "0";
 var Version = VersionMajor + "." + VersionMinor + "." + VersionPatch;
-var PreVersion = "dev";
+var PreVersion = "-dev";
 
 var Title = "ExFat";
 var Company = "picrap";
