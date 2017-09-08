@@ -1,5 +1,6 @@
 ﻿{
   "dependencies": {
+    "Clarius.TransformOnBuild": "1.1.12",
     "DiscUtils.Core": "0.13.0-alpha"
   },
   "frameworks": {
