@@ -92,13 +92,14 @@ namespace ExFat.DiscUtils
 
         public override bool DirectoryExists(string path)
         {
-            // TODO
-            throw new NotImplementedException();
+            var information = _filesystem.GetInformation(path);
+            return information != null && information.Attributes.HasAny(FileAttributes.Directory);
         }
 
         public override bool FileExists(string path)
         {
-            throw new NotImplementedException();
+            var information = _filesystem.GetInformation(path);
+            return information != null && !information.Attributes.HasAny(FileAttributes.Directory);
         }
 
         public override string[] GetDirectories(string path, string searchPattern, SearchOption searchOption)

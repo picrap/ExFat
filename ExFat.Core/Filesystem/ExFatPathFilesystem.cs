@@ -184,5 +184,18 @@ namespace ExFat.Filesystem
             }
             Delete(path);
         }
+
+        /// <summary>
+        /// Gets the information.
+        /// </summary>
+        /// <param name="path">The path.</param>
+        /// <returns></returns>
+        public ExFatEntryInformation GetInformation(string path)
+        {
+            var entry = GetEntry(path);
+            if (entry == null)
+                return null;
+            return new ExFatEntryInformation(_entryFilesystem, entry);
+        }
     }
 }
