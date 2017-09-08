@@ -8,16 +8,26 @@ namespace ExFat.Partition
     using System.IO;
     using IO;
 
+    /// <summary>
+    /// Allocation bitmap manager. Allows to allocate or free clusters from bitmap.
+    /// This is where you start when you want a free cluster, then it needs to be chained... If not contiguous
+    /// </summary>
     public class ExFatAllocationBitmap
     {
         private byte[] _bitmap;
         private Stream _dataStream;
         private uint _firstCluster;
 
+        /// <summary>
+        /// Gets the length.
+        /// </summary>
+        /// <value>
+        /// The length.
+        /// </value>
         public long Length { get; private set; }
 
         /// <summary>
-        /// Gets or sets the allocation state fpr the specified cluster.
+        /// Gets or sets the allocation state for the specified cluster.
         /// </summary>
         /// <value>
         /// The <see cref="System.Boolean"/>.
@@ -45,17 +55,29 @@ namespace ExFat.Partition
             Length = length;
         }
 
+        /// <summary>
+        /// Flushes this instance.
+        /// </summary>
         public void Flush()
         {
             _dataStream.Flush();
         }
 
+        /// <summary>
+        /// Releases resources.
+        /// </summary>
         public void Dispose()
         {
             Flush();
             _dataStream.Dispose();
         }
 
+        /// <summary>
+        /// Indicates whether the specified cluster is free
+        /// </summary>
+        /// <param name="cluster">The cluster.</param>
+        /// <returns></returns>
+        /// <exception cref="System.ArgumentOutOfRangeException">cluster</exception>
         public bool GetAt(Cluster cluster)
         {
             if (cluster.Value < _firstCluster || cluster.Value >= Length)
@@ -66,6 +88,12 @@ namespace ExFat.Partition
             return (_bitmap[byteIndex] & bitMask) != 0;
         }
 
+        /// <summary>
+        /// Allocates or frees the specified cluster
+        /// </summary>
+        /// <param name="cluster">The cluster.</param>
+        /// <param name="allocated">if set to <c>true</c> [allocated].</param>
+        /// <exception cref="System.ArgumentOutOfRangeException">cluster</exception>
         public void SetAt(Cluster cluster, bool allocated)
         {
             if (cluster.Value < _firstCluster || cluster.Value >= Length)
@@ -82,6 +110,12 @@ namespace ExFat.Partition
             _dataStream.Write(_bitmap, byteIndex, 1);
         }
 
+        /// <summary>
+        /// Finds one or more unallocated cluster.
+        /// Does not allocate them, so all allocation process must be perform form within a lock
+        /// </summary>
+        /// <param name="contiguous">The contiguous.</param>
+        /// <returns></returns>
         public Cluster FindUnallocated(int contiguous = 1)
         {
             UInt32 freeCluster = 0;

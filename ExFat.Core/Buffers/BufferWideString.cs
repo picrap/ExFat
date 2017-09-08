@@ -8,6 +8,10 @@ namespace ExFat.Buffers
     using System.Diagnostics;
     using System.Linq;
 
+    /// <summary>
+    /// 16-bit char string buffer
+    /// </summary>
+    /// <seealso cref="string" />
     [DebuggerDisplay("{" + nameof(Value) + "}")]
     public class BufferWideString : IValueProvider<string>
     {
@@ -40,6 +44,7 @@ namespace ExFat.Buffers
             return new[] { (byte)(c & 0xFF), (byte)(c >> 8) };
         }
 
+        /// <inheritdoc />
         /// <summary>
         /// Gets or sets the value.
         /// </summary>

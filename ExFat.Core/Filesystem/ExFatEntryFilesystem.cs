@@ -159,7 +159,7 @@ namespace ExFat.Filesystem
             return OpenData(fileEntry, FileAccess.ReadWrite);
         }
 
-        private PartitionStream OpenData(ExFatFilesystemEntry fileEntry, FileAccess access)
+        private Stream OpenData(ExFatFilesystemEntry fileEntry, FileAccess access)
         {
             return _partition.OpenDataStream(fileEntry.DataDescriptor, access, d => UpdateEntry(fileEntry, access, d));
         }

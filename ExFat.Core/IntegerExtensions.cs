@@ -6,6 +6,9 @@ namespace ExFat
 {
     using System;
 
+    /// <summary>
+    /// Extensions to <see cref="int"/> and friends
+    /// </summary>
     public static class IntegerExtensions
     {
         /// <summary>

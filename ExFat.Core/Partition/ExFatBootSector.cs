@@ -9,15 +9,36 @@ namespace ExFat.Partition
     using Buffers;
     using Buffer = Buffers.Buffer;
 
+    /// <summary>
+    /// exFAT boot sector
+    /// </summary>
     public class ExFatBootSector
     {
+        /// <summary>
+        /// The default JMP boot
+        /// </summary>
         public static readonly byte[] DefaultJmpBoot = new byte[] {0xEB, 0x76, 0x90};
+        /// <summary>
+        /// The OEM name
+        /// </summary>
         public const string ExFatOemName = "EXFAT   ";
 
         private readonly byte[] _bytes;
 
+        /// <summary>
+        /// Gets or sets the JMP boot.
+        /// </summary>
+        /// <value>
+        /// The JMP boot.
+        /// </value>
         public BufferBytes JmpBoot { get; }
 
+        /// <summary>
+        /// Gets or sets the OEM name.
+        /// </summary>
+        /// <value>
+        /// The name of the oem.
+        /// </value>
         public IValueProvider<string> OemName { get; }
 
         /// <summary>
@@ -74,7 +95,7 @@ namespace ExFat.Partition
         ///         0 – 1st , 1 – 2nd
         /// Bit 1 – Volume Dirty
         ///         0 – Clean, 1- dirty
-        /// Bits 2 & 3 – Media failure
+        /// Bits 2 + 3 – Media failure
         ///         0 – No failures, 1 – failures reported
         /// </summary>
         /// <value>
@@ -138,6 +159,10 @@ namespace ExFat.Partition
             NumberOfFats = new BufferUInt8(buffer, 110);
         }
 
+        /// <summary>
+        /// Reads boot sector from specified stream.
+        /// </summary>
+        /// <param name="stream">The stream.</param>
         public void Read(Stream stream)
         {
             stream.Read(_bytes, 0, _bytes.Length);

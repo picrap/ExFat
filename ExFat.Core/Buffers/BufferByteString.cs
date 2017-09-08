@@ -9,6 +9,10 @@ namespace ExFat.Buffers
     using System.Linq;
     using System.Text;
 
+    /// <summary>
+    /// 8-bit char string
+    /// </summary>
+    /// <seealso cref="string" />
     [DebuggerDisplay("{" + nameof(Value) + "}")]
     public class BufferByteString : IValueProvider<string>
     {
@@ -25,6 +29,7 @@ namespace ExFat.Buffers
             }
         }
 
+        /// <inheritdoc />
         /// <summary>
         /// Gets or sets the value.
         /// </summary>

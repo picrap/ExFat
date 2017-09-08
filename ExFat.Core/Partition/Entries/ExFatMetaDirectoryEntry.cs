@@ -14,6 +14,12 @@ namespace ExFat.Partition.Entries
     /// </summary>
     public class ExFatMetaDirectoryEntry : IDataProvider
     {
+        /// <summary>
+        /// Gets all entries.
+        /// </summary>
+        /// <value>
+        /// The entries.
+        /// </value>
         public List<ExFatDirectoryEntry> Entries { get; } = new List<ExFatDirectoryEntry>();
 
         /// <summary>

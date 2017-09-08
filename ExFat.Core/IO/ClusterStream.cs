@@ -8,7 +8,12 @@ namespace ExFat.IO
     using System.IO;
     using Partition;
 
-    public class ClusterStream : PartitionStream
+    /// <inheritdoc />
+    /// <summary>
+    /// Stream, based on clusters chain
+    /// </summary>
+    /// <seealso cref="T:System.IO.Stream" />
+    public class ClusterStream : Stream
     {
         private readonly IClusterReader _clusterReader;
         private readonly IClusterWriter _clusterWriter;
@@ -28,14 +33,27 @@ namespace ExFat.IO
 
         private int CurrentClusterOffset => (int)_position % _clusterReader.BytesPerCluster;
 
+        /// <inheritdoc />
+        /// <summary>
+        /// Gets a value indicating whether the current stream supports reading.
+        /// </summary>
         public override bool CanRead => true;
+        /// <inheritdoc />
+        /// <summary>
+        /// Gets a value indicating whether the current stream supports seeking.
+        /// </summary>
         public override bool CanSeek => _length.HasValue;
+        /// <inheritdoc />
+        /// <summary>
+        /// When overridden in a derived class, gets a value indicating whether the current stream supports writing.
+        /// </summary>
         public override bool CanWrite => _clusterWriter != null;
 
+        /// <inheritdoc />
         /// <summary>
         /// Gets the length in bytes of the stream.
         /// </summary>
-        /// <exception cref="System.NotSupportedException"></exception>
+        /// <exception cref="T:System.NotSupportedException"></exception>
         public override long Length
         {
             get
@@ -46,6 +64,7 @@ namespace ExFat.IO
             }
         }
 
+        /// <inheritdoc />
         /// <summary>
         /// Gets or sets the position within the current stream.
         /// </summary>
@@ -55,25 +74,15 @@ namespace ExFat.IO
             set { Seek(value, SeekOrigin.Begin); }
         }
 
-        public override Cluster Cluster
-        {
-            get
-            {
-                SeekClusterFromPosition(false, false);
-                if (CurrentClusterIndexFromPosition == _currentClusterDataIndex)
-                    return _currentCluster;
-                return Cluster.Last;
-            }
-        }
-
+        /// <inheritdoc />
         /// <summary>
-        /// Initializes a new instance of the <see cref="ClusterStream" /> class.
+        /// Initializes a new instance of the <see cref="T:ExFat.IO.ClusterStream" /> class.
         /// </summary>
         /// <param name="clusterReader">The cluster information reader.</param>
         /// <param name="clusterWriter">The cluster writer.</param>
         /// <param name="dataDescriptor">The data descriptor.</param>
         /// <param name="onDisposed">Method invoked when stream is disposed.</param>
-        /// <exception cref="ArgumentException">If contiguous is true, the length must be specified</exception>
+        /// <exception cref="T:System.ArgumentException">If contiguous is true, the length must be specified</exception>
         public ClusterStream(IClusterReader clusterReader, IClusterWriter clusterWriter, DataDescriptor dataDescriptor, Action<DataDescriptor> onDisposed)
         {
             _clusterReader = clusterReader;
@@ -91,6 +100,11 @@ namespace ExFat.IO
                 SeekClusterFromPosition(true, true);
         }
 
+        /// <inheritdoc />
+        /// <summary>
+        /// Releases the unmanaged resources used by the <see cref="T:System.IO.Stream" /> and optionally releases the managed resources.
+        /// </summary>
+        /// <param name="disposing">true to release both managed and unmanaged resources; false to release only unmanaged resources.</param>
         protected override void Dispose(bool disposing)
         {
             FlushCurrentCluster();
@@ -287,6 +301,16 @@ namespace ExFat.IO
             return cluster;
         }
 
+        /// <inheritdoc />
+        /// <summary>
+        /// Reads a sequence of bytes from the current stream and advances the position within the stream by the number of bytes read.
+        /// </summary>
+        /// <param name="buffer">An array of bytes. When this method returns, the buffer contains the specified byte array with the values between <paramref name="offset" /> and (<paramref name="offset" /> + <paramref name="count" /> - 1) replaced by the bytes read from the current source.</param>
+        /// <param name="offset">The zero-based byte offset in <paramref name="buffer" /> at which to begin storing the data read from the current stream.</param>
+        /// <param name="count">The maximum number of bytes to be read from the current stream.</param>
+        /// <returns>
+        /// The total number of bytes read into the buffer. This can be less than the number of bytes requested if that many bytes are not currently available, or zero (0) if the end of the stream has been reached.
+        /// </returns>
         public override int Read(byte[] buffer, int offset, int count)
         {
             var totalRead = 0;
@@ -317,13 +341,14 @@ namespace ExFat.IO
             return totalRead;
         }
 
+        /// <inheritdoc />
         /// <summary>
         /// Writes a sequence of bytes to the current stream and advances the current position within this stream by the number of bytes written.
         /// </summary>
         /// <param name="buffer">An array of bytes. This method copies <paramref name="count" /> bytes from <paramref name="buffer" /> to the current stream.</param>
         /// <param name="offset">The zero-based byte offset in <paramref name="buffer" /> at which to begin copying bytes to the current stream.</param>
         /// <param name="count">The number of bytes to be written to the current stream.</param>
-        /// <exception cref="NotSupportedException"></exception>
+        /// <exception cref="T:System.NotSupportedException"></exception>
         public override void Write(byte[] buffer, int offset, int count)
         {
             if (!CanWrite)

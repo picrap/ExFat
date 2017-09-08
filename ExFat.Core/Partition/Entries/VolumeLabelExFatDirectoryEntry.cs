@@ -9,6 +9,10 @@ namespace ExFat.Partition.Entries
     using Buffers;
     using Buffer = Buffers.Buffer;
 
+    /// <summary>
+    /// Volume label
+    /// </summary>
+    /// <seealso cref="ExFat.Partition.Entries.ExFatDirectoryEntry" />
     [DebuggerDisplay("Volume label {" + nameof(VolumeLabel) + "}")]
     public class VolumeLabelExFatDirectoryEntry : ExFatDirectoryEntry
     {

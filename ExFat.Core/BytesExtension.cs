@@ -6,6 +6,9 @@ namespace ExFat
 {
     using System;
 
+    /// <summary>
+    /// Extenstions to <see cref="byte"/>[]
+    /// </summary>
     public static class BytesExtension
     {
         /// <summary>
@@ -20,7 +23,7 @@ namespace ExFat
         {
             count += offset;
             for (int index = offset; index < count; index++)
-                checksum = (UInt16) (checksum.RotateRight() + bytes[index]);
+                checksum = (UInt16)(checksum.RotateRight() + bytes[index]);
             return checksum;
         }
     }

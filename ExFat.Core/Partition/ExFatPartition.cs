@@ -11,6 +11,7 @@ namespace ExFat.Partition
     using Entries;
     using IO;
 
+    /// <inheritdoc />
     /// <summary>
     /// The ExFAT filesystem.
     /// The class is a quite low-level accessor
@@ -20,12 +21,40 @@ namespace ExFat.Partition
         private readonly Stream _partitionStream;
         private readonly object _streamLock = new object();
 
+        /// <summary>
+        /// Gets the boot sector.
+        /// </summary>
+        /// <value>
+        /// The boot sector.
+        /// </value>
         public ExFatBootSector BootSector { get; }
 
+        /// <inheritdoc />
+        /// <summary>
+        /// Gets the cluster size, in bytes
+        /// </summary>
+        /// <value>
+        /// The bytes per cluster.
+        /// </value>
         public int BytesPerCluster => (int)(BootSector.SectorsPerCluster.Value * BootSector.BytesPerSector.Value);
 
+        /// <summary>
+        /// Gets the root directory data descriptor.
+        /// </summary>
+        /// <value>
+        /// The root directory data descriptor.
+        /// </value>
         public DataDescriptor RootDirectoryDataDescriptor => new DataDescriptor(BootSector.RootDirectoryCluster.Value, false, long.MaxValue);
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ExFatPartition"/> class.
+        /// </summary>
+        /// <param name="partitionStream">The partition stream.</param>
+        /// <exception cref="System.ArgumentException">
+        /// Given stream must be seekable
+        /// or
+        /// Given stream must be readable
+        /// </exception>
         public ExFatPartition(Stream partitionStream)
         {
             if (!partitionStream.CanSeek)
@@ -37,12 +66,18 @@ namespace ExFat.Partition
             BootSector = ReadBootSector(_partitionStream);
         }
 
+        /// <summary>
+        /// Releases (actually flushes) all pending resources (which are actually already flushed).
+        /// </summary>
         public void Dispose()
         {
             Flush();
             DisposeAllocationBitmap();
         }
 
+        /// <summary>
+        /// Disposes the allocation bitmap.
+        /// </summary>
         private void DisposeAllocationBitmap()
         {
             _allocationBitmap?.Dispose();
@@ -58,6 +93,9 @@ namespace ExFat.Partition
             FlushPartitionStream();
         }
 
+        /// <summary>
+        /// Flushes the partition stream.
+        /// </summary>
         private void FlushPartitionStream()
         {
             // because .Flush() is not implemented in DiscUtils :)
@@ -70,11 +108,19 @@ namespace ExFat.Partition
             }
         }
 
+        /// <summary>
+        /// Flushes the allocation bitmap.
+        /// </summary>
         private void FlushAllocationBitmap()
         {
             _allocationBitmap?.Flush();
         }
 
+        /// <summary>
+        /// Reads the boot sector.
+        /// </summary>
+        /// <param name="partitionStream">The partition stream.</param>
+        /// <returns></returns>
         public static ExFatBootSector ReadBootSector(Stream partitionStream)
         {
             partitionStream.Seek(0, SeekOrigin.Begin);
@@ -83,21 +129,40 @@ namespace ExFat.Partition
             return bootSector;
         }
 
+        /// <summary>
+        /// Gets the cluster offset.
+        /// </summary>
+        /// <param name="cluster">The cluster.</param>
+        /// <returns></returns>
         public long GetClusterOffset(Cluster cluster)
         {
             return (BootSector.ClusterOffsetSector.Value + (cluster.Value - 2) * BootSector.SectorsPerCluster.Value) * BootSector.BytesPerSector.Value;
         }
 
+        /// <summary>
+        /// Seeks the cluster.
+        /// </summary>
+        /// <param name="cluster">The cluster.</param>
+        /// <param name="offset">The offset.</param>
         private void SeekCluster(Cluster cluster, long offset = 0)
         {
             _partitionStream.Seek(GetClusterOffset(cluster) + offset, SeekOrigin.Begin);
         }
 
+        /// <summary>
+        /// Gets the sector offset.
+        /// </summary>
+        /// <param name="sectorIndex">Index of the sector.</param>
+        /// <returns></returns>
         public long GetSectorOffset(long sectorIndex)
         {
             return sectorIndex * (int)BootSector.BytesPerSector.Value;
         }
 
+        /// <summary>
+        /// Seeks the sector.
+        /// </summary>
+        /// <param name="sectorIndex">Index of the sector.</param>
         private void SeekSector(long sectorIndex)
         {
             _partitionStream.Seek(GetSectorOffset(sectorIndex), SeekOrigin.Begin);
@@ -139,6 +204,12 @@ namespace ExFat.Partition
             }
         }
 
+        /// <inheritdoc />
+        /// <summary>
+        /// Gets the next cluster for a given cluster.
+        /// </summary>
+        /// <param name="cluster">The cluster.</param>
+        /// <returns></returns>
         public Cluster GetNextCluster(Cluster cluster)
         {
             // TODO: optimize?
@@ -173,6 +244,12 @@ namespace ExFat.Partition
             }
         }
 
+        /// <inheritdoc />
+        /// <summary>
+        /// Sets the next cluster.
+        /// </summary>
+        /// <param name="cluster">The cluster.</param>
+        /// <param name="nextCluster">The next cluster.</param>
         public void SetNextCluster(Cluster cluster, Cluster nextCluster)
         {
             lock (_streamLock)
@@ -236,6 +313,21 @@ namespace ExFat.Partition
             }
         }
 
+        /// <inheritdoc />
+        /// <summary>
+        /// Reads one cluster.
+        /// </summary>
+        /// <param name="cluster">The cluster number.</param>
+        /// <param name="clusterBuffer">The cluster buffer. It must be large enough to contain full cluster</param>
+        /// <param name="offset"></param>
+        /// <param name="length"></param>
+        /// <exception cref="T:System.ArgumentOutOfRangeException">
+        /// length
+        /// or
+        /// length
+        /// or
+        /// offset
+        /// </exception>
         public void ReadCluster(Cluster cluster, byte[] clusterBuffer, int offset, int length)
         {
             if (length + offset > BytesPerCluster)
@@ -251,6 +343,21 @@ namespace ExFat.Partition
             }
         }
 
+        /// <inheritdoc />
+        /// <summary>
+        /// Writes the cluster.
+        /// </summary>
+        /// <param name="cluster">The cluster.</param>
+        /// <param name="clusterBuffer">The cluster buffer.</param>
+        /// <param name="offset"></param>
+        /// <param name="length"></param>
+        /// <exception cref="T:System.ArgumentOutOfRangeException">
+        /// length
+        /// or
+        /// length
+        /// or
+        /// offset
+        /// </exception>
         public void WriteCluster(Cluster cluster, byte[] clusterBuffer, int offset, int length)
         {
             if (length + offset > BytesPerCluster)
@@ -266,6 +373,12 @@ namespace ExFat.Partition
             }
         }
 
+        /// <summary>
+        /// Reads the sectors.
+        /// </summary>
+        /// <param name="sector">The sector.</param>
+        /// <param name="sectorBuffer">The sector buffer.</param>
+        /// <param name="sectorCount">The sector count.</param>
         public void ReadSectors(long sector, byte[] sectorBuffer, int sectorCount)
         {
             lock (_streamLock)
@@ -275,6 +388,12 @@ namespace ExFat.Partition
             }
         }
 
+        /// <summary>
+        /// Writes the sectors.
+        /// </summary>
+        /// <param name="sector">The sector.</param>
+        /// <param name="sectorBuffer">The sector buffer.</param>
+        /// <param name="sectorCount">The sector count.</param>
         public void WriteSectors(long sector, byte[] sectorBuffer, int sectorCount)
         {
             lock (_streamLock)
@@ -349,6 +468,10 @@ namespace ExFat.Partition
 
         private ExFatUpCaseTable _upCaseTable;
 
+        /// <summary>
+        /// Gets up case table.
+        /// </summary>
+        /// <returns></returns>
         public ExFatUpCaseTable GetUpCaseTable()
         {
             if (_upCaseTable == null)
@@ -368,6 +491,10 @@ namespace ExFat.Partition
 
         private ExFatAllocationBitmap _allocationBitmap;
 
+        /// <summary>
+        /// Gets the allocation bitmap.
+        /// </summary>
+        /// <returns></returns>
         public ExFatAllocationBitmap GetAllocationBitmap()
         {
             if (_allocationBitmap == null)

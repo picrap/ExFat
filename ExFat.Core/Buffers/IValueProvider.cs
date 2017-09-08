@@ -4,6 +4,11 @@
 
 namespace ExFat.Buffers
 {
+    /// <summary>
+    /// Anything that provides a value from stored data.
+    /// Provider implementations can be nested.
+    /// </summary>
+    /// <typeparam name="TValue">The type of the value.</typeparam>
     public interface IValueProvider<TValue>
     {
         /// <summary>

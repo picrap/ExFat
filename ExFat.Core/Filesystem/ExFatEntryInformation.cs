@@ -7,6 +7,10 @@ namespace ExFat.Filesystem
     using System;
     using System.IO;
 
+    /// <summary>
+    /// Information about file system entry.
+    /// High-level, related to <see cref="ExFatPathFilesystem"/>
+    /// </summary>
     public class ExFatEntryInformation
     {
         private readonly ExFatEntryFilesystem _entryFilesystem;

@@ -10,16 +10,33 @@ namespace ExFat.Filesystem
     using System.Linq;
     using Partition;
 
+    /// <inheritdoc />
+    /// <summary>
+    /// High-level file system, which works with paths
+    /// </summary>
+    /// <seealso cref="T:System.IDisposable" />
     public class ExFatPathFilesystem : IDisposable
     {
         private readonly ExFatEntryFilesystem _entryFilesystem;
         private readonly Cache<string, ExFatFilesystemEntry> _entries;
         private const char Separator = '\\';
 
+        /// <inheritdoc />
+        /// <summary>
+        /// Initializes a new instance of the <see cref="T:ExFat.Filesystem.ExFatPathFilesystem" /> class.
+        /// </summary>
+        /// <param name="partitionStream">The partition stream.</param>
+        /// <param name="flags">The flags.</param>
         public ExFatPathFilesystem(Stream partitionStream, ExFatFilesystemFlags flags = ExFatFilesystemFlags.Default)
             : this(new ExFatPartition(partitionStream), flags)
         { }
 
+        /// <inheritdoc />
+        /// <summary>
+        /// Initializes a new instance of the <see cref="T:ExFat.Filesystem.ExFatPathFilesystem" /> class.
+        /// </summary>
+        /// <param name="partition">The partition.</param>
+        /// <param name="flags">The flags.</param>
         public ExFatPathFilesystem(ExFatPartition partition, ExFatFilesystemFlags flags = ExFatFilesystemFlags.Default)
             : this(new ExFatEntryFilesystem(partition, flags))
         { }
@@ -34,6 +51,10 @@ namespace ExFat.Filesystem
             _entries = new Cache<string, ExFatFilesystemEntry>(Environment.ProcessorCount * (8 + 100));
         }
 
+        /// <inheritdoc />
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// </summary>
         public void Dispose()
         {
             _entryFilesystem.Dispose();
@@ -108,6 +129,11 @@ namespace ExFat.Filesystem
             _entryFilesystem.Update(entry);
         }
 
+        /// <summary>
+        /// Enumerates the files.
+        /// </summary>
+        /// <param name="directoryPath">The directory path.</param>
+        /// <returns></returns>
         public IEnumerable<string> EnumerateFiles(string directoryPath)
         {
             directoryPath = CleanupPath(directoryPath);
@@ -115,6 +141,11 @@ namespace ExFat.Filesystem
             return _entryFilesystem.EnumerateFileSystemEntries(directory).Where(e => !e.IsDirectory).Select(e => GetPath(directoryPath, e));
         }
 
+        /// <summary>
+        /// Enumerates the directories.
+        /// </summary>
+        /// <param name="directoryPath">The directory path.</param>
+        /// <returns></returns>
         public IEnumerable<string> EnumerateDirectories(string directoryPath)
         {
             directoryPath = CleanupPath(directoryPath);
@@ -122,6 +153,11 @@ namespace ExFat.Filesystem
             return _entryFilesystem.EnumerateFileSystemEntries(directory).Where(e => e.IsDirectory).Select(e => GetPath(directoryPath, e));
         }
 
+        /// <summary>
+        /// Enumerates the entries.
+        /// </summary>
+        /// <param name="directoryPath">The directory path.</param>
+        /// <returns></returns>
         public IEnumerable<string> EnumerateEntries(string directoryPath)
         {
             directoryPath = CleanupPath(directoryPath);
@@ -129,18 +165,78 @@ namespace ExFat.Filesystem
             return _entryFilesystem.EnumerateFileSystemEntries(directory).Select(e => GetPath(directoryPath, e));
         }
 
+        /// <summary>
+        /// Gets the creation time.
+        /// </summary>
+        /// <param name="path">The path.</param>
+        /// <returns></returns>
         public DateTime GetCreationTime(string path) => GetSafeEntry(path).CreationTime;
+        /// <summary>
+        /// Gets the creation time UTC.
+        /// </summary>
+        /// <param name="path">The path.</param>
+        /// <returns></returns>
         public DateTime GetCreationTimeUtc(string path) => GetSafeEntry(path).CreationTimeUtc;
+        /// <summary>
+        /// Gets the last write time.
+        /// </summary>
+        /// <param name="path">The path.</param>
+        /// <returns></returns>
         public DateTime GetLastWriteTime(string path) => GetSafeEntry(path).LastWriteTime;
+        /// <summary>
+        /// Gets the last write time UTC.
+        /// </summary>
+        /// <param name="path">The path.</param>
+        /// <returns></returns>
         public DateTime GetLastWriteTimeUtc(string path) => GetSafeEntry(path).LastWriteTimeUtc;
+        /// <summary>
+        /// Gets the last access time.
+        /// </summary>
+        /// <param name="path">The path.</param>
+        /// <returns></returns>
         public DateTime GetLastAccessTime(string path) => GetSafeEntry(path).LastAccessTime;
+        /// <summary>
+        /// Gets the last access time UTC.
+        /// </summary>
+        /// <param name="path">The path.</param>
+        /// <returns></returns>
         public DateTime GetLastAccessTimeUtc(string path) => GetSafeEntry(path).LastAccessTimeUtc;
 
+        /// <summary>
+        /// Sets the creation time.
+        /// </summary>
+        /// <param name="path">The path.</param>
+        /// <param name="creationTime">The creation time.</param>
         public void SetCreationTime(string path, DateTime creationTime) => UpdateSafeEntry(path, e => e.CreationDateTimeOffset = creationTime.ToLocalTime());
+        /// <summary>
+        /// Sets the creation time UTC.
+        /// </summary>
+        /// <param name="path">The path.</param>
+        /// <param name="creationTime">The creation time.</param>
         public void SetCreationTimeUtc(string path, DateTime creationTime) => UpdateSafeEntry(path, e => e.CreationDateTimeOffset = creationTime.ToUniversalTime());
+        /// <summary>
+        /// Sets the last write time.
+        /// </summary>
+        /// <param name="path">The path.</param>
+        /// <param name="lastWriteTime">The last write time.</param>
         public void SetLastWriteTime(string path, DateTime lastWriteTime) => UpdateSafeEntry(path, e => e.LastWriteDateTimeOffset = lastWriteTime.ToLocalTime());
+        /// <summary>
+        /// Sets the last write time UTC.
+        /// </summary>
+        /// <param name="path">The path.</param>
+        /// <param name="lastWriteTime">The last write time.</param>
         public void SetLastWriteTimeUtc(string path, DateTime lastWriteTime) => UpdateSafeEntry(path, e => e.LastWriteDateTimeOffset = lastWriteTime.ToUniversalTime());
+        /// <summary>
+        /// Sets the last access time.
+        /// </summary>
+        /// <param name="path">The path.</param>
+        /// <param name="lastAccessTime">The last access time.</param>
         public void SetLastAccessTime(string path, DateTime lastAccessTime) => UpdateSafeEntry(path, e => e.LastAccessDateTimeOffset = lastAccessTime.ToLocalTime());
+        /// <summary>
+        /// Sets the last access time UTC.
+        /// </summary>
+        /// <param name="path">The path.</param>
+        /// <param name="lastAccessTime">The last access time.</param>
         public void SetLastAccessTimeUtc(string path, DateTime lastAccessTime) => UpdateSafeEntry(path, e => e.LastAccessDateTimeOffset = lastAccessTime.ToUniversalTime());
 
         private ExFatFilesystemEntry CreateDirectoryEntry(string path)
@@ -155,11 +251,20 @@ namespace ExFat.Filesystem
             return directoryEntry;
         }
 
+        /// <summary>
+        /// Creates a directory under the given path.
+        /// </summary>
+        /// <param name="path">The path.</param>
         public void CreateDirectory(string path)
         {
             CreateDirectoryEntry(path);
         }
 
+        /// <summary>
+        /// Deletes the specified entry at given path.
+        /// </summary>
+        /// <param name="path">The path.</param>
+        /// <exception cref="System.IO.IOException"></exception>
         public void Delete(string path)
         {
             path = CleanupPath(path);
@@ -173,6 +278,11 @@ namespace ExFat.Filesystem
             _entryFilesystem.Delete(entry);
         }
 
+        /// <summary>
+        /// Deletes the tree at given path.
+        /// If the entry is a file, simply deletes the file.
+        /// </summary>
+        /// <param name="path">The path.</param>
         public void DeleteTree(string path)
         {
             path = CleanupPath(path);

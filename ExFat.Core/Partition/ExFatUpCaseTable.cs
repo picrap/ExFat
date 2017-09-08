@@ -7,10 +7,16 @@ namespace ExFat.Partition
     using System.Collections.Generic;
     using System.IO;
 
+    /// <summary>
+    /// Up-case table
+    /// </summary>
     public class ExFatUpCaseTable
     {
         private readonly IDictionary<char, char> _table = new Dictionary<char, char>();
 
+        /// <summary>
+        /// Sets the default table.
+        /// </summary>
         public void SetDefault()
         {
             _table.Clear();

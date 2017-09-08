@@ -7,6 +7,10 @@ namespace ExFat.Buffers
     using System;
     using System.Diagnostics;
 
+    /// <summary>
+    /// 32-bits unsigned int buffer
+    /// </summary>
+    /// <seealso cref="uint" />
     [DebuggerDisplay("{" + nameof(Value) + "}")]
     public class BufferUInt32 : IValueProvider<UInt32>
     {
@@ -24,6 +28,11 @@ namespace ExFat.Buffers
             set { LittleEndian.GetBytes(value, _buffer); }
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="BufferUInt32"/> class.
+        /// </summary>
+        /// <param name="buffer">The buffer.</param>
+        /// <param name="offset">The offset.</param>
         public BufferUInt32(Buffer buffer, int offset)
         {
             _buffer = new Buffer(buffer, offset, sizeof(UInt32));

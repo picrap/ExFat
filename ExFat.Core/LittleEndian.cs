@@ -8,6 +8,9 @@ namespace ExFat
     using System.Collections.Generic;
     using Buffer = Buffers.Buffer;
 
+    /// <summary>
+    /// Methods to convert between bytes and integers
+    /// </summary>
     public static class LittleEndian
     {
         /// <summary>
