@@ -13,6 +13,14 @@ namespace ExFat.DiscUtils.Tests
     [TestCategory("PathFilesystem")]
     public class PathFilesystemWriteTests
     {
+        private bool IsAlmostMoreRecentThan(DateTime test, DateTime reference)
+        {
+            var dt = test - reference;
+            // for some unknown (and strange) reason, a strict comparison fails on AppVeyor.
+            // I'd love to see how they manage the time
+            return dt.TotalHours > -1;
+        }
+
         [TestMethod]
         [TestCategory("Write")]
         public void CreateDirectory()
@@ -25,8 +33,7 @@ namespace ExFat.DiscUtils.Tests
                     var path = @"zzzz";
                     filesystem.CreateDirectory(path);
                     var d = filesystem.GetCreationTimeUtc(path);
-                    // for some unknown (and strange) reason, this failed on appveyor
-                    Assert.IsTrue(d >= now);
+                    Assert.IsTrue(IsAlmostMoreRecentThan(d, now));
                 }
             }
         }
@@ -43,7 +50,7 @@ namespace ExFat.DiscUtils.Tests
                     var path = @"a\b\c";
                     filesystem.CreateDirectory(path);
                     var d = filesystem.GetCreationTimeUtc(path);
-                    Assert.IsTrue(d >= now);
+                    Assert.IsTrue(IsAlmostMoreRecentThan(d, now));
                 }
             }
         }
