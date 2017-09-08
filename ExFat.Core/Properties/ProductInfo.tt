@@ -13,5 +13,7 @@ using System.Reflection;
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
-[assembly: AssemblyVersion("<#=Version#>")]
+[assembly: AssemblyVersion("<#=Version#>")] // <#=PreVersion#>
 [assembly: AssemblyFileVersion("<#=Version#>")]
+
+// <#=Description#>
