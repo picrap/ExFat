@@ -187,7 +187,10 @@ namespace ExFat.DiscUtils
 
         public override long GetFileLength(string path)
         {
-            throw new NotImplementedException();
+            var information = _filesystem.GetInformation(path);
+            if (information == null)
+                throw new FileNotFoundException();
+            return information.Length;
         }
     }
 }

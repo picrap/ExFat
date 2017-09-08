@@ -100,6 +100,14 @@ namespace ExFat.Filesystem
             set { _entry.LastAccessDateTimeOffset = value.ToUniversalTime(); Update(); }
         }
 
+        /// <summary>
+        /// Gets the length.
+        /// </summary>
+        /// <value>
+        /// The length.
+        /// </value>
+        public long Length => _entry.Length;
+
         internal ExFatEntryInformation(ExFatEntryFilesystem entryFilesystem, ExFatFilesystemEntry entry)
         {
             _entryFilesystem = entryFilesystem;
