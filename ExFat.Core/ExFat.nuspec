@@ -1,27 +1,2 @@
 ﻿<?xml version="1.0"?>
-
-<package>
-  <metadata>
-    <id>ExFat.Core</id>
-    <version>0.1.0-dev</version>
-    <title>ExFat</title>
-    <authors>picrap</authors>
-    <owners>picrap</owners>
-    <licenseUrl>http://opensource.org/licenses/mit-license.php</licenseUrl>
-    <projectUrl>https://github.com/picrap/ExFat</projectUrl>
-    <iconUrl>https://raw.githubusercontent.com/picrap/ExFat/master/Icon/ExFat.png</iconUrl>
-    <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <summary>exFAT filesystem handler in pure .NET</summary>
-    <description>ExFat allows to manage exFAT partitions at different levels: partition, file system entry or full path.</description>
-    <releaseNotes></releaseNotes>
-    <copyright>Copyright 2017 picrap</copyright>
-    <tags>exfat filesystem partition</tags>
-    <developmentDependency>false</developmentDependency>
-  </metadata>
-  <files>
-    <file src="bin\$ConfigurationName$\ExFat.Core.dll" target="lib\net40-client"/>
-    <file src="bin\$ConfigurationName$\ExFat.Core.xml" target="lib\net40-client"/>
-    <file src="bin\$ConfigurationName$\ExFat.Core.pdb" target="lib\net40-client"/>
-    <file src="**\*.cs" target="src"/>
-  </files>
-</package>
+<!-- This is replaced by TransformOnBuild -->
