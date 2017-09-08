@@ -58,8 +58,6 @@ namespace ExFat.Partition
             FlushPartitionStream();
         }
 
-        private byte[] _sector;
-
         private void FlushPartitionStream()
         {
             // because .Flush() is not implemented in DiscUtils :)
@@ -69,10 +67,6 @@ namespace ExFat.Partition
             }
             catch (NotImplementedException)
             {
-                if (_sector == null)
-                    _sector = new byte[BootSector.BytesPerSector.Value];
-                _partitionStream.Seek(0, SeekOrigin.Begin);
-                _partitionStream.Read(_sector, 0, _sector.Length);
             }
         }
 

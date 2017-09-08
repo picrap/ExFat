@@ -47,8 +47,6 @@ namespace ExFat.Partition
 
         public void Flush()
         {
-            _dataStream.Seek(0, SeekOrigin.Begin);
-            _dataStream.Write(_bitmap, 0, _bitmap.Length);
             _dataStream.Flush();
         }
 
