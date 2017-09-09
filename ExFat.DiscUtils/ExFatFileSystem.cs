@@ -143,7 +143,7 @@ namespace ExFat.DiscUtils
 
         private static Regex ConvertWildcardsToRegEx(string pattern)
         {
-            if (pattern == null)
+            if (pattern == null || pattern == "*.*")
                 return null;
 
             //if (!pattern.Contains("."))
