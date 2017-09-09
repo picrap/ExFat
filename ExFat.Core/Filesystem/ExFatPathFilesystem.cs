@@ -21,6 +21,29 @@ namespace ExFat.Filesystem
         private readonly Cache<string, ExFatFilesystemEntry> _entries;
         private const char Separator = '\\';
 
+        /// <summary>
+        /// Gets the total size.
+        /// </summary>
+        /// <value>
+        /// The total size.
+        /// </value>
+        public long TotalSpace => _entryFilesystem.TotalSpace;
+
+        /// <summary>
+        /// Gets the used space
+        /// </summary>
+        /// <value>
+        /// The used space.
+        /// </value>
+        public long UsedSpace => _entryFilesystem.UsedSpace;
+
+        /// <summary>
+        /// Gets the available size.
+        /// </summary>
+        /// <value>
+        /// The available size.
+        /// </value>
+        public long AvailableSpace => _entryFilesystem.AvailableSpace;
         /// <inheritdoc />
         /// <summary>
         /// Initializes a new instance of the <see cref="T:ExFat.Filesystem.ExFatPathFilesystem" /> class.

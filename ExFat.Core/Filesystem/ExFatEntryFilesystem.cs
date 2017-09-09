@@ -26,6 +26,30 @@ namespace ExFat.Filesystem
         private ExFatFilesystemEntry _rootDirectory;
 
         /// <summary>
+        /// Gets the total size.
+        /// </summary>
+        /// <value>
+        /// The total size.
+        /// </value>
+        public long TotalSpace => _partition.TotalSpace;
+
+        /// <summary>
+        /// Gets the used space
+        /// </summary>
+        /// <value>
+        /// The used space.
+        /// </value>
+        public long UsedSpace => _partition.UsedSpace;
+
+        /// <summary>
+        /// Gets the available size.
+        /// </summary>
+        /// <value>
+        /// The available size.
+        /// </value>
+        public long AvailableSpace => _partition.AvailableSpace;
+
+        /// <summary>
         /// Gets the root directory.
         /// </summary>
         /// <value>

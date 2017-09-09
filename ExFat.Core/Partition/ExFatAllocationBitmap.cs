@@ -83,8 +83,13 @@ namespace ExFat.Partition
             if (cluster.Value < _firstCluster || cluster.Value >= Length)
                 throw new ArgumentOutOfRangeException(nameof(cluster));
             var clusterIndex = cluster.Value - _firstCluster;
-            var byteIndex = (int)clusterIndex / 8;
-            var bitMask = 1 << (int)(clusterIndex & 7);
+            return GetAtIndex(clusterIndex);
+        }
+
+        private bool GetAtIndex(long clusterIndex)
+        {
+            var byteIndex = (int) clusterIndex / 8;
+            var bitMask = 1 << (int) (clusterIndex & 7);
             return (_bitmap[byteIndex] & bitMask) != 0;
         }
 
@@ -146,6 +151,30 @@ namespace ExFat.Partition
             }
             // nothing found
             return Cluster.Free;
+        }
+
+        /// <summary>
+        /// Gets the used clusters.
+        /// </summary>
+        /// <returns></returns>
+        public long GetUsedClusters()
+        {
+            long usedClusters = 0;
+            for (int clusterIndex = 0; clusterIndex < Length-_firstCluster;)
+            {
+                if (clusterIndex % 8 == 0)
+                {
+                    if (_bitmap[clusterIndex / 8] == 0xFF)
+                        usedClusters += 8;
+                    clusterIndex += 8;
+                }
+                else
+                {
+                    if (GetAtIndex(clusterIndex++))
+                        usedClusters++;
+                }
+            }
+            return usedClusters;
         }
     }
 }

@@ -19,7 +19,6 @@ namespace ExFat.DiscUtils
         public const string Name = "Microsoft exFAT";
 
         private readonly Stream _partitionStream;
-        private ExFatBootSector _bootSector;
         private readonly ExFatPathFilesystem _filesystem;
 
         public override string FriendlyName => Name;
@@ -30,9 +29,23 @@ namespace ExFat.DiscUtils
         /// </summary>
         public override bool CanWrite => _partitionStream.CanWrite;
 
-        public override long Size => throw new NotImplementedException();
-        public override long UsedSpace => throw new NotImplementedException();
-        public override long AvailableSpace => throw new NotImplementedException();
+        /// <inheritdoc />
+        /// <summary>
+        /// Size of the Filesystem in bytes
+        /// </summary>
+        public override long Size => _filesystem.TotalSpace;
+
+        /// <inheritdoc />
+        /// <summary>
+        /// Used space of the Filesystem in bytes
+        /// </summary>
+        public override long UsedSpace => _filesystem.UsedSpace;
+
+        /// <inheritdoc />
+        /// <summary>
+        /// Available space of the Filesystem in bytes
+        /// </summary>
+        public override long AvailableSpace => _filesystem.AvailableSpace;
 
         /// <inheritdoc />
         /// <summary>
@@ -43,8 +56,8 @@ namespace ExFat.DiscUtils
         public ExFatFileSystem(Stream partitionStream)
         {
             _filesystem = new ExFatPathFilesystem(partitionStream);
-            _bootSector = ExFatPartition.ReadBootSector(partitionStream);
-            if (!_bootSector.IsValid)
+            var bootSector = ExFatPartition.ReadBootSector(partitionStream);
+            if (!bootSector.IsValid)
                 throw new InvalidOperationException("Given stream is not exFAT volume");
             _partitionStream = partitionStream;
         }
@@ -74,7 +87,9 @@ namespace ExFat.DiscUtils
 
         public override void CopyFile(string sourceFile, string destinationFile, bool overwrite)
         {
-            throw new NotImplementedException();
+            using (var reader = _filesystem.Open(sourceFile, FileMode.Open, FileAccess.Read))
+            using (var writer = _filesystem.Open(destinationFile, overwrite ? FileMode.Create : FileMode.CreateNew, FileAccess.Write))
+                reader.CopyTo(writer);
         }
 
         public override void CreateDirectory(string path)

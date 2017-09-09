@@ -11,7 +11,6 @@ namespace ExFat.Partition
     using Entries;
     using IO;
 
-    /// <inheritdoc />
     /// <summary>
     /// The ExFAT filesystem.
     /// The class is a quite low-level accessor
@@ -45,6 +44,30 @@ namespace ExFat.Partition
         /// The root directory data descriptor.
         /// </value>
         public DataDescriptor RootDirectoryDataDescriptor => new DataDescriptor(BootSector.RootDirectoryCluster.Value, false, long.MaxValue);
+
+        /// <summary>
+        /// Gets the total size.
+        /// </summary>
+        /// <value>
+        /// The total size.
+        /// </value>
+        public long TotalSpace => BootSector.ClusterCount.Value * (long)BytesPerCluster;
+
+        /// <summary>
+        /// Gets the used space
+        /// </summary>
+        /// <value>
+        /// The used space.
+        /// </value>
+        public long UsedSpace => GetUsedClusters() * (long)BytesPerCluster;
+
+        /// <summary>
+        /// Gets the available size.
+        /// </summary>
+        /// <value>
+        /// The available size.
+        /// </value>
+        public long AvailableSpace => TotalSpace - UsedSpace;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ExFatPartition"/> class.
@@ -506,6 +529,15 @@ namespace ExFat.Partition
                 _allocationBitmap.Open(allocationBitmapStream, allocationBitmapEntry.FirstCluster.Value, BootSector.ClusterCount.Value);
             }
             return _allocationBitmap;
+        }
+
+        /// <summary>
+        /// Gets the used clusters.
+        /// </summary>
+        /// <returns></returns>
+        private long GetUsedClusters()
+        {
+            return GetAllocationBitmap().GetUsedClusters();
         }
     }
 }
