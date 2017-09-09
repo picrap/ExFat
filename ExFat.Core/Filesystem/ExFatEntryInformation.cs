@@ -5,16 +5,26 @@
 namespace ExFat.Filesystem
 {
     using System;
+    using System.Diagnostics;
     using System.IO;
 
     /// <summary>
     /// Information about file system entry.
     /// High-level, related to <see cref="ExFatPathFilesystem"/>
     /// </summary>
+    [DebuggerDisplay("{" + nameof(Path) + "}")]
     public class ExFatEntryInformation
     {
         private readonly ExFatEntryFilesystem _entryFilesystem;
         private readonly ExFatFilesystemEntry _entry;
+
+        /// <summary>
+        /// Gets the path.
+        /// </summary>
+        /// <value>
+        /// The path.
+        /// </value>
+        public string Path { get; }
 
         /// <summary>
         /// Gets the attributes.
@@ -108,8 +118,15 @@ namespace ExFat.Filesystem
         /// </value>
         public long Length => _entry.Length;
 
-        internal ExFatEntryInformation(ExFatEntryFilesystem entryFilesystem, ExFatFilesystemEntry entry)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ExFatEntryInformation"/> class.
+        /// </summary>
+        /// <param name="entryFilesystem">The entry filesystem.</param>
+        /// <param name="entry">The entry.</param>
+        /// <param name="path">The path.</param>
+        internal ExFatEntryInformation(ExFatEntryFilesystem entryFilesystem, ExFatFilesystemEntry entry, string path)
         {
+            Path = path;
             _entryFilesystem = entryFilesystem;
             _entry = entry;
         }

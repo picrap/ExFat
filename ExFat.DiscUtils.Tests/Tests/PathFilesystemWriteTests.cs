@@ -65,7 +65,7 @@ namespace ExFat.DiscUtils.Tests
                 using (var filesystem = new ExFatPathFilesystem(testEnvironment.PartitionStream))
                 {
                     filesystem.DeleteTree(DiskContent.LongFolderFileName);
-                    Assert.IsFalse(filesystem.EnumerateDirectories("").Contains($@"\{DiskContent.LongFolderFileName}"));
+                    Assert.IsFalse(filesystem.EnumerateEntries("").Any(e => e.Path == $@"\{DiskContent.LongFolderFileName}"));
                 }
             }
         }

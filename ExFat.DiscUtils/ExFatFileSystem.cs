@@ -5,8 +5,10 @@
 namespace ExFat.DiscUtils
 {
     using System;
+    using System.Collections.Generic;
     using System.IO;
     using System.Linq;
+    using System.Text.RegularExpressions;
     using Filesystem;
     using global::DiscUtils;
     using global::DiscUtils.Streams;
@@ -104,28 +106,72 @@ namespace ExFat.DiscUtils
 
         public override string[] GetDirectories(string path, string searchPattern, SearchOption searchOption)
         {
-            throw new NotImplementedException();
+            return GetEntries(path, searchPattern, searchOption)
+                .Where(e => e.Attributes.HasAny(FileAttributes.Directory)).Select(e => e.Path).ToArray();
         }
 
         public override string[] GetFiles(string path, string searchPattern, SearchOption searchOption)
         {
-            throw new NotImplementedException();
+            var entries = GetEntries(path, searchPattern, searchOption);
+            return entries.Where(e => !e.Attributes.HasAny(FileAttributes.Directory)).Select(e => e.Path).ToArray();
         }
 
         public override string[] GetFileSystemEntries(string path)
         {
-            return _filesystem.EnumerateEntries(path).ToArray();
+            return GetEntries(path, null, SearchOption.TopDirectoryOnly).Select(e => e.Path).ToArray();
         }
 
         public override string[] GetFileSystemEntries(string path, string searchPattern)
         {
-            throw new NotImplementedException();
+            return GetEntries(path, searchPattern, SearchOption.TopDirectoryOnly).Select(e => e.Path).ToArray();
         }
 
+        private static Regex ConvertWildcardsToRegEx(string pattern)
+        {
+            if (pattern == null)
+                return null;
+
+            //if (!pattern.Contains("."))
+            //    pattern += ".";
+
+            string query = "^" + Regex.Escape(pattern).Replace(@"\*", ".*").Replace(@"\?", "[^.]") + "$";
+            return new Regex(query, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+        }
+
+        private IEnumerable<ExFatEntryInformation> GetEntries(string path, string searchPattern, SearchOption searchOption)
+        {
+            var regex = ConvertWildcardsToRegEx(searchPattern);
+            var entry = _filesystem.GetInformation(path);
+            if (entry == null || !entry.Attributes.HasAny(FileAttributes.Directory))
+                throw new DirectoryNotFoundException();
+            return GetEntries(entry, searchOption == SearchOption.TopDirectoryOnly ? 1 : int.MaxValue).Where(e => IsMatch(regex, e));
+        }
+
+        private static bool IsMatch(Regex regex, ExFatEntryInformation e)
+        {
+            if (regex == null)
+                return true;
+            var fileName = Path.GetFileName(e.Path);
+            return regex.IsMatch(fileName);
+        }
+
+        private readonly ExFatEntryInformation[] _noEntry = new ExFatEntryInformation[0];
+
+        private IEnumerable<ExFatEntryInformation> GetEntries(ExFatEntryInformation entryInformation, int depth)
+        {
+            if (depth == 0 || !entryInformation.Attributes.HasAny(FileAttributes.Directory))
+                return _noEntry;
+            return _filesystem.EnumerateEntries(entryInformation.Path).SelectMany(e => new[] { e }.Concat(GetEntries(e, depth - 1)));
+        }
+
+        /// <summary>
+        /// Moves a directory.
+        /// </summary>
+        /// <param name="sourceDirectoryName">The directory to move.</param>
+        /// <param name="destinationDirectoryName">The target directory name.</param>
         public override void MoveDirectory(string sourceDirectoryName, string destinationDirectoryName)
         {
-            // TODO
-            throw new NotImplementedException();
+            _filesystem.Move(sourceDirectoryName, Path.GetDirectoryName(destinationDirectoryName), Path.GetFileName(destinationDirectoryName));
         }
 
         /// <inheritdoc />

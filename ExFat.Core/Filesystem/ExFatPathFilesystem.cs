@@ -130,39 +130,15 @@ namespace ExFat.Filesystem
         }
 
         /// <summary>
-        /// Enumerates the files.
-        /// </summary>
-        /// <param name="directoryPath">The directory path.</param>
-        /// <returns></returns>
-        public IEnumerable<string> EnumerateFiles(string directoryPath)
-        {
-            directoryPath = CleanupPath(directoryPath);
-            var directory = GetSafeDirectory(directoryPath);
-            return _entryFilesystem.EnumerateFileSystemEntries(directory).Where(e => !e.IsDirectory).Select(e => GetPath(directoryPath, e));
-        }
-
-        /// <summary>
-        /// Enumerates the directories.
-        /// </summary>
-        /// <param name="directoryPath">The directory path.</param>
-        /// <returns></returns>
-        public IEnumerable<string> EnumerateDirectories(string directoryPath)
-        {
-            directoryPath = CleanupPath(directoryPath);
-            var directory = GetSafeDirectory(directoryPath);
-            return _entryFilesystem.EnumerateFileSystemEntries(directory).Where(e => e.IsDirectory).Select(e => GetPath(directoryPath, e));
-        }
-
-        /// <summary>
         /// Enumerates the entries.
         /// </summary>
         /// <param name="directoryPath">The directory path.</param>
         /// <returns></returns>
-        public IEnumerable<string> EnumerateEntries(string directoryPath)
+        public IEnumerable<ExFatEntryInformation> EnumerateEntries(string directoryPath)
         {
             directoryPath = CleanupPath(directoryPath);
             var directory = GetSafeDirectory(directoryPath);
-            return _entryFilesystem.EnumerateFileSystemEntries(directory).Select(e => GetPath(directoryPath, e));
+            return _entryFilesystem.EnumerateFileSystemEntries(directory).Select(e => new ExFatEntryInformation(_entryFilesystem, e, GetPath(directoryPath, e)));
         }
 
         /// <summary>
@@ -290,7 +266,7 @@ namespace ExFat.Filesystem
             if (entry.IsDirectory)
             {
                 foreach (var childPath in EnumerateEntries(path))
-                    DeleteTree(childPath);
+                    DeleteTree(childPath.Path);
             }
             Delete(path);
         }
@@ -305,7 +281,7 @@ namespace ExFat.Filesystem
             var entry = GetEntry(path);
             if (entry == null)
                 return null;
-            return new ExFatEntryInformation(_entryFilesystem, entry);
+            return new ExFatEntryInformation(_entryFilesystem, entry, path);
         }
 
         /// <summary>
