@@ -17,7 +17,7 @@ DiscUtils support is on its way and should be released in the very next few days
 2. Middle level: entry access. Files/directories can be used to read/write content.
 3. High level: path access. This works as you would expect using file paths.
 
-`ExFat.DiscUtils` is also a high-level access (using paths) with implementation for [`DiscUtils`](https://www.nuget.org/packages/DiscUtils).
+`ExFat.DiscUtils` is also a high-level access (using paths) with implementation for [`DiscUtils`](https://github.com/DiscUtils/DiscUtils).
 
 Because it is still under development, you can see pending features state [here](https://github.com/picrap/ExFat/labels/feature).
 
