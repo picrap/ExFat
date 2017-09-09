@@ -324,15 +324,21 @@ namespace ExFat.Filesystem
         /// <param name="targetName">Name of the target.</param>
         public void Move(ExFatFilesystemEntry source, ExFatFilesystemEntry targetDirectory, string targetName = null)
         {
-            if (!(source.MetaEntry.Primary is FileExFatDirectoryEntry))
+            if (!(source.MetaEntry.Primary is FileExFatDirectoryEntry sourceFile))
                 throw new InvalidOperationException();
 
             // create new entry, similar to source
             targetName = targetName ?? source.Name;
             var newEntry = CreateEntry(targetDirectory, targetName, source.Attributes);
-            newEntry.CreationDateTimeOffset = source.CreationDateTimeOffset;
-            newEntry.LastWriteDateTimeOffset = source.LastWriteDateTimeOffset;
-            newEntry.LastAccessDateTimeOffset = source.LastAccessDateTimeOffset;
+            var newFile = (FileExFatDirectoryEntry)newEntry.MetaEntry.Primary;
+            newFile.CreationTimeStamp.Value = sourceFile.CreationTimeStamp.Value;
+            newFile.Creation10msIncrement.Value = sourceFile.Creation10msIncrement.Value;
+            newFile.CreationTimeZoneOffset.Value = sourceFile.CreationTimeZoneOffset.Value;
+            newFile.LastWriteTimeStamp.Value = sourceFile.LastWriteTimeStamp.Value;
+            newFile.LastWrite10msIncrement.Value = sourceFile.LastWrite10msIncrement.Value;
+            newFile.LastWriteTimeZoneOffset.Value = sourceFile.LastWriteTimeZoneOffset.Value;
+            newFile.LastAccessTimeStamp.Value = sourceFile.LastAccessTimeStamp.Value;
+            newFile.LastAccessTimeZoneOffset.Value = sourceFile.LastAccessTimeZoneOffset.Value;
             newEntry.MetaEntry.SecondaryStreamExtension.DataDescriptor = source.MetaEntry.SecondaryStreamExtension.DataDescriptor;
             newEntry.MetaEntry.SecondaryStreamExtension.ValidDataLength.Value = source.MetaEntry.SecondaryStreamExtension.ValidDataLength.Value;
             // add it to target directory
