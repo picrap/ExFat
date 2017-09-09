@@ -315,5 +315,32 @@ namespace ExFat.Filesystem
         {
             _partition.UpdateEntry(entry.ParentDataDescriptor, entry.MetaEntry);
         }
+
+        /// <summary>
+        /// Moves the specified entry from source to target.
+        /// </summary>
+        /// <param name="source">The source.</param>
+        /// <param name="targetDirectory">The target directory.</param>
+        /// <param name="targetName">Name of the target.</param>
+        public void Move(ExFatFilesystemEntry source, ExFatFilesystemEntry targetDirectory, string targetName = null)
+        {
+            if (!(source.MetaEntry.Primary is FileExFatDirectoryEntry))
+                throw new InvalidOperationException();
+
+            // create new entry, similar to source
+            targetName = targetName ?? source.Name;
+            var newEntry = CreateEntry(targetDirectory, targetName, source.Attributes);
+            newEntry.CreationDateTimeOffset = source.CreationDateTimeOffset;
+            newEntry.LastWriteDateTimeOffset = source.LastWriteDateTimeOffset;
+            newEntry.LastAccessDateTimeOffset = source.LastAccessDateTimeOffset;
+            newEntry.MetaEntry.SecondaryStreamExtension.DataDescriptor = source.MetaEntry.SecondaryStreamExtension.DataDescriptor;
+            newEntry.MetaEntry.SecondaryStreamExtension.ValidDataLength.Value = source.MetaEntry.SecondaryStreamExtension.ValidDataLength.Value;
+            // add it to target directory
+            _partition.AddEntry(targetDirectory.DataDescriptor, newEntry.MetaEntry);
+            // and mark previous as deleted
+            foreach (var e in source.MetaEntry.Entries)
+                e.EntryType.Value &= ~ExFatDirectoryEntryType.InUse;
+            Update(source);
+        }
     }
 }

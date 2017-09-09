@@ -106,13 +106,13 @@ namespace ExFat.Partition
         /// <summary>
         /// Adds the entry to directory (given by <see cref="DataDescriptor" />.
         /// </summary>
-        /// <param name="dataDescriptor">The data descriptor.</param>
+        /// <param name="targetDirectoryDataDescriptor">The data descriptor.</param>
         /// <param name="metaEntry">The meta entry.</param>
         /// <returns>A <see cref="DataDescriptor"/> describing directory after append</returns>
-        public DataDescriptor AddEntry(DataDescriptor dataDescriptor, ExFatMetaDirectoryEntry metaEntry)
+        public DataDescriptor AddEntry(DataDescriptor targetDirectoryDataDescriptor, ExFatMetaDirectoryEntry metaEntry)
         {
-            var r = dataDescriptor;
-            using (var directoryStream = OpenDataStream(dataDescriptor, FileAccess.ReadWrite, d => r = d))
+            var r = targetDirectoryDataDescriptor;
+            using (var directoryStream = OpenDataStream(targetDirectoryDataDescriptor, FileAccess.ReadWrite, d => r = d))
             {
                 var availableSlot = FindAvailableSlot(directoryStream, metaEntry.Entries.Count);
                 directoryStream.Seek(availableSlot, SeekOrigin.Begin);

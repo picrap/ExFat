@@ -345,5 +345,33 @@ namespace ExFat.Filesystem
                 stream.Seek(0, SeekOrigin.End);
             return stream;
         }
+
+        /// <summary>
+        /// Moves the specified source.
+        /// </summary>
+        /// <param name="sourcePath">The source path.</param>
+        /// <param name="targetDirectory">The target directory. null to stay in same directory</param>
+        /// <param name="targetName">Name of the target. null to keep original name</param>
+        public void Move(string sourcePath, string targetDirectory, string targetName = null)
+        {
+            sourcePath = CleanupPath(sourcePath);
+            targetDirectory = CleanupPath(targetDirectory);
+
+            if (targetDirectory == null && targetName == null)
+                throw new ArgumentNullException(nameof(targetDirectory), "Either targetDirectory or targetName has to be provided");
+
+            if (targetDirectory == null)
+                targetDirectory = GetParentAndName(sourcePath).Item1;
+
+            var sourceEntry = GetEntry(sourcePath);
+            if (sourceEntry == null)
+                throw new FileNotFoundException();
+            var targetDirectoryEntry = GetEntry(targetDirectory);
+            if (targetDirectoryEntry == null)
+                throw new FileNotFoundException();
+
+            _entryFilesystem.Move(sourceEntry, targetDirectoryEntry, targetName);
+            _entries[sourcePath] = null;
+        }
     }
 }

@@ -165,5 +165,20 @@ namespace ExFat.DiscUtils.Tests
                 }
             }
         }
+
+        [TestMethod]
+        [TestCategory("Write")]
+        public void MoveFileTest()
+        {
+            using (var testEnvironment = new TestEnvironment(true))
+            {
+                using (var filesystem = new ExFatEntryFilesystem(testEnvironment.PartitionStream))
+                {
+                    var aFile = filesystem.FindChild(filesystem.RootDirectory, DiskContent.LongContiguousFileName);
+                    var aFolder = filesystem.FindChild(filesystem.RootDirectory, DiskContent.EmptyRootFolderFileName);
+                    filesystem.Move(aFile, aFolder, "noob");
+                }
+            }
+        }
     }
 }

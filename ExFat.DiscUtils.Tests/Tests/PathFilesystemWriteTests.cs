@@ -89,5 +89,20 @@ namespace ExFat.DiscUtils.Tests
                 }
             }
         }
+
+        [TestMethod]
+        [TestCategory("Write")]
+        public void MoveTree()
+        {
+            using (var testEnvironment = new TestEnvironment(true))
+            {
+                using (var filesystem = new ExFatPathFilesystem(testEnvironment.PartitionStream))
+                {
+                    filesystem.Move(DiskContent.LongSparseFile1Name, DiskContent.EmptyRootFolderFileName);
+                    Assert.IsNull(filesystem.GetInformation(DiskContent.LongSparseFile1Name));
+                    Assert.IsNotNull(filesystem.GetInformation(DiskContent.EmptyRootFolderFileName + "\\" + DiskContent.LongSparseFile1Name));
+                }
+            }
+        }
     }
 }

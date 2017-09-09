@@ -128,10 +128,38 @@ namespace ExFat.DiscUtils
             throw new NotImplementedException();
         }
 
+        /// <inheritdoc />
+        /// <summary>
+        /// Moves a file, allowing an existing file to be overwritten.
+        /// </summary>
+        /// <param name="sourceName">The file to move.</param>
+        /// <param name="destinationName">The target file name.</param>
+        /// <param name="overwrite">Whether to permit a destination file to be overwritten.</param>
+        /// <exception cref="T:System.NotImplementedException"></exception>
         public override void MoveFile(string sourceName, string destinationName, bool overwrite)
         {
-            // TODO
-            throw new NotImplementedException();
+            var information = _filesystem.GetInformation(destinationName);
+            string targetDirectory, targetName;
+            if (information != null)
+            {
+                if (information.Attributes.HasAny(FileAttributes.Directory))
+                {
+                    targetDirectory = destinationName;
+                    targetName = null;
+                }
+                else
+                {
+                    if (overwrite)
+                        DeleteFile(destinationName);
+                    throw new IOException();
+                }
+            }
+            else
+            {
+                targetDirectory = Path.GetDirectoryName(destinationName);
+                targetName = Path.GetFileName(destinationName);
+            }
+            _filesystem.Move(sourceName, targetDirectory, targetName);
         }
 
         public override SparseStream OpenFile(string path, FileMode mode, FileAccess access)
