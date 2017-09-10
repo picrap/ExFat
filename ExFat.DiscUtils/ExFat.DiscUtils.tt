@@ -15,7 +15,7 @@
     <iconUrl>https://raw.githubusercontent.com/picrap/ExFat/master/Icon/ExFat.png</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <summary>exFAT IFileSystem implementation for DiscUtils</summary>
-    <description><#=Description#></description>
+    <description><#=Description#> Please note that the dependency DiscUtils.Core has to be installed separately (because it is still in pre-release).</description>
     <releaseNotes></releaseNotes>
     <copyright>Copyright 2017 picrap</copyright>
     <tags>exfat filesystem partition discutils</tags>
