@@ -6,6 +6,7 @@ namespace ExFat.Partition
 {
     using System;
     using System.IO;
+    using System.Linq;
     using Buffers;
     using Buffer = Buffers.Buffer;
 
@@ -17,7 +18,7 @@ namespace ExFat.Partition
         /// <summary>
         /// The default JMP boot
         /// </summary>
-        public static readonly byte[] DefaultJmpBoot = new byte[] {0xEB, 0x76, 0x90};
+        public static readonly byte[] DefaultJmpBoot = new byte[] { 0xEB, 0x76, 0x90 };
         /// <summary>
         /// The OEM name
         /// </summary>
@@ -136,14 +137,22 @@ namespace ExFat.Partition
         /// <value>
         ///   <c>true</c> if this instance is valid; otherwise, <c>false</c>.
         /// </value>
-        public bool IsValid => OemName.Value == ExFatOemName;
+        public bool IsExFat => OemName.Value == ExFatOemName;
+
+        /// <summary>
+        /// Returns true if the whole bootsector is valid.
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if this instance is valid; otherwise, <c>false</c>.
+        /// </value>
+        public bool IsValid => IsExFat && _bytes[BytesPerSector.Value - 2] == 0x55 && _bytes[BytesPerSector.Value - 1] == 0xAA && IsChecksumValid();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ExFatBootSector"/> class.
         /// </summary>
-        public ExFatBootSector()
+        internal ExFatBootSector(byte[] bytes)
         {
-            _bytes = new byte[512];
+            _bytes = bytes;
             var buffer = new Buffer(_bytes);
             JmpBoot = new BufferBytes(buffer, 0, 3);
             OemName = new BufferByteString(buffer, 3, 8);
@@ -157,6 +166,34 @@ namespace ExFat.Partition
             BytesPerSector = new ShiftValueProvider(new BufferUInt8(buffer, 108));
             SectorsPerCluster = new ShiftValueProvider(new BufferUInt8(buffer, 109));
             NumberOfFats = new BufferUInt8(buffer, 110);
+        }
+
+        /// <summary>
+        /// Computes the checksum.
+        /// </summary>
+        /// <returns></returns>
+        public byte[] ComputeChecksum()
+        {
+            var checksum = _bytes.GetChecksum32(0, 106);
+            checksum = _bytes.GetChecksum32(108, 4, checksum);
+            checksum = _bytes.GetChecksum32(113, (int)(BytesPerSector.Value * 11 - 113), checksum);
+            return LittleEndian.GetBytes(checksum);
+        }
+
+        private bool IsChecksumValid()
+        {
+            var checksum = ComputeChecksum();
+            var startSectorOffset = 11 * BytesPerSector.Value;
+            var endSectorOffset = 12 * BytesPerSector.Value;
+            for (var lastSectorOffset = startSectorOffset; lastSectorOffset < endSectorOffset;)
+            {
+                if (checksum[0] != _bytes[lastSectorOffset++]
+                    || checksum[1] != _bytes[lastSectorOffset++]
+                    || checksum[2] != _bytes[lastSectorOffset++]
+                    || checksum[3] != _bytes[lastSectorOffset++])
+                    return false;
+            }
+            return true;
         }
 
         /// <summary>

@@ -212,10 +212,10 @@ namespace ExFat.Partition.Entries
         /// <returns></returns>
         public UInt16 ComputeChecksum(IEnumerable<ExFatDirectoryEntry> secondaryEntries)
         {
-            var checksum = Buffer.Bytes.GetChecksum(0, 2);
-            checksum = Buffer.Bytes.GetChecksum(4, 28, checksum);
+            var checksum = Buffer.Bytes.GetChecksum16(0, 2);
+            checksum = Buffer.Bytes.GetChecksum16(4, 28, checksum);
             foreach (var secondaryEntry in secondaryEntries)
-                checksum = secondaryEntry.Buffer.Bytes.GetChecksum(0, 32, checksum);
+                checksum = secondaryEntry.Buffer.Bytes.GetChecksum16(0, 32, checksum);
             return checksum;
         }
     }

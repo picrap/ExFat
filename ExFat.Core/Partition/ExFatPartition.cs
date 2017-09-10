@@ -147,7 +147,18 @@ namespace ExFat.Partition
         public static ExFatBootSector ReadBootSector(Stream partitionStream)
         {
             partitionStream.Seek(0, SeekOrigin.Begin);
-            var bootSector = new ExFatBootSector();
+            var defaultBootSector = new ExFatBootSector(new byte[512]);
+            defaultBootSector.Read(partitionStream);
+            var sectorSize = defaultBootSector.BytesPerSector.Value;
+
+            // it probably not a valid exFAT boot sector, so don't dig any further
+            if (sectorSize < 512 || sectorSize > 4096)
+                return defaultBootSector;
+
+            var fullData = new byte[sectorSize * 12];
+
+            partitionStream.Seek(0, SeekOrigin.Begin);
+            var bootSector = new ExFatBootSector(fullData);
             bootSector.Read(partitionStream);
             return bootSector;
         }
