@@ -57,6 +57,10 @@ namespace ExFat.IO
         /// Cluster marked bad
         /// </summary>
         public static Cluster Bad = new Cluster(0xFFFFFFF7);
+        /// <summary>
+        /// The marker
+        /// </summary>
+        public static Cluster Marker = new Cluster(0xFFFFFFF8);
 
         private static long MinLast = -8;
         private static UInt32 Reserved32 = 0xFFFFFFF0;
@@ -196,7 +200,7 @@ namespace ExFat.IO
         /// </returns>
         public override int GetHashCode()
         {
-            return (int) Value;
+            return (int)Value;
         }
     }
 }

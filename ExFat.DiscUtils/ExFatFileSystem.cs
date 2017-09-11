@@ -281,5 +281,12 @@ namespace ExFat.DiscUtils
                 throw new FileNotFoundException();
             return information.Length;
         }
+
+        public static ExFatFileSystem Format(PhysicalVolumeInfo volume, string label = null)
+        {
+            var partitionStream = volume.Open();
+            ExFatPathFilesystem.Format(partitionStream, label);
+            return new ExFatFileSystem(partitionStream);
+        }
     }
 }

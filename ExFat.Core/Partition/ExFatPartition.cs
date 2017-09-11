@@ -26,7 +26,7 @@ namespace ExFat.Partition
         /// <value>
         /// The boot sector.
         /// </value>
-        public ExFatBootSector BootSector { get; }
+        public ExFatBootSector BootSector { get; private set; }
 
         /// <inheritdoc />
         /// <summary>
@@ -79,6 +79,11 @@ namespace ExFat.Partition
         /// Given stream must be readable
         /// </exception>
         public ExFatPartition(Stream partitionStream)
+            : this(partitionStream, true)
+        {
+        }
+
+        private ExFatPartition(Stream partitionStream, bool readBootsector)
         {
             if (!partitionStream.CanSeek)
                 throw new ArgumentException("Given stream must be seekable");
@@ -86,7 +91,8 @@ namespace ExFat.Partition
                 throw new ArgumentException("Given stream must be readable");
 
             _partitionStream = partitionStream;
-            BootSector = ReadBootSector(_partitionStream);
+            if (readBootsector)
+                BootSector = ReadBootSector(_partitionStream);
         }
 
         /// <summary>

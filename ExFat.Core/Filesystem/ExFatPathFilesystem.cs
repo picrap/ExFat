@@ -372,5 +372,17 @@ namespace ExFat.Filesystem
             _entryFilesystem.Move(sourceEntry, targetDirectoryEntry, targetName);
             _entries[sourcePath] = null;
         }
+
+        /// <summary>
+        /// Formats the specified partition stream.
+        /// </summary>
+        /// <param name="partitionStream">The partition stream.</param>
+        /// <param name="volumeLabel">The volume label.</param>
+        /// <returns></returns>
+        public static ExFatPathFilesystem Format(Stream partitionStream, string volumeLabel = null)
+        {
+            var entryFilesystem = ExFatEntryFilesystem.Format(partitionStream, volumeLabel);
+            return new ExFatPathFilesystem(entryFilesystem);
+        }
     }
 }

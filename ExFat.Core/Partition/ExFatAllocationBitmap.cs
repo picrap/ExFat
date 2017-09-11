@@ -45,14 +45,24 @@ namespace ExFat.Partition
         /// </summary>
         /// <param name="dataStream">The data stream.</param>
         /// <param name="firstCluster">The first cluster.</param>
-        /// <param name="length">The length.</param>
-        public void Open(Stream dataStream, uint firstCluster, long length)
+        /// <param name="totalClusters">The total clusters.</param>
+        public void Open(Stream dataStream, uint firstCluster, long totalClusters)
         {
             _dataStream = dataStream;
             _firstCluster = firstCluster;
-            _bitmap = new byte[dataStream.Length];
-            dataStream.Read(_bitmap, 0, _bitmap.Length);
-            Length = length;
+            _bitmap = new byte[(totalClusters + 7) / 8];
+            dataStream?.Read(_bitmap, 0, _bitmap.Length);
+            Length = totalClusters;
+        }
+
+        /// <summary>
+        /// Writes the specified data stream.
+        /// </summary>
+        /// <param name="dataStream">The data stream.</param>
+        public void Write(Stream dataStream)
+        {
+            _dataStream = dataStream;
+            dataStream.Write(_bitmap, 0, _bitmap.Length);
         }
 
         /// <summary>
@@ -88,8 +98,8 @@ namespace ExFat.Partition
 
         private bool GetAtIndex(long clusterIndex)
         {
-            var byteIndex = (int) clusterIndex / 8;
-            var bitMask = 1 << (int) (clusterIndex & 7);
+            var byteIndex = (int)clusterIndex / 8;
+            var bitMask = 1 << (int)(clusterIndex & 7);
             return (_bitmap[byteIndex] & bitMask) != 0;
         }
 
@@ -110,9 +120,11 @@ namespace ExFat.Partition
                 _bitmap[byteIndex] |= (byte)bitMask;
             else
                 _bitmap[byteIndex] &= (byte)~bitMask;
-            // for some unknown reason, this does not work on DiscUtils, so the Flush() handle all problems
-            _dataStream.Seek(byteIndex, SeekOrigin.Begin);
-            _dataStream.Write(_bitmap, byteIndex, 1);
+            if (_dataStream != null)
+            {
+                _dataStream.Seek(byteIndex, SeekOrigin.Begin);
+                _dataStream.Write(_bitmap, byteIndex, 1);
+            }
         }
 
         /// <summary>
@@ -160,7 +172,7 @@ namespace ExFat.Partition
         public long GetUsedClusters()
         {
             long usedClusters = 0;
-            for (int clusterIndex = 0; clusterIndex < Length-_firstCluster;)
+            for (int clusterIndex = 0; clusterIndex < Length - _firstCluster;)
             {
                 if (clusterIndex % 8 == 0)
                 {

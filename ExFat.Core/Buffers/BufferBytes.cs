@@ -58,6 +58,16 @@ namespace ExFat.Buffers
         }
 
         /// <summary>
+        /// Sets the specified bytes.
+        /// </summary>
+        /// <param name="bytes">The bytes.</param>
+        public void Set(IList<byte> bytes)
+        {
+            for (var offset = 0; offset < _buffer.Length; offset++)
+                _buffer[offset] = bytes[offset];
+        }
+
+        /// <summary>
         /// Returns an enumerator that iterates through the collection.
         /// </summary>
         /// <returns>

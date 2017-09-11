@@ -91,6 +91,22 @@ namespace ExFat.Partition
         public IValueProvider<UInt32> RootDirectoryCluster { get; }
 
         /// <summary>
+        /// Gets or sets the volume serial number.
+        /// </summary>
+        /// <value>
+        /// The volume serial number.
+        /// </value>
+        public IValueProvider<UInt32> VolumeSerialNumber { get; }
+
+        /// <summary>
+        /// Gets the file system revision (currently 256).
+        /// </summary>
+        /// <value>
+        /// The file system revision.
+        /// </value>
+        public IValueProvider<UInt16> FileSystemRevision { get;  }
+
+        /// <summary>
         /// Gets the volume flags.
         /// Bit 0 – Active FAT
         ///         0 – 1st , 1 – 2nd
@@ -132,6 +148,22 @@ namespace ExFat.Partition
         public IValueProvider<byte> NumberOfFats { get; }
 
         /// <summary>
+        /// Extended INT 13h drive number; typically 0x80
+        /// </summary>
+        /// <value>
+        /// The drive select.
+        /// </value>
+        public IValueProvider<byte> DriveSelect { get; }
+
+        /// <summary>
+        /// 0..100 – percentage of allocated clusters rounded down to the integer 0xFF – percentage is not available
+        /// </summary>
+        /// <value>
+        /// The percent in use.
+        /// </value>
+        public IValueProvider<byte> PercentInUse { get; }
+
+        /// <summary>
         /// Returns true if this boot sector is valid (better check this after reading it).
         /// </summary>
         /// <value>
@@ -162,10 +194,14 @@ namespace ExFat.Partition
             ClusterOffsetSector = new BufferUInt32(buffer, 88);
             ClusterCount = new BufferUInt32(buffer, 92);
             RootDirectoryCluster = new BufferUInt32(buffer, 96);
+            VolumeSerialNumber = new BufferUInt32(buffer, 100);
+            FileSystemRevision = new BufferUInt16(buffer, 104);
             VolumeFlags = new BufferUInt16(buffer, 106);
             BytesPerSector = new ShiftValueProvider(new BufferUInt8(buffer, 108));
             SectorsPerCluster = new ShiftValueProvider(new BufferUInt8(buffer, 109));
             NumberOfFats = new BufferUInt8(buffer, 110);
+            DriveSelect = new BufferUInt8(buffer, 111);
+            PercentInUse = new BufferUInt8(buffer, 112);
         }
 
         /// <summary>

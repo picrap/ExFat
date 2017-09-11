@@ -6,11 +6,36 @@ namespace ExFat.Generator
 {
     using System;
     using System.IO;
+    using System.Linq;
     using DiscUtils;
+    using global::DiscUtils;
+    using global::DiscUtils.Partitions;
+    using global::DiscUtils.Vhdx;
 
     public static class Program
     {
         public static void Main(string[] args)
+        {
+            File.Copy("Empty1.vhdx", "Empty.vhdx", true);
+            using (var disk = new Disk("Empty.vhdx"))
+            {
+                //var gpt = GuidPartitionTable.Initialize(disk);
+                //gpt.Create(gpt.FirstUsableSector, gpt.LastUsableSector, GuidPartitionTypes.WindowsBasicData, 0, null);
+                var volume = VolumeManager.GetPhysicalVolumes(disk)[1];
+                using (var fs = ExFatFileSystem.Format(volume, null))
+                    fs.CreateDirectory("a folder");
+            }
+            using (var disk = new Disk("Empty.vhdx"))
+            {
+                var volume = VolumeManager.GetPhysicalVolumes(disk)[1];
+                using (var fs2 = new ExFatFileSystem(volume.Open()))
+                {
+                    var e = fs2.GetDirectories("");
+                }
+            }
+        }
+
+        public static void Main111(string[] args)
         {
             const string drive = "X:";
 

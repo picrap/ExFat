@@ -372,5 +372,17 @@ namespace ExFat.Filesystem
                 e.EntryType.Value &= ~ExFatDirectoryEntryType.InUse;
             Update(source);
         }
+
+        /// <summary>
+        /// Formats the specified partition.
+        /// </summary>
+        /// <param name="partitionStream">The partition stream.</param>
+        /// <param name="volumeLabel">The volume label.</param>
+        /// <returns></returns>
+        public static ExFatEntryFilesystem Format(Stream partitionStream, string volumeLabel = null)
+        {
+            var partition = ExFatPartition.Format(partitionStream, 512, 256, volumeLabel);
+            return new ExFatEntryFilesystem(partition);
+        }
     }
 }

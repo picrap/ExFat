@@ -59,9 +59,14 @@
       <Project>{14CB35EF-DC35-4DCD-87DA-C18515F82900}</Project>
       <Name>ExFat.DiscUtils.Tests</Name>
     </ProjectReference>
+    <ProjectReference Include="..\ExFat.DiscUtils\ExFat.DiscUtils.csproj">
+      <Project>{D3FE0435-345E-4BDE-A22E-AD923638275C}</Project>
+      <Name>ExFat.DiscUtils</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
+    <None Include="project.json" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
