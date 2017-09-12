@@ -123,10 +123,10 @@ namespace ExFat.Filesystem
         /// </summary>
         /// <param name="entryFilesystem">The entry filesystem.</param>
         /// <param name="entry">The entry.</param>
-        /// <param name="path">The path.</param>
-        internal ExFatEntryInformation(ExFatEntryFilesystem entryFilesystem, ExFatFilesystemEntry entry, string path)
+        /// <param name="cleanPath">The path.</param>
+        internal ExFatEntryInformation(ExFatEntryFilesystem entryFilesystem, ExFatFilesystemEntry entry, string cleanPath)
         {
-            Path = path;
+            Path = cleanPath;
             _entryFilesystem = entryFilesystem;
             _entry = entry;
         }

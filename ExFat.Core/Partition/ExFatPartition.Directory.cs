@@ -12,23 +12,28 @@ namespace ExFat.Partition
 
     partial class ExFatPartition
     {
+        private readonly object _directoryLock = new object();
+
         /// <summary>
         /// Gets the entries, totally raw (includes the deleted entries).
         /// </summary>
         /// <returns></returns>
         public IEnumerable<ExFatDirectoryEntry> GetEntries(DataDescriptor dataDescriptor)
         {
-            using (var readerStream = OpenDataStream(dataDescriptor, FileAccess.Read))
+            lock (_directoryLock)
             {
-                for (var offset = 0L; ; offset += 32)
+                using (var readerStream = OpenDataStream(dataDescriptor, FileAccess.Read))
                 {
-                    var entryBytes = new byte[32];
-                    // cluster offset before reading data, since it's the start
-                    if (readerStream.Read(entryBytes, 0, entryBytes.Length) != 32)
-                        break;
-                    var directoryEntry = ExFatDirectoryEntry.Create(new Buffer(entryBytes), offset);
-                    if (directoryEntry != null)
-                        yield return directoryEntry;
+                    for (var offset = 0L; ; offset += 32)
+                    {
+                        var entryBytes = new byte[32];
+                        // cluster offset before reading data, since it's the start
+                        if (readerStream.Read(entryBytes, 0, entryBytes.Length) != 32)
+                            break;
+                        var directoryEntry = ExFatDirectoryEntry.Create(new Buffer(entryBytes), offset);
+                        if (directoryEntry != null)
+                            yield return directoryEntry;
+                    }
                 }
             }
         }
@@ -68,7 +73,7 @@ namespace ExFat.Partition
         /// <exception cref="System.InvalidOperationException"></exception>
         private long FindAvailableSlot(Stream directoryStream, int entriesCount)
         {
-            lock (directoryStream)
+            lock (_directoryLock)
             {
                 long availableSlot = -1;
                 int availableCount = 0;
@@ -112,13 +117,16 @@ namespace ExFat.Partition
         public DataDescriptor AddEntry(DataDescriptor targetDirectoryDataDescriptor, ExFatMetaDirectoryEntry metaEntry)
         {
             var r = targetDirectoryDataDescriptor;
-            using (var directoryStream = OpenDataStream(targetDirectoryDataDescriptor, FileAccess.ReadWrite, d => r = d))
+            lock (_directoryLock)
             {
-                var availableSlot = FindAvailableSlot(directoryStream, metaEntry.Entries.Count);
-                directoryStream.Seek(availableSlot, SeekOrigin.Begin);
-                foreach (var entry in metaEntry.Entries)
-                    entry.EntryType.Value |= ExFatDirectoryEntryType.InUse;
-                metaEntry.Write(directoryStream);
+                using (var directoryStream = OpenDataStream(targetDirectoryDataDescriptor, FileAccess.ReadWrite, d => r = d))
+                {
+                    var availableSlot = FindAvailableSlot(directoryStream, metaEntry.Entries.Count);
+                    directoryStream.Seek(availableSlot, SeekOrigin.Begin);
+                    foreach (var entry in metaEntry.Entries)
+                        entry.EntryType.Value |= ExFatDirectoryEntryType.InUse;
+                    metaEntry.Write(directoryStream);
+                }
             }
             return r;
         }
@@ -131,10 +139,13 @@ namespace ExFat.Partition
         /// <returns>A <see cref="DataDescriptor"/> describing directory after append</returns>
         public void UpdateEntry(DataDescriptor dataDescriptor, ExFatMetaDirectoryEntry metaEntry)
         {
-            using (var directoryStream = OpenDataStream(dataDescriptor, FileAccess.ReadWrite))
+            lock (_directoryLock)
             {
-                directoryStream.Seek(metaEntry.Primary.DirectoryPosition, SeekOrigin.Begin);
-                metaEntry.Write(directoryStream);
+                using (var directoryStream = OpenDataStream(dataDescriptor, FileAccess.ReadWrite))
+                {
+                    directoryStream.Seek(metaEntry.Primary.DirectoryPosition, SeekOrigin.Begin);
+                    metaEntry.Write(directoryStream);
+                }
             }
         }
     }

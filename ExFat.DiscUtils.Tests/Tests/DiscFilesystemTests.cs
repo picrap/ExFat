@@ -35,11 +35,11 @@ namespace ExFat.DiscUtils.Tests
                 using (var filesystem = new ExFatFileSystem(testEnvironment.PartitionStream))
                 {
                     var allFiles = filesystem.GetFiles("");
-                    Assert.IsTrue(allFiles.Contains($"\\{DiskContent.LongContiguousFileName}"));
-                    Assert.IsTrue(allFiles.Contains($"\\{DiskContent.LongSparseFile1Name}"));
-                    Assert.IsTrue(allFiles.Contains($"\\{DiskContent.LongSparseFile2Name}"));
-                    Assert.IsFalse(allFiles.Contains($"\\{DiskContent.EmptyRootFolderFileName}"));
-                    Assert.IsFalse(allFiles.Contains($"\\{DiskContent.LongFolderFileName}"));
+                    Assert.IsTrue(allFiles.Contains(DiskContent.LongContiguousFileName));
+                    Assert.IsTrue(allFiles.Contains(DiskContent.LongSparseFile1Name));
+                    Assert.IsTrue(allFiles.Contains(DiskContent.LongSparseFile2Name));
+                    Assert.IsFalse(allFiles.Contains(DiskContent.EmptyRootFolderFileName));
+                    Assert.IsFalse(allFiles.Contains(DiskContent.LongFolderFileName));
                 }
             }
         }
@@ -53,11 +53,11 @@ namespace ExFat.DiscUtils.Tests
                 using (var filesystem = new ExFatFileSystem(testEnvironment.PartitionStream))
                 {
                     var allDirectories = filesystem.GetDirectories("");
-                    Assert.IsFalse(allDirectories.Contains($"\\{DiskContent.LongContiguousFileName}"));
-                    Assert.IsFalse(allDirectories.Contains($"\\{DiskContent.LongSparseFile1Name}"));
-                    Assert.IsFalse(allDirectories.Contains($"\\{DiskContent.LongSparseFile2Name}"));
-                    Assert.IsTrue(allDirectories.Contains($"\\{DiskContent.EmptyRootFolderFileName}"));
-                    Assert.IsTrue(allDirectories.Contains($"\\{DiskContent.LongFolderFileName}"));
+                    Assert.IsFalse(allDirectories.Contains(DiskContent.LongContiguousFileName));
+                    Assert.IsFalse(allDirectories.Contains(DiskContent.LongSparseFile1Name));
+                    Assert.IsFalse(allDirectories.Contains(DiskContent.LongSparseFile2Name));
+                    Assert.IsTrue(allDirectories.Contains(DiskContent.EmptyRootFolderFileName));
+                    Assert.IsTrue(allDirectories.Contains(DiskContent.LongFolderFileName));
                 }
             }
         }

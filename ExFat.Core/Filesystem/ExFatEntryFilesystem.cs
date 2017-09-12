@@ -21,7 +21,7 @@ namespace ExFat.Filesystem
     {
         private readonly ExFatOptions _options;
         private readonly ExFatPartition _partition;
-        private readonly object _lock = new object();
+        private readonly object _entryLock = new object();
 
         private ExFatFilesystemEntry _rootDirectory;
 
@@ -112,11 +112,14 @@ namespace ExFat.Filesystem
             if (!directoryEntry.IsDirectory)
                 throw new InvalidOperationException();
 
-            foreach (var metaEntry in _partition.GetMetaEntries(directoryEntry.DataDescriptor))
+            lock (_entryLock)
             {
-                // keep only file entries
-                if (metaEntry.Primary is FileExFatDirectoryEntry)
-                    yield return new ExFatFilesystemEntry(directoryEntry.DataDescriptor, metaEntry);
+                foreach (var metaEntry in _partition.GetMetaEntries(directoryEntry.DataDescriptor))
+                {
+                    // keep only file entries
+                    if (metaEntry.Primary is FileExFatDirectoryEntry)
+                        yield return new ExFatFilesystemEntry(directoryEntry.DataDescriptor, metaEntry);
+                }
             }
         }
 
@@ -133,12 +136,15 @@ namespace ExFat.Filesystem
                 throw new InvalidOperationException();
 
             var nameHash = _partition.ComputeNameHash(name);
-            foreach (var metaEntry in _partition.GetMetaEntries(directoryEntry.DataDescriptor))
+            lock (_entryLock)
             {
-                var streamExtension = metaEntry.SecondaryStreamExtension;
-                // keep only file entries
-                if (streamExtension != null && streamExtension.NameHash.Value == nameHash && metaEntry.ExtensionsFileName == name)
-                    return new ExFatFilesystemEntry(directoryEntry.DataDescriptor, metaEntry);
+                foreach (var metaEntry in _partition.GetMetaEntries(directoryEntry.DataDescriptor))
+                {
+                    var streamExtension = metaEntry.SecondaryStreamExtension;
+                    // keep only file entries
+                    if (streamExtension != null && streamExtension.NameHash.Value == nameHash && metaEntry.ExtensionsFileName == name)
+                        return new ExFatFilesystemEntry(directoryEntry.DataDescriptor, metaEntry);
+                }
             }
             return null;
         }
@@ -282,7 +288,7 @@ namespace ExFat.Filesystem
             if (!parentDirectoryEntry.IsDirectory)
                 throw new InvalidOperationException();
 
-            lock (_lock)
+            lock (_entryLock)
             {
                 var existingEntry = FindChild(parentDirectoryEntry, directoryName);
                 if (existingEntry != null)
@@ -311,10 +317,13 @@ namespace ExFat.Filesystem
         /// <param name="entry">The entry.</param>
         public void Delete(ExFatFilesystemEntry entry)
         {
-            _partition.Free(entry.DataDescriptor);
-            foreach (var e in entry.MetaEntry.Entries)
-                e.EntryType.Value &= ~ExFatDirectoryEntryType.InUse;
-            Update(entry);
+            lock (_entryLock)
+            {
+                _partition.Free(entry.DataDescriptor);
+                foreach (var e in entry.MetaEntry.Entries)
+                    e.EntryType.Value &= ~ExFatDirectoryEntryType.InUse;
+                Update(entry);
+            }
         }
 
         /// <summary>
@@ -323,12 +332,15 @@ namespace ExFat.Filesystem
         /// <param name="entry">The entry.</param>
         public void DeleteTree(ExFatFilesystemEntry entry)
         {
-            if (entry.IsDirectory)
+            lock (_entryLock)
             {
-                foreach (var childEntry in EnumerateFileSystemEntries(entry))
-                    DeleteTree(childEntry);
+                if (entry.IsDirectory)
+                {
+                    foreach (var childEntry in EnumerateFileSystemEntries(entry))
+                        DeleteTree(childEntry);
+                }
+                Delete(entry);
             }
-            Delete(entry);
         }
 
         /// <summary>
@@ -337,6 +349,7 @@ namespace ExFat.Filesystem
         /// <param name="entry">The entry.</param>
         public void Update(ExFatFilesystemEntry entry)
         {
+            lock (_entryLock)
             _partition.UpdateEntry(entry.ParentDataDescriptor, entry.MetaEntry);
         }
 
@@ -351,26 +364,29 @@ namespace ExFat.Filesystem
             if (!(source.MetaEntry.Primary is FileExFatDirectoryEntry sourceFile))
                 throw new InvalidOperationException();
 
-            // create new entry, similar to source
-            targetName = targetName ?? source.Name;
-            var newEntry = CreateEntry(targetDirectory, targetName, source.Attributes);
-            var newFile = (FileExFatDirectoryEntry)newEntry.MetaEntry.Primary;
-            newFile.CreationTimeStamp.Value = sourceFile.CreationTimeStamp.Value;
-            newFile.Creation10msIncrement.Value = sourceFile.Creation10msIncrement.Value;
-            newFile.CreationTimeZoneOffset.Value = sourceFile.CreationTimeZoneOffset.Value;
-            newFile.LastWriteTimeStamp.Value = sourceFile.LastWriteTimeStamp.Value;
-            newFile.LastWrite10msIncrement.Value = sourceFile.LastWrite10msIncrement.Value;
-            newFile.LastWriteTimeZoneOffset.Value = sourceFile.LastWriteTimeZoneOffset.Value;
-            newFile.LastAccessTimeStamp.Value = sourceFile.LastAccessTimeStamp.Value;
-            newFile.LastAccessTimeZoneOffset.Value = sourceFile.LastAccessTimeZoneOffset.Value;
-            newEntry.MetaEntry.SecondaryStreamExtension.DataDescriptor = source.MetaEntry.SecondaryStreamExtension.DataDescriptor;
-            newEntry.MetaEntry.SecondaryStreamExtension.ValidDataLength.Value = source.MetaEntry.SecondaryStreamExtension.ValidDataLength.Value;
-            // add it to target directory
-            _partition.AddEntry(targetDirectory.DataDescriptor, newEntry.MetaEntry);
-            // and mark previous as deleted
-            foreach (var e in source.MetaEntry.Entries)
-                e.EntryType.Value &= ~ExFatDirectoryEntryType.InUse;
-            Update(source);
+            lock (_entryLock)
+            {
+                // create new entry, similar to source
+                targetName = targetName ?? source.Name;
+                var newEntry = CreateEntry(targetDirectory, targetName, source.Attributes);
+                var newFile = (FileExFatDirectoryEntry) newEntry.MetaEntry.Primary;
+                newFile.CreationTimeStamp.Value = sourceFile.CreationTimeStamp.Value;
+                newFile.Creation10msIncrement.Value = sourceFile.Creation10msIncrement.Value;
+                newFile.CreationTimeZoneOffset.Value = sourceFile.CreationTimeZoneOffset.Value;
+                newFile.LastWriteTimeStamp.Value = sourceFile.LastWriteTimeStamp.Value;
+                newFile.LastWrite10msIncrement.Value = sourceFile.LastWrite10msIncrement.Value;
+                newFile.LastWriteTimeZoneOffset.Value = sourceFile.LastWriteTimeZoneOffset.Value;
+                newFile.LastAccessTimeStamp.Value = sourceFile.LastAccessTimeStamp.Value;
+                newFile.LastAccessTimeZoneOffset.Value = sourceFile.LastAccessTimeZoneOffset.Value;
+                newEntry.MetaEntry.SecondaryStreamExtension.DataDescriptor = source.MetaEntry.SecondaryStreamExtension.DataDescriptor;
+                newEntry.MetaEntry.SecondaryStreamExtension.ValidDataLength.Value = source.MetaEntry.SecondaryStreamExtension.ValidDataLength.Value;
+                // add it to target directory
+                _partition.AddEntry(targetDirectory.DataDescriptor, newEntry.MetaEntry);
+                // and mark previous as deleted
+                foreach (var e in source.MetaEntry.Entries)
+                    e.EntryType.Value &= ~ExFatDirectoryEntryType.InUse;
+                Update(source);
+            }
         }
 
         /// <summary>
