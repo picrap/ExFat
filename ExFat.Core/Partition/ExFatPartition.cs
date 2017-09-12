@@ -20,6 +20,8 @@ namespace ExFat.Partition
         private readonly Stream _partitionStream;
         private readonly ExFatOptions _options;
         private readonly object _streamLock = new object();
+        private readonly object _allocationLock = new object();
+        private readonly object _fatLock = new object();
 
         /// <summary>
         /// Gets the boot sector.
@@ -254,7 +256,7 @@ namespace ExFat.Partition
         public Cluster GetNextCluster(Cluster cluster)
         {
             // TODO: optimize?
-            lock (_streamLock)
+            lock (_fatLock)
             {
                 var fatPage = GetFatPage(cluster);
                 var clusterIndex = (int)(cluster.Value % ClustersPerFatPage);
@@ -271,17 +273,20 @@ namespace ExFat.Partition
         /// <returns></returns>
         public IEnumerable<Cluster> GetClusters(DataDescriptor dataDescriptor)
         {
-            var cluster = dataDescriptor.FirstCluster;
-            var length = (long?)dataDescriptor.Length ?? long.MaxValue;
-            for (long offset = 0; offset < length; offset += BytesPerCluster)
+            lock (_fatLock)
             {
-                if (cluster.IsLast)
-                    yield break;
-                yield return cluster;
-                if (dataDescriptor.Contiguous)
-                    cluster = cluster + 1;
-                else
-                    cluster = GetNextCluster(cluster);
+                var cluster = dataDescriptor.FirstCluster;
+                var length = (long?)dataDescriptor.Length ?? long.MaxValue;
+                for (long offset = 0; offset < length; offset += BytesPerCluster)
+                {
+                    if (cluster.IsLast)
+                        yield break;
+                    yield return cluster;
+                    if (dataDescriptor.Contiguous)
+                        cluster = cluster + 1;
+                    else
+                        cluster = GetNextCluster(cluster);
+                }
             }
         }
 
@@ -293,15 +298,15 @@ namespace ExFat.Partition
         /// <param name="nextCluster">The next cluster.</param>
         public void SetNextCluster(Cluster cluster, Cluster nextCluster)
         {
-            lock (_streamLock)
+            lock (_fatLock)
             {
                 var fatPage = GetFatPage(cluster);
                 var clusterIndex = (int)(cluster.Value % ClustersPerFatPage);
                 LittleEndian.GetBytes((UInt32)nextCluster.Value, fatPage, clusterIndex * sizeof(Int32));
                 _fatPageDirty = true;
+                if (!_options.HasAny(ExFatOptions.DelayWrite))
+                    FlushFatPage();
             }
-            if (!_options.HasAny(ExFatOptions.DelayWrite))
-                FlushFatPage();
         }
 
         /// <inheritdoc />
@@ -312,9 +317,9 @@ namespace ExFat.Partition
         /// <returns></returns>
         public Cluster AllocateCluster(Cluster previousClusterHint)
         {
-            var allocationBitmap = GetAllocationBitmap();
-            lock (_streamLock)
+            lock (_allocationLock)
             {
+                var allocationBitmap = GetAllocationBitmap();
                 Cluster cluster;
                 // no data? anything else is good
                 if (!previousClusterHint.IsData)
@@ -335,12 +340,15 @@ namespace ExFat.Partition
         /// Frees the specified <see cref="DataDescriptor"/> clusters.
         /// </summary>
         /// <param name="dataDescriptor">The data descriptor.</param>
-        public void Deallocate(DataDescriptor dataDescriptor)
+        public void Free(DataDescriptor dataDescriptor)
         {
-            var allocationBitmap = GetAllocationBitmap();
-            // TODO: optimize to write all only once
-            foreach (var cluster in GetClusters(dataDescriptor))
-                allocationBitmap[cluster] = false;
+            lock (_allocationLock)
+            {
+                var allocationBitmap = GetAllocationBitmap();
+                // TODO: optimize to write all only once
+                foreach (var cluster in GetClusters(dataDescriptor))
+                    allocationBitmap[cluster] = false;
+            }
         }
 
         /// <inheritdoc />
@@ -350,7 +358,7 @@ namespace ExFat.Partition
         /// <param name="cluster">The cluster.</param>
         public void FreeCluster(Cluster cluster)
         {
-            lock (_streamLock)
+            lock (_allocationLock)
             {
                 GetAllocationBitmap()[cluster] = false;
             }

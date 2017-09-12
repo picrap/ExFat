@@ -311,7 +311,7 @@ namespace ExFat.Filesystem
         /// <param name="entry">The entry.</param>
         public void Delete(ExFatFilesystemEntry entry)
         {
-            _partition.Deallocate(entry.DataDescriptor);
+            _partition.Free(entry.DataDescriptor);
             foreach (var e in entry.MetaEntry.Entries)
                 e.EntryType.Value &= ~ExFatDirectoryEntryType.InUse;
             Update(entry);
