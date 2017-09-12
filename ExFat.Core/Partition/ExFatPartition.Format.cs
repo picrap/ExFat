@@ -28,6 +28,8 @@ namespace ExFat.Partition
             var bytesPerSector = options?.BytesPerSector ?? 512;
             var totalSectors = volumeSpace / bytesPerSector;
             var sectorsPerCluster = options?.SectorsPerCluster ?? ComputeSectorsPerCluster(totalSectors);
+            if (sectorsPerCluster > 1 << 25)
+                throw new ArgumentException("Sectors per cluster can not exceed 2^25");
             const uint fats = 1;
             const uint usedFats = fats;
             const uint bootSectors = 12;
@@ -120,11 +122,11 @@ namespace ExFat.Partition
 
         private static uint Align(uint value, uint bytesPerSector)
         {
-            var alignment = 4 << 10; // 4K alignmet
+            const int alignment = 4 << 10; // 4K alignmet
             if (bytesPerSector > alignment)
                 return value;
             var r = alignment / bytesPerSector - 1;
-            return (uint)((value + r) & ~r);
+            return (value + r) & ~r;
         }
 
         private static void CreateVolumeLabel(ClusterStream directoryStream, string volumeLabel)

@@ -10,11 +10,35 @@ namespace ExFat.Generator
     using DiscUtils;
     using global::DiscUtils;
     using global::DiscUtils.Partitions;
+    using global::DiscUtils.Streams;
     using global::DiscUtils.Vhdx;
 
     public static class Program
     {
         public static void Main(string[] args)
+        {
+            string label = "Zap!";
+            long capacity = 2L << 40;
+            int blockSize = 4 << 20;
+            using (var diskStream = File.Create("big.vhdx"))
+            using (var disk = Disk.InitializeDynamic(diskStream, Ownership.Dispose, capacity, blockSize))
+            {
+                var gpt = GuidPartitionTable.Initialize(disk);
+                gpt.Create(gpt.FirstUsableSector, gpt.LastUsableSector, GuidPartitionTypes.WindowsBasicData, 0, null);
+                var volume = VolumeManager.GetPhysicalVolumes(disk).First();
+                uint bytesPerSector = (uint)(volume.PhysicalGeometry?.BytesPerSector ?? 512);
+                var clusterCount = 1 << 25;// uint.MaxValue - 16;
+                var clusterSize = capacity / clusterCount;
+                var clusterBits = (int)Math.Ceiling(Math.Log(clusterSize) / Math.Log(2));
+                if (clusterBits > 18)
+                    clusterBits = 18;
+                //clusterBits = 20;
+                using (var fs = ExFatFileSystem.Format(volume, new ExFatFormatOptions { SectorsPerCluster = (1u << clusterBits) / bytesPerSector }, label: label))
+                { }
+            }
+        }
+
+        public static void Main2(string[] args)
         {
             File.Copy("Empty1.vhdx", "Empty.vhdx", true);
             using (var disk = new Disk("Empty.vhdx"))

@@ -56,6 +56,7 @@
     <Compile Include="Buffers\BufferUInt16.cs" />
     <Compile Include="Buffers\BufferUInt32.cs" />
     <Compile Include="Buffers\BufferUInt64.cs" />
+    <Compile Include="Buffers\CacheValueProvider.cs" />
     <Compile Include="Buffers\EnumValueProvider.cs" />
     <Compile Include="Buffers\IValueProvider.cs" />
     <Compile Include="Buffers\ShiftValueProvider.cs" />

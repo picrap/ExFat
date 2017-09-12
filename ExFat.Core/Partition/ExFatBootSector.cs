@@ -104,7 +104,7 @@ namespace ExFat.Partition
         /// <value>
         /// The file system revision.
         /// </value>
-        public IValueProvider<UInt16> FileSystemRevision { get;  }
+        public IValueProvider<UInt16> FileSystemRevision { get; }
 
         /// <summary>
         /// Gets the volume flags.
@@ -197,7 +197,7 @@ namespace ExFat.Partition
             VolumeSerialNumber = new BufferUInt32(buffer, 100);
             FileSystemRevision = new BufferUInt16(buffer, 104);
             VolumeFlags = new BufferUInt16(buffer, 106);
-            BytesPerSector = new ShiftValueProvider(new BufferUInt8(buffer, 108));
+            BytesPerSector = new CacheValueProvider<uint>(new ShiftValueProvider(new BufferUInt8(buffer, 108)));
             SectorsPerCluster = new ShiftValueProvider(new BufferUInt8(buffer, 109));
             NumberOfFats = new BufferUInt8(buffer, 110);
             DriveSelect = new BufferUInt8(buffer, 111);

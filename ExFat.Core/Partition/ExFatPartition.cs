@@ -300,9 +300,14 @@ namespace ExFat.Partition
         {
             lock (_fatLock)
             {
+                // the only point is to avoid writing to virtual hard disk, which may be sparse and handle sparseness more or less efficiently...
                 var fatPage = GetFatPage(cluster);
                 var clusterIndex = (int)(cluster.Value % ClustersPerFatPage);
-                LittleEndian.GetBytes((UInt32)nextCluster.Value, fatPage, clusterIndex * sizeof(Int32));
+                var b = LittleEndian.GetBytes((UInt32)nextCluster.Value);
+                var fatPageOffset = clusterIndex * sizeof(UInt32);
+                if (b[0] == fatPage[fatPageOffset] && b[1] == fatPage[fatPageOffset + 1] && b[2] == fatPage[fatPageOffset + 2] && b[3] == fatPage[fatPageOffset + 3])
+                    return;
+                Buffer.BlockCopy(b, 0, fatPage, fatPageOffset, sizeof(Int32));
                 _fatPageDirty = true;
                 if (!_options.HasAny(ExFatOptions.DelayWrite))
                     FlushFatPage();
