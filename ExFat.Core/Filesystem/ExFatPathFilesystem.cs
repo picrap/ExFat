@@ -18,10 +18,13 @@ namespace ExFat.Filesystem
     public class ExFatPathFilesystem : IDisposable
     {
         private readonly ExFatEntryFilesystem _entryFilesystem;
-        private readonly Cache<string, ExFatFilesystemEntry> _entries2;
+        private readonly Cache<string, ExFatFilesystemEntry> _entries;
         private readonly object _entriesLock = new object();
-        private const char Separator = '\\';
-        private static readonly string SeparatorString = Separator.ToString();
+        private readonly char[] _separators;
+        /// <summary>
+        /// The default separators
+        /// </summary>
+        public static readonly char[] DefaultSeparators = new[] { '\\', '/' };
 
         /// <summary>
         /// Gets the total size.
@@ -46,34 +49,37 @@ namespace ExFat.Filesystem
         /// The available size.
         /// </value>
         public long AvailableSpace => _entryFilesystem.AvailableSpace;
-        /// <inheritdoc />
         /// <summary>
         /// Initializes a new instance of the <see cref="T:ExFat.Filesystem.ExFatPathFilesystem" /> class.
         /// </summary>
         /// <param name="partitionStream">The partition stream.</param>
         /// <param name="flags">The flags.</param>
-        public ExFatPathFilesystem(Stream partitionStream, ExFatOptions flags = ExFatOptions.Default)
-            : this(new ExFatPartition(partitionStream), flags)
+        /// <param name="pathSeparators">The path separators.</param>
+        public ExFatPathFilesystem(Stream partitionStream, ExFatOptions flags = ExFatOptions.Default, char[] pathSeparators = null)
+            : this(new ExFatPartition(partitionStream), flags, pathSeparators)
         { }
 
-        /// <inheritdoc />
         /// <summary>
         /// Initializes a new instance of the <see cref="T:ExFat.Filesystem.ExFatPathFilesystem" /> class.
         /// </summary>
         /// <param name="partition">The partition.</param>
         /// <param name="flags">The flags.</param>
-        public ExFatPathFilesystem(ExFatPartition partition, ExFatOptions flags = ExFatOptions.Default)
-            : this(new ExFatEntryFilesystem(partition, flags))
+        /// <param name="pathSeparators">The path separators.</param>
+        /// <inheritdoc />
+        public ExFatPathFilesystem(ExFatPartition partition, ExFatOptions flags = ExFatOptions.Default, char[] pathSeparators = null)
+            : this(new ExFatEntryFilesystem(partition, flags), pathSeparators)
         { }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ExFatPathFilesystem"/> class.
+        /// Initializes a new instance of the <see cref="ExFatPathFilesystem" /> class.
         /// </summary>
         /// <param name="entryFilesystem">The entry filesystem.</param>
-        public ExFatPathFilesystem(ExFatEntryFilesystem entryFilesystem)
+        /// <param name="pathSeparators">The path separators.</param>
+        public ExFatPathFilesystem(ExFatEntryFilesystem entryFilesystem, char[] pathSeparators = null)
         {
             _entryFilesystem = entryFilesystem;
-            _entries2 = new Cache<string, ExFatFilesystemEntry>(Environment.ProcessorCount * (8 + 100));
+            _entries = new Cache<string, ExFatFilesystemEntry>(Environment.ProcessorCount * (8 + 100));
+            _separators = pathSeparators ?? DefaultSeparators;
         }
 
         /// <inheritdoc />
@@ -95,7 +101,7 @@ namespace ExFat.Filesystem
 
             lock (_entriesLock)
             {
-                if (_entries2.TryGetValue(path, out var entry))
+                if (_entries.TryGetValue(path, out var entry))
                     return entry;
 
                 var pn = GetParentAndName(path);
@@ -107,23 +113,21 @@ namespace ExFat.Filesystem
         private ExFatFilesystemEntry Register(ExFatFilesystemEntry entry, string cleanPath)
         {
             lock (_entriesLock)
-                _entries2[cleanPath] = entry;
+                _entries[cleanPath] = entry;
             return entry;
         }
 
-        private static Tuple<string, string> GetParentAndName(string cleanPath)
+        private Tuple<string, string> GetParentAndName(string cleanPath)
         {
-            var separatorIndex = cleanPath.LastIndexOf(Separator);
+            var separatorIndex = cleanPath.LastIndexOfAny(_separators);
             if (separatorIndex < 0)
                 return Tuple.Create("", cleanPath);
             return Tuple.Create(cleanPath.Substring(0, separatorIndex), cleanPath.Substring(separatorIndex + 1));
         }
 
-        private static string CleanupPath(string path)
+        private string CleanupPath(string path)
         {
-            if (path.StartsWith(SeparatorString) || path.EndsWith(SeparatorString))
-                return path.Trim(Separator);
-            return path;
+            return path.Trim(_separators);
         }
 
         private ExFatFilesystemEntry GetEntry(string cleanParentPath, string childName)
@@ -134,13 +138,13 @@ namespace ExFat.Filesystem
             return _entryFilesystem.FindChild(parentEntry, childName);
         }
 
-        private static string GetPath(string cleanParentPath, ExFatFilesystemEntry entry)
+        private string GetPath(string cleanParentPath, ExFatFilesystemEntry entry)
         {
             var fileName = entry.MetaEntry.ExtensionsFileName;
             // on root entries, the direct name is returned
             if (cleanParentPath == "")
                 return fileName;
-            return $"{cleanParentPath}{Separator}{fileName}";
+            return $"{cleanParentPath}{_separators[0]}{fileName}";
         }
 
         private ExFatFilesystemEntry GetSafeDirectory(string cleanDirectoryPath)
