@@ -22,7 +22,7 @@ namespace ExFat.Generator
                 //var gpt = GuidPartitionTable.Initialize(disk);
                 //gpt.Create(gpt.FirstUsableSector, gpt.LastUsableSector, GuidPartitionTypes.WindowsBasicData, 0, null);
                 var volume = VolumeManager.GetPhysicalVolumes(disk)[1];
-                using (var fs = ExFatFileSystem.Format(volume, null))
+                using (var fs = ExFatFileSystem.Format(volume))
                     fs.CreateDirectory("a folder");
             }
             using (var disk = new Disk("Empty.vhdx"))

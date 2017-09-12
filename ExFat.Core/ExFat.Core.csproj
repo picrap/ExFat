@@ -63,6 +63,7 @@
     <Compile Include="Cache.cs" />
     <Compile Include="DateTimeUtility.cs" />
     <Compile Include="EnumUtility.cs" />
+    <Compile Include="ExFatFormatOptions.cs" />
     <Compile Include="Filesystem\ExFatEntryInformation.cs" />
     <Compile Include="ExFatOptions.cs" />
     <Compile Include="Filesystem\ExFatPathFilesystem.cs" />

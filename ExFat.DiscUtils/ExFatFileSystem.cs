@@ -282,10 +282,10 @@ namespace ExFat.DiscUtils
             return information.Length;
         }
 
-        public static ExFatFileSystem Format(PhysicalVolumeInfo volume, string label = null)
+        public static ExFatFileSystem Format(PhysicalVolumeInfo volume, ExFatFormatOptions options = null, string label = null)
         {
             var partitionStream = volume.Open();
-            using (ExFatPathFilesystem.Format(partitionStream, label)) { }
+            using (ExFatPathFilesystem.Format(partitionStream, options, label)) { }
             return new ExFatFileSystem(partitionStream);
         }
     }

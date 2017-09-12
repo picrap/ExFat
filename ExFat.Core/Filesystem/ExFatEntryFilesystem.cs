@@ -377,11 +377,12 @@ namespace ExFat.Filesystem
         /// Formats the specified partition.
         /// </summary>
         /// <param name="partitionStream">The partition stream.</param>
+        /// <param name="options">The options.</param>
         /// <param name="volumeLabel">The volume label.</param>
         /// <returns></returns>
-        public static ExFatEntryFilesystem Format(Stream partitionStream, string volumeLabel = null)
+        public static ExFatEntryFilesystem Format(Stream partitionStream, ExFatFormatOptions options, string volumeLabel = null)
         {
-            var partition = ExFatPartition.Format(partitionStream, 512, 256, volumeLabel);
+            var partition = ExFatPartition.Format(partitionStream, options, volumeLabel);
             return new ExFatEntryFilesystem(partition);
         }
     }

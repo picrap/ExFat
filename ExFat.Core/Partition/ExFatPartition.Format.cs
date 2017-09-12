@@ -16,18 +16,18 @@ namespace ExFat.Partition
         /// Formats the specified partition stream.
         /// </summary>
         /// <param name="partitionStream">The partition stream.</param>
-        /// <param name="bytesPerSector">The bytes per sector.</param>
-        /// <param name="sectorsPerCluster">The sectors per cluster.</param>
+        /// <param name="options">The options.</param>
         /// <param name="volumeLabel">The volume label.</param>
-        /// <param name="volumeSpace">The volume space.</param>
         /// <returns></returns>
-        public static ExFatPartition Format(Stream partitionStream, uint bytesPerSector, uint sectorsPerCluster, string volumeLabel = null, ulong? volumeSpace = null)
+        public static ExFatPartition Format(Stream partitionStream, ExFatFormatOptions options, string volumeLabel = null)
         {
             var partition = new ExFatPartition(partitionStream, 0, false);
             partitionStream.Seek(0, SeekOrigin.Begin);
 
-            volumeSpace = volumeSpace ?? (ulong?)partitionStream.Length;
-            var totalSectors = volumeSpace.Value / bytesPerSector;
+            var volumeSpace = options?.VolumeSpace ?? (ulong)partitionStream.Length;
+            var bytesPerSector = options?.BytesPerSector ?? 512;
+            var totalSectors = volumeSpace / bytesPerSector;
+            var sectorsPerCluster = options?.SectorsPerCluster ?? ComputeSectorsPerCluster(totalSectors);
             const uint fats = 1;
             const uint usedFats = fats;
             const uint bootSectors = 12;
@@ -44,7 +44,9 @@ namespace ExFat.Partition
             bootSector.FatOffsetSector.Value = Align(bpbSectors, bytesPerSector);
             bootSector.FatLengthSectors.Value = Align(sectorsPerFat, bytesPerSector);
             bootSector.ClusterOffsetSector.Value = Align(bootSector.FatOffsetSector.Value + usedFats * bootSector.FatLengthSectors.Value, bytesPerSector);
-            totalClusters = (uint)((volumeSpace.Value / bytesPerSector - bootSector.ClusterOffsetSector.Value) / sectorsPerCluster);
+            totalClusters = (uint)((volumeSpace / bytesPerSector - bootSector.ClusterOffsetSector.Value) / sectorsPerCluster);
+            if (totalClusters > 0xFFFFFFF0)
+                throw new ArgumentException("clusters are too small to address full disk");
             bootSector.ClusterCount.Value = totalClusters;
             bootSector.VolumeSerialNumber.Value = (uint)new Random().Next();
             bootSector.FileSystemRevision.Value = 256;
@@ -97,6 +99,23 @@ namespace ExFat.Partition
             }
             partition.Flush();
             return partition;
+        }
+
+        private static uint ComputeSectorsPerCluster(ulong totalSectors)
+        {
+            // this is based on the following defaults:
+            // up to 256 MB -> 4 kB clusters
+            // up to 32 GB -> 32 kB clusters
+            // up to 256 TB -> 128 kB clusters
+            // Also, remember 1 KB = 1<<10, 1 GB = 1<<20, 1 TB = 1<<30
+            const int refSectorBits = 9; // 512 B
+            if (totalSectors <= 256 << (20 - refSectorBits))
+                return 4 << (10 - refSectorBits);
+            if (totalSectors <= 32 << (30 - refSectorBits))
+                return 32 << (10 - refSectorBits);
+            if (totalSectors <= 256 << (30 - refSectorBits))
+                return 128 << (10 - refSectorBits);
+            throw new ArgumentException("Sectors per cluster value has to be provided");
         }
 
         private static uint Align(uint value, uint bytesPerSector)
