@@ -7,7 +7,7 @@
 // Patch is no change.
 var VersionMajor = "0";
 var VersionMinor = "9";
-var VersionPatch = "4";
+var VersionPatch = "5";
 var Version = VersionMajor + "." + VersionMinor + "." + VersionPatch;
 var PreVersion = "";
 

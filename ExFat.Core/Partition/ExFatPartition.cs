@@ -220,18 +220,28 @@ namespace ExFat.Partition
 
         private byte[] GetFatPage(Cluster cluster)
         {
+            var fatPageIndex = GetFatPageIndex(cluster);
+            return GetFatPageFromIndex(fatPageIndex);
+        }
+
+        private byte[] GetFatPageFromIndex(long fatPageIndex)
+        {
             if (_fatPage == null)
                 _fatPage = new byte[FatPageSize];
 
-            var fatPageIndex = cluster.Value / ClustersPerFatPage;
             if (fatPageIndex != _fatPageIndex)
             {
                 FlushFatPage();
                 ReadSectors(BootSector.FatOffsetSector.Value + fatPageIndex * SectorsPerFatPage, _fatPage, SectorsPerFatPage);
                 _fatPageIndex = fatPageIndex;
             }
-
             return _fatPage;
+        }
+
+        private long GetFatPageIndex(Cluster cluster)
+        {
+            var fatPageIndex = cluster.Value / ClustersPerFatPage;
+            return fatPageIndex;
         }
 
         private void FlushFatPage()
@@ -311,6 +321,19 @@ namespace ExFat.Partition
                 _fatPageDirty = true;
                 if (!_options.HasAny(ExFatOptions.DelayWrite))
                     FlushFatPage();
+            }
+        }
+
+        private void ClearFat()
+        {
+            var lastPageIndex = GetFatPageIndex(BootSector.ClusterCount.Value);
+            for (var pageIndex = 0; pageIndex <= lastPageIndex; pageIndex++)
+            {
+                var fatPage = GetFatPageFromIndex(pageIndex);
+                if (fatPage.All(b => b == 0))
+                    continue;
+                Array.Clear(fatPage, 0, fatPage.Length);
+                _fatPageDirty = true;
             }
         }
 

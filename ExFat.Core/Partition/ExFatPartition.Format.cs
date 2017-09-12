@@ -66,11 +66,9 @@ namespace ExFat.Partition
             partition.BootSector = bootSector;
 
             // prepare FAT
+            partition.ClearFat();
             partition.SetNextCluster(0, Cluster.Marker);
             partition.SetNextCluster(1, Cluster.Last);
-            var lastCluster = Cluster.First + totalClusters;
-            for (var cluster = Cluster.First; cluster.Value < lastCluster.Value; cluster += 1)
-                partition.SetNextCluster(cluster, Cluster.Free);
 
             // create allocation bitmap
             var allocationBitmapEntry = CreateAllocationBitmap(partition, totalClusters);
