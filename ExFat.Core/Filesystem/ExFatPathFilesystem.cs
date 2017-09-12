@@ -50,7 +50,7 @@ namespace ExFat.Filesystem
         /// </summary>
         /// <param name="partitionStream">The partition stream.</param>
         /// <param name="flags">The flags.</param>
-        public ExFatPathFilesystem(Stream partitionStream, ExFatFilesystemFlags flags = ExFatFilesystemFlags.Default)
+        public ExFatPathFilesystem(Stream partitionStream, ExFatOptions flags = ExFatOptions.Default)
             : this(new ExFatPartition(partitionStream), flags)
         { }
 
@@ -60,7 +60,7 @@ namespace ExFat.Filesystem
         /// </summary>
         /// <param name="partition">The partition.</param>
         /// <param name="flags">The flags.</param>
-        public ExFatPathFilesystem(ExFatPartition partition, ExFatFilesystemFlags flags = ExFatFilesystemFlags.Default)
+        public ExFatPathFilesystem(ExFatPartition partition, ExFatOptions flags = ExFatOptions.Default)
             : this(new ExFatEntryFilesystem(partition, flags))
         { }
 

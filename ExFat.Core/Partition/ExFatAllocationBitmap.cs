@@ -17,6 +17,7 @@ namespace ExFat.Partition
         private byte[] _bitmap;
         private Stream _dataStream;
         private uint _firstCluster;
+        private bool _delayWrite;
 
         /// <summary>
         /// Gets the length.
@@ -46,11 +47,13 @@ namespace ExFat.Partition
         /// <param name="dataStream">The data stream.</param>
         /// <param name="firstCluster">The first cluster.</param>
         /// <param name="totalClusters">The total clusters.</param>
-        public void Open(Stream dataStream, uint firstCluster, long totalClusters)
+        /// <param name="delayWrite">if set to <c>true</c> [delay write].</param>
+        public void Open(Stream dataStream, uint firstCluster, long totalClusters, bool delayWrite)
         {
             _dataStream = dataStream;
             _firstCluster = firstCluster;
             _bitmap = new byte[(totalClusters + 7) / 8];
+            _delayWrite = delayWrite;
             dataStream?.Read(_bitmap, 0, _bitmap.Length);
             Length = totalClusters;
         }
@@ -70,6 +73,12 @@ namespace ExFat.Partition
         /// </summary>
         public void Flush()
         {
+            // only on delay write, because otherwise the bitmap is always up to date
+            if (_delayWrite)
+            {
+                _dataStream.Seek(0, SeekOrigin.Begin);
+                _dataStream.Write(_bitmap, 0, _bitmap.Length);
+            }
             _dataStream.Flush();
         }
 
@@ -120,7 +129,8 @@ namespace ExFat.Partition
                 _bitmap[byteIndex] |= (byte)bitMask;
             else
                 _bitmap[byteIndex] &= (byte)~bitMask;
-            if (_dataStream != null)
+            // update stream only if write is not delayed
+            if (_dataStream != null && !_delayWrite)
             {
                 _dataStream.Seek(byteIndex, SeekOrigin.Begin);
                 _dataStream.Write(_bitmap, byteIndex, 1);

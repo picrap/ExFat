@@ -64,7 +64,7 @@
     <Compile Include="DateTimeUtility.cs" />
     <Compile Include="EnumUtility.cs" />
     <Compile Include="Filesystem\ExFatEntryInformation.cs" />
-    <Compile Include="Filesystem\ExFatFilesystemFlags.cs" />
+    <Compile Include="ExFatOptions.cs" />
     <Compile Include="Filesystem\ExFatPathFilesystem.cs" />
     <Compile Include="IO\Cluster.cs" />
     <Compile Include="Partition\Entries\AllocationBitmapFlags.cs" />

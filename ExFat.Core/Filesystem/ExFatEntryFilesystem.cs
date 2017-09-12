@@ -19,7 +19,7 @@ namespace ExFat.Filesystem
     /// <seealso cref="System.IDisposable" />
     public class ExFatEntryFilesystem : IDisposable
     {
-        private readonly ExFatFilesystemFlags _flags;
+        private readonly ExFatOptions _options;
         private readonly ExFatPartition _partition;
         private readonly object _lock = new object();
 
@@ -70,9 +70,9 @@ namespace ExFat.Filesystem
         /// Initializes a new instance of the <see cref="T:ExFat.Filesystem.ExFatEntryFilesystem" /> class.
         /// </summary>
         /// <param name="partitionStream">The partition stream.</param>
-        /// <param name="flags">The flags.</param>
-        public ExFatEntryFilesystem(Stream partitionStream, ExFatFilesystemFlags flags = ExFatFilesystemFlags.Default)
-            : this(new ExFatPartition(partitionStream), flags)
+        /// <param name="options">The flags.</param>
+        public ExFatEntryFilesystem(Stream partitionStream, ExFatOptions options = ExFatOptions.Default)
+            : this(new ExFatPartition(partitionStream), options)
         {
         }
 
@@ -80,10 +80,10 @@ namespace ExFat.Filesystem
         /// Initializes a new instance of the <see cref="ExFatEntryFilesystem"/> class.
         /// </summary>
         /// <param name="partition">The partition.</param>
-        /// <param name="flags">The flags.</param>
-        public ExFatEntryFilesystem(ExFatPartition partition, ExFatFilesystemFlags flags = ExFatFilesystemFlags.Default)
+        /// <param name="options">The flags.</param>
+        public ExFatEntryFilesystem(ExFatPartition partition, ExFatOptions options = ExFatOptions.Default)
         {
-            _flags = flags;
+            _options = options;
             _partition = partition;
         }
 
@@ -197,7 +197,7 @@ namespace ExFat.Filesystem
             var file = (FileExFatDirectoryEntry)entry.MetaEntry.Primary;
 
             // if file was open for reading and the flag is set, the entry is updated
-            if (descriptor.HasAny(FileAccess.Read) && _flags.HasAny(ExFatFilesystemFlags.UpdateLastAccessTime))
+            if (descriptor.HasAny(FileAccess.Read) && _options.HasAny(ExFatOptions.UpdateLastAccessTime))
             {
                 now = DateTimeOffset.Now;
                 file.LastAccessDateTimeOffset.Value = now.Value;

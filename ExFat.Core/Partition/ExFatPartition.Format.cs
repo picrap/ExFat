@@ -23,7 +23,7 @@ namespace ExFat.Partition
         /// <returns></returns>
         public static ExFatPartition Format(Stream partitionStream, uint bytesPerSector, uint sectorsPerCluster, string volumeLabel = null, ulong? volumeSpace = null)
         {
-            var partition = new ExFatPartition(partitionStream, false);
+            var partition = new ExFatPartition(partitionStream, 0, false);
             partitionStream.Seek(0, SeekOrigin.Begin);
 
             volumeSpace = volumeSpace ?? (ulong?)partitionStream.Length;
@@ -121,7 +121,7 @@ namespace ExFat.Partition
         private static AllocationBitmapExFatDirectoryEntry CreateAllocationBitmap(ExFatPartition partition, uint totalClusters)
         {
             var allocationBitmap = new ExFatAllocationBitmap();
-            allocationBitmap.Open(null, 2, totalClusters);
+            allocationBitmap.Open(null, 2, totalClusters, true);
             partition._allocationBitmap = allocationBitmap;
 
             var dataDescriptor = new DataDescriptor(0, false, 0);

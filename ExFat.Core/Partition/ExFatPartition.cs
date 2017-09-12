@@ -18,6 +18,7 @@ namespace ExFat.Partition
     public partial class ExFatPartition : IClusterWriter, IDisposable
     {
         private readonly Stream _partitionStream;
+        private readonly ExFatOptions _options;
         private readonly object _streamLock = new object();
 
         /// <summary>
@@ -51,7 +52,7 @@ namespace ExFat.Partition
         /// <value>
         /// The total size.
         /// </value>
-        public long TotalSpace => BootSector.ClusterCount.Value * (long)BytesPerCluster;
+        public long TotalSpace => BootSector.ClusterCount.Value * BytesPerCluster;
 
         /// <summary>
         /// Gets the used space
@@ -59,7 +60,7 @@ namespace ExFat.Partition
         /// <value>
         /// The used space.
         /// </value>
-        public long UsedSpace => GetUsedClusters() * (long)BytesPerCluster;
+        public long UsedSpace => GetUsedClusters() * BytesPerCluster;
 
         /// <summary>
         /// Gets the available size.
@@ -70,20 +71,19 @@ namespace ExFat.Partition
         public long AvailableSpace => TotalSpace - UsedSpace;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ExFatPartition"/> class.
+        /// Initializes a new instance of the <see cref="ExFatPartition" /> class.
         /// </summary>
         /// <param name="partitionStream">The partition stream.</param>
-        /// <exception cref="System.ArgumentException">
-        /// Given stream must be seekable
+        /// <param name="options">The options.</param>
+        /// <exception cref="System.ArgumentException">Given stream must be seekable
         /// or
-        /// Given stream must be readable
-        /// </exception>
-        public ExFatPartition(Stream partitionStream)
-            : this(partitionStream, true)
+        /// Given stream must be readable</exception>
+        public ExFatPartition(Stream partitionStream, ExFatOptions options = ExFatOptions.Default)
+            : this(partitionStream, options, true)
         {
         }
 
-        private ExFatPartition(Stream partitionStream, bool readBootsector)
+        private ExFatPartition(Stream partitionStream, ExFatOptions options, bool readBootsector)
         {
             if (!partitionStream.CanSeek)
                 throw new ArgumentException("Given stream must be seekable");
@@ -91,6 +91,7 @@ namespace ExFat.Partition
                 throw new ArgumentException("Given stream must be readable");
 
             _partitionStream = partitionStream;
+            _options = options;
             if (readBootsector)
                 BootSector = ReadBootSector(_partitionStream);
         }
@@ -299,6 +300,8 @@ namespace ExFat.Partition
                 LittleEndian.GetBytes((UInt32)nextCluster.Value, fatPage, clusterIndex * sizeof(Int32));
                 _fatPageDirty = true;
             }
+            if (!_options.HasAny(ExFatOptions.DelayWrite))
+                FlushFatPage();
         }
 
         /// <inheritdoc />
@@ -543,7 +546,7 @@ namespace ExFat.Partition
                 var allocationBitmapEntry = FindRootDirectoryEntries<AllocationBitmapExFatDirectoryEntry>()
                     .First(b => !b.BitmapFlags.Value.HasAny(AllocationBitmapFlags.SecondClusterBitmap));
                 var allocationBitmapStream = OpenDataStream(allocationBitmapEntry.DataDescriptor, FileAccess.ReadWrite);
-                _allocationBitmap.Open(allocationBitmapStream, allocationBitmapEntry.FirstCluster.Value, BootSector.ClusterCount.Value);
+                _allocationBitmap.Open(allocationBitmapStream, allocationBitmapEntry.FirstCluster.Value, BootSector.ClusterCount.Value, _options.HasAny(ExFatOptions.DelayWrite));
             }
             return _allocationBitmap;
         }
