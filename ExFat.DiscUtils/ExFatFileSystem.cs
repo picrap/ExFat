@@ -285,7 +285,7 @@ namespace ExFat.DiscUtils
         public static ExFatFileSystem Format(PhysicalVolumeInfo volume, string label = null)
         {
             var partitionStream = volume.Open();
-            ExFatPathFilesystem.Format(partitionStream, label);
+            using (ExFatPathFilesystem.Format(partitionStream, label)) { }
             return new ExFatFileSystem(partitionStream);
         }
     }

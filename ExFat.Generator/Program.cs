@@ -30,6 +30,7 @@ namespace ExFat.Generator
                 var volume = VolumeManager.GetPhysicalVolumes(disk)[1];
                 using (var fs2 = new ExFatFileSystem(volume.Open()))
                 {
+                    var i = fs2.GetDirectoryInfo("a folder");
                     var e = fs2.GetDirectories("");
                 }
             }

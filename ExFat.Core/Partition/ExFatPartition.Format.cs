@@ -29,7 +29,7 @@ namespace ExFat.Partition
             volumeSpace = volumeSpace ?? (ulong?)partitionStream.Length;
             var totalSectors = volumeSpace.Value / bytesPerSector;
             const uint fats = 1;
-            const uint usedFats = 2;
+            const uint usedFats = fats;
             const uint bootSectors = 12;
             const uint bpbSectors = 2 * bootSectors;
 
@@ -41,9 +41,10 @@ namespace ExFat.Partition
             bootSector.JmpBoot.Set(ExFatBootSector.DefaultJmpBoot);
             bootSector.OemName.Value = ExFatBootSector.ExFatOemName;
             bootSector.VolumeLengthSectors.Value = totalSectors;
-            bootSector.FatOffsetSector.Value = bpbSectors;
-            bootSector.FatLengthSectors.Value = sectorsPerFat;
-            bootSector.ClusterOffsetSector.Value = bpbSectors + usedFats * sectorsPerFat;
+            bootSector.FatOffsetSector.Value = Align(bpbSectors, bytesPerSector);
+            bootSector.FatLengthSectors.Value = Align(sectorsPerFat, bytesPerSector);
+            bootSector.ClusterOffsetSector.Value = Align(bootSector.FatOffsetSector.Value + usedFats * bootSector.FatLengthSectors.Value, bytesPerSector);
+            totalClusters = (uint)((volumeSpace.Value / bytesPerSector - bootSector.ClusterOffsetSector.Value) / sectorsPerCluster);
             bootSector.ClusterCount.Value = totalClusters;
             bootSector.VolumeSerialNumber.Value = (uint)new Random().Next();
             bootSector.FileSystemRevision.Value = 256;
@@ -59,8 +60,13 @@ namespace ExFat.Partition
                 bootSectorBytes[sectorIndex * bytesPerSector + bytesPerSector - 1] = 0xAA;
             }
             partition.BootSector = bootSector;
+
+            // prepare FAT
             partition.SetNextCluster(0, Cluster.Marker);
             partition.SetNextCluster(1, Cluster.Last);
+            var lastCluster = Cluster.First + totalClusters;
+            for (var cluster = Cluster.First; cluster.Value < lastCluster.Value; cluster += 1)
+                partition.SetNextCluster(cluster, Cluster.Free);
 
             // create allocation bitmap
             var allocationBitmapEntry = CreateAllocationBitmap(partition, totalClusters);
@@ -70,7 +76,7 @@ namespace ExFat.Partition
             using (partition.OpenClusterStream(directoryDataDescriptor, FileAccess.ReadWrite, d => directoryDataDescriptor = new DataDescriptor(d.FirstCluster, d.Contiguous, long.MaxValue))) { }
             bootSector.RootDirectoryCluster.Value = directoryDataDescriptor.FirstCluster.ToUInt32();
 
-            // boot sector is not complete
+            // boot sector is now complete
             var checksum = bootSector.ComputeChecksum();
             for (var offset = 11 * bytesPerSector; offset < 12 * bytesPerSector; offset += 4)
             {
@@ -86,10 +92,30 @@ namespace ExFat.Partition
             {
                 allocationBitmapEntry.Write(directoryStream);
 
-                // create up-case table
                 CreateUpCaseTable(partition, directoryStream);
+                CreateVolumeLabel(directoryStream, volumeLabel);
             }
+            partition.Flush();
             return partition;
+        }
+
+        private static uint Align(uint value, uint bytesPerSector)
+        {
+            var alignment = 4 << 10; // 4K alignmet
+            if (bytesPerSector > alignment)
+                return value;
+            var r = alignment / bytesPerSector - 1;
+            return (uint)((value + r) & ~r);
+        }
+
+        private static void CreateVolumeLabel(ClusterStream directoryStream, string volumeLabel)
+        {
+            if (volumeLabel == null)
+                return;
+            var volumeLabelEntry = new VolumeLabelExFatDirectoryEntry(new Buffer(new byte[32]));
+            volumeLabelEntry.EntryType.Value = ExFatDirectoryEntryType.VolumeLabel | ExFatDirectoryEntryType.InUse;
+            volumeLabelEntry.VolumeLabel = volumeLabel;
+            volumeLabelEntry.Write(directoryStream);
         }
 
         private static AllocationBitmapExFatDirectoryEntry CreateAllocationBitmap(ExFatPartition partition, uint totalClusters)

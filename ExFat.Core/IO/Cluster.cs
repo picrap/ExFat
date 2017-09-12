@@ -46,6 +46,10 @@ namespace ExFat.IO
         public bool IsLast => Value < 0 && Value >= MinLast;
 
         /// <summary>
+        /// The first data cluster
+        /// </summary>
+        public static Cluster First = new Cluster(2);
+        /// <summary>
         /// Free cluster instance
         /// </summary>
         public static Cluster Free = new Cluster(0);

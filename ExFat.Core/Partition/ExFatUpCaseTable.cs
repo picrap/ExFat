@@ -81,7 +81,6 @@ namespace ExFat.Partition
                     Write(stream, skip, ref checksum);
                     Write(stream, LittleEndian.GetBytes((UInt16)(lc - current)), ref checksum);
                 }
-                Write(stream, LittleEndian.GetBytes(lc), ref checksum);
                 Write(stream, LittleEndian.GetBytes(_table[lc]), ref checksum);
                 current = lc + 1;
             }

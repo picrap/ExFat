@@ -132,7 +132,7 @@ namespace ExFat.Partition
             {
                 _partitionStream.Flush();
             }
-            catch (SystemException) // because I want to catch the NotImplemented Exception but R# considers it as a TO DO
+            catch (SystemException) // because I want to catch the NotImplemented.Exception but R# considers it as a TO.DO
             {
             }
         }
