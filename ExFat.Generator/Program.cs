@@ -17,6 +17,21 @@ namespace ExFat.Generator
     {
         public static void Main(string[] args)
         {
+            using (var diskStream = File.OpenRead("D:\\rozina-pascal.localcopy.vhdx"))
+            {
+                var disk = new Disk(diskStream, Ownership.Dispose);
+                var volume = VolumeManager.GetPhysicalVolumes(disk).First();
+                var volumeStream = volume.Open();
+                using (var fs = new ExFatFileSystem(volumeStream))
+                {
+                    var f = fs.FileExists(@"rozina-pascal\storage\parameters");
+                    var d = fs.DirectoryExists(@"rozina-pascal\storage\parameters");
+                }
+            }
+        }
+
+        public static void Main4(string[] args)
+        {
             string label = "Zap!";
             long capacity = 2L << 40;
             int blockSize = 4 << 20;

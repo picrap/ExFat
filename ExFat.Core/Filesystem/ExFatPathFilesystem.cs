@@ -91,22 +91,21 @@ namespace ExFat.Filesystem
             _entryFilesystem.Dispose();
         }
 
-        private ExFatFilesystemEntry GetEntry(string path)
+        private ExFatFilesystemEntry GetEntry(string cleanPath)
         {
-            if (path == null)
+            if (cleanPath == null)
                 throw new ArgumentNullException();
-            path = CleanupPath(path);
-            if (path == "")
+            if (cleanPath == "")
                 return _entryFilesystem.RootDirectory;
 
             lock (_entriesLock)
             {
-                if (_entries.TryGetValue(path, out var entry))
+                if (_entries.TryGetValue(cleanPath, out var entry))
                     return entry;
 
-                var pn = GetParentAndName(path);
+                var pn = GetParentAndName(cleanPath);
                 entry = GetEntry(pn.Item1, pn.Item2);
-                return Register(entry, path);
+                return Register(entry, cleanPath);
             }
         }
 
@@ -115,6 +114,12 @@ namespace ExFat.Filesystem
             lock (_entriesLock)
                 _entries[cleanPath] = entry;
             return entry;
+        }
+
+        private void Unregister(string cleanPath)
+        {
+            lock (_entriesLock)
+                _entries.Remove(cleanPath);
         }
 
         private Tuple<string, string> GetParentAndName(string cleanPath)
@@ -141,6 +146,11 @@ namespace ExFat.Filesystem
         private string GetPath(string cleanParentPath, ExFatFilesystemEntry entry)
         {
             var fileName = entry.MetaEntry.ExtensionsFileName;
+            return GetPath(cleanParentPath, fileName);
+        }
+
+        private string GetPath(string cleanParentPath, string fileName)
+        {
             // on root entries, the direct name is returned
             if (cleanParentPath == "")
                 return fileName;
@@ -378,8 +388,9 @@ namespace ExFat.Filesystem
                 throw new ArgumentNullException(nameof(targetDirectory), "Either targetDirectory or targetName has to be provided");
 
             var cleanSourcePath = CleanupPath(sourcePath);
+            var cleanSourceParentAndName = GetParentAndName(cleanSourcePath);
             if (targetDirectory == null)
-                targetDirectory = GetParentAndName(cleanSourcePath).Item1;
+                targetDirectory = cleanSourceParentAndName.Item1;
             var cleanTargetDirectory = CleanupPath(targetDirectory);
 
             var sourceEntry = GetEntry(cleanSourcePath);
@@ -389,7 +400,10 @@ namespace ExFat.Filesystem
             if (targetDirectoryEntry == null)
                 throw new FileNotFoundException();
 
+            var cleanTargetPath = cleanTargetDirectory;
+            cleanTargetPath = GetPath(cleanTargetPath, targetName ?? cleanSourceParentAndName.Item2);
             _entryFilesystem.Move(sourceEntry, targetDirectoryEntry, targetName);
+            Unregister(cleanTargetPath);
             Register(null, cleanSourcePath);
         }
 

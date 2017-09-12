@@ -61,5 +61,42 @@ namespace ExFat.DiscUtils.Tests
                 }
             }
         }
+
+        [TestMethod]
+        [TestCategory("Write")]
+        public void MoveFile()
+        {
+            using (var testEnvironment = new TestEnvironment())
+            {
+                using (var filesystem = new ExFatFileSystem(testEnvironment.PartitionStream))
+                {
+                    using (var a = filesystem.OpenFile("a", FileMode.Create))
+                        a.WriteByte(1);
+                    Assert.IsTrue(filesystem.FileExists("a"));
+                    filesystem.MoveFile("a", "b");
+                    Assert.IsFalse(filesystem.FileExists("a"));
+                    Assert.IsTrue(filesystem.FileExists("b"));
+                }
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("Write")]
+        public void MoveFileToDirectory()
+        {
+            using (var testEnvironment = new TestEnvironment())
+            {
+                using (var filesystem = new ExFatFileSystem(testEnvironment.PartitionStream))
+                {
+                    using (var a = filesystem.OpenFile("a", FileMode.Create))
+                        a.WriteByte(1);
+                    filesystem.CreateDirectory("d");
+                    Assert.IsTrue(filesystem.FileExists("a"));
+                    filesystem.MoveFile("a", "d");
+                    Assert.IsFalse(filesystem.FileExists("a"));
+                    Assert.IsTrue(filesystem.FileExists("d\\a"));
+                }
+            }
+        }
     }
 }
