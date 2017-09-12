@@ -15,7 +15,7 @@
     <iconUrl>https://raw.githubusercontent.com/picrap/ExFat/master/Icon/ExFat.png</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <summary>exFAT filesystem handler in pure .NET</summary>
-    <description><#=Description#></description>
+    <description><#=Description#> This package is the standalone version (which does not reference any other package).</description>
     <releaseNotes></releaseNotes>
     <copyright>Copyright 2017 picrap</copyright>
     <tags>exfat filesystem partition</tags>
