@@ -462,17 +462,18 @@ namespace ExFat.Filesystem
         /// </exception>
         public Stream Open(string literalPath, FileMode mode, FileAccess access)
         {
-            var cleanPath = ParsePath(literalPath);
-            var parentEntry = GetNode(cleanPath.GetParent());
+            var path = ParsePath(literalPath);
+            var parentEntry = GetNode(path.GetParent());
             if (parentEntry == null)
                 throw new DirectoryNotFoundException();
-            var child = _entryFilesystem.FindChild(parentEntry.Entry, cleanPath.Name);
+            var child = _entryFilesystem.FindChild(parentEntry.Entry, path.Name);
             // not existing?
             if (child == null)
             {
                 if (mode == FileMode.Append || mode == FileMode.Open || mode == FileMode.Truncate)
                     throw new FileNotFoundException();
-                return _entryFilesystem.CreateFile(parentEntry.Entry, cleanPath.Name);
+                parentEntry.RemoveChild(path.Name);
+                return _entryFilesystem.CreateFile(parentEntry.Entry, path.Name);
             }
 
             if (child.IsDirectory)
