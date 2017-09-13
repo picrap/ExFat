@@ -48,44 +48,40 @@ namespace ExFat.Filesystem
         {
             private readonly ExFatPathFilesystem _filesystem;
             private readonly IDictionary<string, Node> _children = new Dictionary<string, Node>();
-
-            public Path Path { get; }
+            private long _generation;
 
             public ExFatFilesystemEntry Entry { get; }
 
-            public long Generation { get; private set; }
-
-            public Node(Path path, ExFatFilesystemEntry entry, ExFatPathFilesystem filesystem)
+            public Node(ExFatFilesystemEntry entry, ExFatPathFilesystem filesystem)
             {
                 _filesystem = filesystem;
-                Generation = _filesystem.GetNextGeneration();
-                Path = path;
+                _generation = _filesystem.GetNextGeneration();
                 Entry = entry;
             }
 
-            public Node GetChild(string name)
+            public Node GetChild(string childName)
             {
-                if (!_children.TryGetValue(name, out var node))
+                if (!_children.TryGetValue(childName, out var node))
                     return null;
-                if (_filesystem.HasExpired(node.Generation))
+                if (_filesystem.HasExpired(node._generation))
                 {
-                    _children.Remove(name);
+                    _children.Remove(childName);
                     return null;
                 }
-                node.Generation = _filesystem.GetNextGeneration();
+                node._generation = _filesystem.GetNextGeneration();
                 return node;
             }
 
             public Node NewChild(Path path, ExFatFilesystemEntry entry)
             {
-                var child = new Node(path, entry, _filesystem);
+                var child = new Node(entry, _filesystem);
                 _children[path.Name] = child;
                 return child;
             }
 
-            public void RemoveChild(string name)
+            public void RemoveChild(string childName)
             {
-                _children.Remove(name);
+                _children.Remove(childName);
             }
         }
 
@@ -153,7 +149,7 @@ namespace ExFat.Filesystem
         {
             _entryFilesystem = entryFilesystem;
             _separators = pathSeparators ?? DefaultSeparators;
-            _rootNode = new Node(new Path(new[] { "" }, 0), _entryFilesystem.RootDirectory, this);
+            _rootNode = new Node(_entryFilesystem.RootDirectory, this);
         }
 
         /// <inheritdoc />
@@ -205,42 +201,32 @@ namespace ExFat.Filesystem
             return parentNode.NewChild(path, filesystemEntry);
         }
 
-        private void ClearEntry(Path path)
+        private Path GetPath(string literalPath)
         {
-            var entry = GetNode(path.GetParent());
-            if (entry != null)
-                entry.RemoveChild(path.Name);
-        }
-
-        private Tuple<string, string> GetParentAndName(string cleanPath)
-        {
-            var separatorIndex = cleanPath.LastIndexOfAny(_separators);
-            if (separatorIndex < 0)
-                return Tuple.Create("", cleanPath);
-            return Tuple.Create(cleanPath.Substring(0, separatorIndex), cleanPath.Substring(separatorIndex + 1));
-        }
-
-        private Path CleanupPath(string path)
-        {
-            var parts = path.Split(_separators, StringSplitOptions.RemoveEmptyEntries);
+            var parts = literalPath.Split(_separators, StringSplitOptions.RemoveEmptyEntries);
             return new Path(parts, parts.Length);
         }
 
-        private string GetPath(string cleanParentPath, ExFatFilesystemEntry entry)
+        private string GetLiteralPath(Path parentPath, ExFatFilesystemEntry entry)
+        {
+            return GetLiteralPath(parentPath.ToLiteral(_separators[0]), entry);
+        }
+
+        private string GetLiteralPath(string literalParentPath, ExFatFilesystemEntry entry)
         {
             var fileName = entry.MetaEntry.ExtensionsFileName;
-            return GetPath(cleanParentPath, fileName);
+            return GetLiteralPath(literalParentPath, fileName);
         }
 
-        private string GetPath(string cleanParentPath, string fileName)
+        private string GetLiteralPath(string literalParentPath, string fileName)
         {
             // on root entries, the direct name is returned
-            if (cleanParentPath == "")
+            if (literalParentPath == "")
                 return fileName;
-            return $"{cleanParentPath}{_separators[0]}{fileName}";
+            return $"{literalParentPath}{_separators[0]}{fileName}";
         }
 
-        private ExFatFilesystemEntry GetSafeDirectory(Path directoryPath)
+        private ExFatFilesystemEntry GetSafeDirectoryEntry(Path directoryPath)
         {
             var directory = GetNode(directoryPath);
             if (directory == null)
@@ -258,7 +244,7 @@ namespace ExFat.Filesystem
             return entry;
         }
 
-        private Node GetSafeNode(string path) => GetSafeNode(CleanupPath(path));
+        private Node GetSafeNode(string literalPath) => GetSafeNode(GetPath(literalPath));
 
         private void UpdateSafeEntry(Path path, Action<ExFatFilesystemEntry> update)
         {
@@ -267,93 +253,93 @@ namespace ExFat.Filesystem
             _entryFilesystem.Update(entry.Entry);
         }
 
-        private void UpdateSafeEntry(string path, Action<ExFatFilesystemEntry> update) => UpdateSafeEntry(CleanupPath(path), update);
+        private void UpdateSafeEntry(string literalPath, Action<ExFatFilesystemEntry> update) => UpdateSafeEntry(GetPath(literalPath), update);
 
         /// <summary>
         /// Enumerates the entries.
         /// </summary>
-        /// <param name="directoryPath">The directory path.</param>
+        /// <param name="literalDirectoryPath">The directory path.</param>
         /// <returns></returns>
-        public IEnumerable<ExFatEntryInformation> EnumerateEntries(string directoryPath)
+        public IEnumerable<ExFatEntryInformation> EnumerateEntries(string literalDirectoryPath)
         {
-            var cleanDirectoryPath = CleanupPath(directoryPath);
-            var directory = GetSafeDirectory(cleanDirectoryPath);
-            return _entryFilesystem.EnumerateFileSystemEntries(directory).Select(e => new ExFatEntryInformation(_entryFilesystem, e, GetPath(cleanDirectoryPath.ToLiteral(_separators[0]), e)));
+            var directoryPath = GetPath(literalDirectoryPath);
+            var directory = GetSafeDirectoryEntry(directoryPath);
+            return _entryFilesystem.EnumerateFileSystemEntries(directory).Select(e => new ExFatEntryInformation(_entryFilesystem, e, GetLiteralPath(directoryPath, e)));
         }
 
         /// <summary>
         /// Gets the creation time.
         /// </summary>
-        /// <param name="path">The path.</param>
+        /// <param name="literalPath">The path.</param>
         /// <returns></returns>
-        public DateTime GetCreationTime(string path) => GetSafeNode(path).Entry.CreationTime;
+        public DateTime GetCreationTime(string literalPath) => GetSafeNode(literalPath).Entry.CreationTime;
         /// <summary>
         /// Gets the creation time UTC.
         /// </summary>
-        /// <param name="path">The path.</param>
+        /// <param name="literalPath">The path.</param>
         /// <returns></returns>
-        public DateTime GetCreationTimeUtc(string path) => GetSafeNode(path).Entry.CreationTimeUtc;
+        public DateTime GetCreationTimeUtc(string literalPath) => GetSafeNode(literalPath).Entry.CreationTimeUtc;
         /// <summary>
         /// Gets the last write time.
         /// </summary>
-        /// <param name="path">The path.</param>
+        /// <param name="literalPath">The path.</param>
         /// <returns></returns>
-        public DateTime GetLastWriteTime(string path) => GetSafeNode(path).Entry.LastWriteTime;
+        public DateTime GetLastWriteTime(string literalPath) => GetSafeNode(literalPath).Entry.LastWriteTime;
         /// <summary>
         /// Gets the last write time UTC.
         /// </summary>
-        /// <param name="path">The path.</param>
+        /// <param name="literalPath">The path.</param>
         /// <returns></returns>
-        public DateTime GetLastWriteTimeUtc(string path) => GetSafeNode(path).Entry.LastWriteTimeUtc;
+        public DateTime GetLastWriteTimeUtc(string literalPath) => GetSafeNode(literalPath).Entry.LastWriteTimeUtc;
         /// <summary>
         /// Gets the last access time.
         /// </summary>
-        /// <param name="path">The path.</param>
+        /// <param name="literalPath">The path.</param>
         /// <returns></returns>
-        public DateTime GetLastAccessTime(string path) => GetSafeNode(path).Entry.LastAccessTime;
+        public DateTime GetLastAccessTime(string literalPath) => GetSafeNode(literalPath).Entry.LastAccessTime;
         /// <summary>
         /// Gets the last access time UTC.
         /// </summary>
-        /// <param name="path">The path.</param>
+        /// <param name="literalPath">The path.</param>
         /// <returns></returns>
-        public DateTime GetLastAccessTimeUtc(string path) => GetSafeNode(path).Entry.LastAccessTimeUtc;
+        public DateTime GetLastAccessTimeUtc(string literalPath) => GetSafeNode(literalPath).Entry.LastAccessTimeUtc;
 
         /// <summary>
         /// Sets the creation time.
         /// </summary>
-        /// <param name="path">The path.</param>
+        /// <param name="literalPath">The path.</param>
         /// <param name="creationTime">The creation time.</param>
-        public void SetCreationTime(string path, DateTime creationTime) => UpdateSafeEntry(path, e => e.CreationDateTimeOffset = creationTime.ToLocalTime());
+        public void SetCreationTime(string literalPath, DateTime creationTime) => UpdateSafeEntry(literalPath, e => e.CreationDateTimeOffset = creationTime.ToLocalTime());
         /// <summary>
         /// Sets the creation time UTC.
         /// </summary>
-        /// <param name="path">The path.</param>
+        /// <param name="literalPath">The path.</param>
         /// <param name="creationTime">The creation time.</param>
-        public void SetCreationTimeUtc(string path, DateTime creationTime) => UpdateSafeEntry(path, e => e.CreationDateTimeOffset = creationTime.ToUniversalTime());
+        public void SetCreationTimeUtc(string literalPath, DateTime creationTime) => UpdateSafeEntry(literalPath, e => e.CreationDateTimeOffset = creationTime.ToUniversalTime());
         /// <summary>
         /// Sets the last write time.
         /// </summary>
-        /// <param name="path">The path.</param>
+        /// <param name="literalPath">The path.</param>
         /// <param name="lastWriteTime">The last write time.</param>
-        public void SetLastWriteTime(string path, DateTime lastWriteTime) => UpdateSafeEntry(path, e => e.LastWriteDateTimeOffset = lastWriteTime.ToLocalTime());
+        public void SetLastWriteTime(string literalPath, DateTime lastWriteTime) => UpdateSafeEntry(literalPath, e => e.LastWriteDateTimeOffset = lastWriteTime.ToLocalTime());
         /// <summary>
         /// Sets the last write time UTC.
         /// </summary>
-        /// <param name="path">The path.</param>
+        /// <param name="literalPath">The path.</param>
         /// <param name="lastWriteTime">The last write time.</param>
-        public void SetLastWriteTimeUtc(string path, DateTime lastWriteTime) => UpdateSafeEntry(path, e => e.LastWriteDateTimeOffset = lastWriteTime.ToUniversalTime());
+        public void SetLastWriteTimeUtc(string literalPath, DateTime lastWriteTime) => UpdateSafeEntry(literalPath, e => e.LastWriteDateTimeOffset = lastWriteTime.ToUniversalTime());
         /// <summary>
         /// Sets the last access time.
         /// </summary>
-        /// <param name="path">The path.</param>
+        /// <param name="literalPath">The path.</param>
         /// <param name="lastAccessTime">The last access time.</param>
-        public void SetLastAccessTime(string path, DateTime lastAccessTime) => UpdateSafeEntry(path, e => e.LastAccessDateTimeOffset = lastAccessTime.ToLocalTime());
+        public void SetLastAccessTime(string literalPath, DateTime lastAccessTime) => UpdateSafeEntry(literalPath, e => e.LastAccessDateTimeOffset = lastAccessTime.ToLocalTime());
         /// <summary>
         /// Sets the last access time UTC.
         /// </summary>
-        /// <param name="path">The path.</param>
+        /// <param name="literalPath">The path.</param>
         /// <param name="lastAccessTime">The last access time.</param>
-        public void SetLastAccessTimeUtc(string path, DateTime lastAccessTime) => UpdateSafeEntry(path, e => e.LastAccessDateTimeOffset = lastAccessTime.ToUniversalTime());
+        public void SetLastAccessTimeUtc(string literalPath, DateTime lastAccessTime) => UpdateSafeEntry(literalPath, e => e.LastAccessDateTimeOffset = lastAccessTime.ToUniversalTime());
 
         private Node CreateDirectoryEntry(Path path)
         {
@@ -368,20 +354,20 @@ namespace ExFat.Filesystem
         /// <summary>
         /// Creates a directory under the given path.
         /// </summary>
-        /// <param name="path">The path.</param>
-        public void CreateDirectory(string path)
+        /// <param name="literalPath">The path.</param>
+        public void CreateDirectory(string literalPath)
         {
-            CreateDirectoryEntry(CleanupPath(path));
+            CreateDirectoryEntry(GetPath(literalPath));
         }
 
         /// <summary>
         /// Deletes the specified entry at given path.
         /// </summary>
-        /// <param name="path">The path.</param>
+        /// <param name="literalPath">The path.</param>
         /// <exception cref="System.IO.IOException"></exception>
-        public void Delete(string path)
+        public void Delete(string literalPath)
         {
-            var node = GetSafeNode(path);
+            var node = GetSafeNode(literalPath);
             if (node.Entry.IsDirectory)
             {
                 if (_entryFilesystem.EnumerateFileSystemEntries(node.Entry).Any())
@@ -394,27 +380,27 @@ namespace ExFat.Filesystem
         /// Deletes the tree at given path.
         /// If the entry is a file, simply deletes the file.
         /// </summary>
-        /// <param name="path">The path.</param>
-        public void DeleteTree(string path)
+        /// <param name="literalPath">The path.</param>
+        public void DeleteTree(string literalPath)
         {
-            var cleanPath = CleanupPath(path);
+            var cleanPath = GetPath(literalPath);
             var entry = GetSafeNode(cleanPath);
             if (entry.Entry.IsDirectory)
             {
                 foreach (var childPath in EnumerateEntries(cleanPath.ToLiteral(_separators[0])))
                     DeleteTree(childPath.Path);
             }
-            Delete(path);
+            Delete(literalPath);
         }
 
         /// <summary>
         /// Gets the information.
         /// </summary>
-        /// <param name="path">The path.</param>
+        /// <param name="literalPath">The path.</param>
         /// <returns></returns>
-        public ExFatEntryInformation GetInformation(string path)
+        public ExFatEntryInformation GetInformation(string literalPath)
         {
-            var cleanPath = CleanupPath(path);
+            var cleanPath = GetPath(literalPath);
             var entry = GetNode(cleanPath);
             if (entry == null)
                 return null;
@@ -424,7 +410,7 @@ namespace ExFat.Filesystem
         /// <summary>
         /// Opens or creates a file.
         /// </summary>
-        /// <param name="path">The path.</param>
+        /// <param name="literalPath">The path.</param>
         /// <param name="mode">The mode.</param>
         /// <param name="access">The access.</param>
         /// <returns></returns>
@@ -432,9 +418,9 @@ namespace ExFat.Filesystem
         /// <exception cref="System.IO.FileNotFoundException"></exception>
         /// <exception cref="System.IO.IOException">
         /// </exception>
-        public Stream Open(string path, FileMode mode, FileAccess access)
+        public Stream Open(string literalPath, FileMode mode, FileAccess access)
         {
-            var cleanPath = CleanupPath(path);
+            var cleanPath = GetPath(literalPath);
             var parentEntry = GetNode(cleanPath.GetParent());
             if (parentEntry == null)
                 throw new DirectoryNotFoundException();
@@ -462,16 +448,16 @@ namespace ExFat.Filesystem
         /// <summary>
         /// Moves the specified source.
         /// </summary>
-        /// <param name="sourcePath">The source path.</param>
-        /// <param name="targetDirectory">The target directory. null to stay in same directory</param>
+        /// <param name="sourceLiteralPath">The source path.</param>
+        /// <param name="targetDirectoryLiteralPath">The target directory. null to stay in same directory</param>
         /// <param name="targetName">Name of the target. null to keep original name</param>
-        public void Move(string sourcePath, string targetDirectory, string targetName = null)
+        public void Move(string sourceLiteralPath, string targetDirectoryLiteralPath, string targetName = null)
         {
-            if (targetDirectory == null && targetName == null)
-                throw new ArgumentNullException(nameof(targetDirectory), "Either targetDirectory or targetName has to be provided");
+            if (targetDirectoryLiteralPath == null && targetName == null)
+                throw new ArgumentNullException(nameof(targetDirectoryLiteralPath), "Either targetDirectory or targetName has to be provided");
 
-            var cleanSourcePath = CleanupPath(sourcePath);
-            var cleanTargetDirectory = targetDirectory == null ? cleanSourcePath.GetParent() : CleanupPath(targetDirectory);
+            var cleanSourcePath = GetPath(sourceLiteralPath);
+            var cleanTargetDirectory = targetDirectoryLiteralPath == null ? cleanSourcePath.GetParent() : GetPath(targetDirectoryLiteralPath);
 
             var sourceEntry = GetNode(cleanSourcePath);
             if (sourceEntry == null)
@@ -480,11 +466,8 @@ namespace ExFat.Filesystem
             if (targetDirectoryEntry == null)
                 throw new FileNotFoundException();
 
-            var cleanTargetPath = cleanTargetDirectory;
-            cleanTargetPath = GetPath(cleanTargetPath, targetName ?? cleanSourcePath.Name);
-            _entryFilesystem.Move(sourceEntry, targetDirectoryEntry, targetName);
-            Unregister(cleanTargetPath);
-            Register(null, cleanSourcePath);
+            _entryFilesystem.Move(sourceEntry.Entry, targetDirectoryEntry.Entry, targetName);
+            sourceEntry.RemoveChild(targetName ?? cleanSourcePath.Name);
         }
 
         /// <summary>
