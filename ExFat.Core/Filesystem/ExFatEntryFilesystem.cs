@@ -194,7 +194,7 @@ namespace ExFat.Filesystem
             return _partition.OpenDataStream(fileEntry.DataDescriptor, access, d => UpdateEntry(fileEntry, access, d));
         }
 
-        private void UpdateEntry(ExFatFilesystemEntry entry, FileAccess descriptor, DataDescriptor dataDescriptor)
+        private void UpdateEntry(ExFatFilesystemEntry entry, FileAccess fileAccess, DataDescriptor dataDescriptor)
         {
             if (entry?.MetaEntry == null)
                 return;
@@ -203,14 +203,14 @@ namespace ExFat.Filesystem
             var file = (FileExFatDirectoryEntry)entry.MetaEntry.Primary;
 
             // if file was open for reading and the flag is set, the entry is updated
-            if (descriptor.HasAny(FileAccess.Read) && _options.HasAny(ExFatOptions.UpdateLastAccessTime))
+            if (fileAccess.HasAny(FileAccess.Read) && _options.HasAny(ExFatOptions.UpdateLastAccessTime))
             {
                 now = DateTimeOffset.Now;
                 file.LastAccessDateTimeOffset.Value = now.Value;
             }
 
             // when it was open for writing, its characteristics may have changed, so we update them
-            if (descriptor.HasAny(FileAccess.Write))
+            if (fileAccess.HasAny(FileAccess.Write))
             {
                 now = now ?? DateTimeOffset.Now;
                 file.FileAttributes.Value |= ExFatFileAttributes.Archive;
@@ -350,7 +350,7 @@ namespace ExFat.Filesystem
         public void Update(ExFatFilesystemEntry entry)
         {
             lock (_entryLock)
-            _partition.UpdateEntry(entry.ParentDataDescriptor, entry.MetaEntry);
+                _partition.UpdateEntry(entry.ParentDataDescriptor, entry.MetaEntry);
         }
 
         /// <summary>
@@ -369,7 +369,7 @@ namespace ExFat.Filesystem
                 // create new entry, similar to source
                 targetName = targetName ?? source.Name;
                 var newEntry = CreateEntry(targetDirectory, targetName, source.Attributes);
-                var newFile = (FileExFatDirectoryEntry) newEntry.MetaEntry.Primary;
+                var newFile = (FileExFatDirectoryEntry)newEntry.MetaEntry.Primary;
                 newFile.CreationTimeStamp.Value = sourceFile.CreationTimeStamp.Value;
                 newFile.Creation10msIncrement.Value = sourceFile.Creation10msIncrement.Value;
                 newFile.CreationTimeZoneOffset.Value = sourceFile.CreationTimeZoneOffset.Value;
@@ -381,7 +381,8 @@ namespace ExFat.Filesystem
                 newEntry.MetaEntry.SecondaryStreamExtension.DataDescriptor = source.MetaEntry.SecondaryStreamExtension.DataDescriptor;
                 newEntry.MetaEntry.SecondaryStreamExtension.ValidDataLength.Value = source.MetaEntry.SecondaryStreamExtension.ValidDataLength.Value;
                 // add it to target directory
-                _partition.AddEntry(targetDirectory.DataDescriptor, newEntry.MetaEntry);
+                var newDataDescriptor = _partition.AddEntry(targetDirectory.DataDescriptor, newEntry.MetaEntry);
+                UpdateEntry(targetDirectory, FileAccess.ReadWrite, newDataDescriptor);
                 // and mark previous as deleted
                 foreach (var e in source.MetaEntry.Entries)
                     e.EntryType.Value &= ~ExFatDirectoryEntryType.InUse;
