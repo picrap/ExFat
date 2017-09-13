@@ -119,6 +119,7 @@ namespace ExFat.Filesystem
         /// The available size.
         /// </value>
         public long AvailableSpace => _entryFilesystem.AvailableSpace;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="T:ExFat.Filesystem.ExFatPathFilesystem" /> class.
         /// </summary>
@@ -229,7 +230,7 @@ namespace ExFat.Filesystem
         private ExFatFilesystemEntry GetSafeDirectoryEntry(Path directoryPath)
         {
             var directory = GetNode(directoryPath);
-            if (directory == null)
+            if (directory?.Entry == null)
                 throw new DirectoryNotFoundException();
             if (!directory.Entry.IsDirectory)
                 throw new IOException();
