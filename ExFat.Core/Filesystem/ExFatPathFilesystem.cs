@@ -119,7 +119,14 @@ namespace ExFat.Filesystem
 
         private readonly ExFatEntryFilesystem _entryFilesystem;
         private readonly object _entriesLock = new object();
-        private readonly char[] _separators;
+
+        /// <summary>
+        /// Gets or sets the path separators.
+        /// </summary>
+        /// <value>
+        /// The path separators.
+        /// </value>
+        public char[] PathSeparators { get; set; }
 
         private readonly Node _rootNode;
 
@@ -181,7 +188,7 @@ namespace ExFat.Filesystem
         public ExFatPathFilesystem(ExFatEntryFilesystem entryFilesystem, char[] pathSeparators = null)
         {
             _entryFilesystem = entryFilesystem;
-            _separators = pathSeparators ?? DefaultSeparators;
+            PathSeparators = pathSeparators ?? DefaultSeparators;
             _rootNode = new Node(_entryFilesystem.RootDirectory, this);
         }
 
@@ -240,13 +247,13 @@ namespace ExFat.Filesystem
 
         private Path ParsePath(string literalPath)
         {
-            var parts = literalPath.Split(_separators, StringSplitOptions.RemoveEmptyEntries);
+            var parts = literalPath.Split(PathSeparators, StringSplitOptions.RemoveEmptyEntries);
             return new Path(parts, parts.Length);
         }
 
         private string GetLiteralPath(Path parentPath, ExFatFilesystemEntry entry)
         {
-            return GetLiteralPath(parentPath.ToLiteral(_separators[0]), entry);
+            return GetLiteralPath(parentPath.ToLiteral(PathSeparators[0]), entry);
         }
 
         private string GetLiteralPath(string literalParentPath, ExFatFilesystemEntry entry)
@@ -260,7 +267,7 @@ namespace ExFat.Filesystem
             // on root entries, the direct name is returned
             if (literalParentPath == "")
                 return fileName;
-            return $"{literalParentPath}{_separators[0]}{fileName}";
+            return $"{literalParentPath}{PathSeparators[0]}{fileName}";
         }
 
         private Node GetSafeNode(Path path)
@@ -429,7 +436,7 @@ namespace ExFat.Filesystem
             var entry = GetSafeNode(cleanPath);
             if (entry.Entry.IsDirectory)
             {
-                foreach (var childPath in EnumerateEntries(cleanPath.ToLiteral(_separators[0])))
+                foreach (var childPath in EnumerateEntries(cleanPath.ToLiteral(PathSeparators[0])))
                     DeleteTree(childPath.Path);
             }
             Delete(literalPath);
@@ -446,7 +453,7 @@ namespace ExFat.Filesystem
             var node = GetNode(cleanPath);
             if (node.Entry == null)
                 return null;
-            return new ExFatEntryInformation(_entryFilesystem, node.Entry, cleanPath.ToLiteral(_separators[0]));
+            return new ExFatEntryInformation(_entryFilesystem, node.Entry, cleanPath.ToLiteral(PathSeparators[0]));
         }
 
         /// <summary>

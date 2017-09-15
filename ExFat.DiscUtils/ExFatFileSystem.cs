@@ -52,8 +52,8 @@ namespace ExFat.DiscUtils
         /// <inheritdoc />
         public ExFatFileSystem(Stream partitionStream, char[] pathSeparators = null)
         {
-            _separators = pathSeparators ?? DefaultSeparators;
-            _filesystem = new ExFatPathFilesystem(partitionStream, pathSeparators: _separators);
+            _filesystem = new ExFatPathFilesystem(partitionStream);
+            PathSeparators = pathSeparators ?? DefaultSeparators;
             var bootSector = ExFatPartition.ReadBootSector(partitionStream);
             if (!bootSector.IsValid)
                 throw new InvalidOperationException("Given stream is not exFAT volume");
