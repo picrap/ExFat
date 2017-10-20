@@ -30,11 +30,12 @@ namespace ExFat.DiscUtils
             using (var gzStream = GetType().Assembly.GetManifestResourceStream(GetType(), "exFAT.vhdx.gz"))
             using (var gzipStream = new GZipStream(gzStream, CompressionMode.Decompress))
             {
-                var fileOptions = FileOptions.DeleteOnClose;
-#if DEBUG
-                if (allowDebugKeep)
-                    fileOptions &= ~FileOptions.DeleteOnClose;
-#endif
+                FileOptions fileOptions = 0;
+//                var fileOptions = FileOptions.DeleteOnClose;
+//#if DEBUG
+//                if (allowDebugKeep)
+//                    fileOptions &= ~FileOptions.DeleteOnClose;
+//#endif
                 var vhdxStream = allowDebugKeep ? (Stream)File.Create(_vhdxPath, 1 << 20, fileOptions) : new MemoryStream();
                 gzipStream.CopyTo(vhdxStream);
 
