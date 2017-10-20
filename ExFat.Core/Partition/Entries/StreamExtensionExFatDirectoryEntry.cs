@@ -80,7 +80,7 @@ namespace ExFat.Partition.Entries
                     GeneralSecondaryFlags.Value |= ExFatGeneralSecondaryFlags.NoFatChain;
                 else
                     GeneralSecondaryFlags.Value &= ~ExFatGeneralSecondaryFlags.NoFatChain;
-                DataLength.Value = value.Length.Value;
+                DataLength.Value = value.Length;
             }
         }
 

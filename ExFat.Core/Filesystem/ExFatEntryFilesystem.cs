@@ -221,8 +221,8 @@ namespace ExFat.Filesystem
                 else
                     stream.GeneralSecondaryFlags.Value &= ~ExFatGeneralSecondaryFlags.NoFatChain;
                 stream.FirstCluster.Value = (UInt32)dataDescriptor.FirstCluster.Value;
-                stream.ValidDataLength.Value = dataDescriptor.Length.Value;
-                stream.DataLength.Value = dataDescriptor.Length.Value;
+                stream.ValidDataLength.Value = dataDescriptor.Length;
+                stream.DataLength.Value = dataDescriptor.Length;
             }
 
             // now has value only if it was used before, so we spare a flag :)

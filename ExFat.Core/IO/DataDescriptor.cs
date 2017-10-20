@@ -36,7 +36,7 @@ namespace ExFat.IO
         /// <value>
         /// The length.
         /// </value>
-        public ulong? Length { get; }
+        public ulong Length { get; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DataDescriptor"/> class.
@@ -45,10 +45,8 @@ namespace ExFat.IO
         /// <param name="contiguous">if set to <c>true</c> [contiguous].</param>
         /// <param name="length">The length.</param>
         /// <exception cref="ArgumentException">length must be provided for contiguous streams</exception>
-        public DataDescriptor(Cluster firstCluster, bool contiguous, ulong? length)
+        public DataDescriptor(Cluster firstCluster, bool contiguous, ulong length)
         {
-            if (contiguous && !length.HasValue)
-                throw new ArgumentException("length must be provided for contiguous streams");
             FirstCluster = firstCluster;
             Contiguous = contiguous;
             Length = length;

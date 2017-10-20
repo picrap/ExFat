@@ -20,7 +20,7 @@ namespace ExFat.IO
         private Cluster _startCluster;
         private bool _contiguous;
         private readonly Action<DataDescriptor> _onDisposed;
-        private long? _length;
+        private long _length;
         private long _position;
 
         private byte[] _currentClusterBuffer;
@@ -42,7 +42,7 @@ namespace ExFat.IO
         /// <summary>
         /// Gets a value indicating whether the current stream supports seeking.
         /// </summary>
-        public override bool CanSeek => _length.HasValue;
+        public override bool CanSeek => true;
         /// <inheritdoc />
         /// <summary>
         /// When overridden in a derived class, gets a value indicating whether the current stream supports writing.
@@ -58,9 +58,7 @@ namespace ExFat.IO
         {
             get
             {
-                if (!_length.HasValue)
-                    throw new NotSupportedException();
-                return _length.Value;
+                return _length;
             }
         }
 
@@ -90,7 +88,7 @@ namespace ExFat.IO
             _startCluster = dataDescriptor.FirstCluster;
             _contiguous = dataDescriptor.Contiguous;
             _onDisposed = onDisposed;
-            _length = (long?)dataDescriptor.Length;
+            _length = (long) dataDescriptor.Length;
 
             _position = 0;
             _currentCluster = _startCluster;
@@ -110,7 +108,7 @@ namespace ExFat.IO
             FlushCurrentCluster();
             base.Dispose(disposing);
             if (disposing && _onDisposed != null)
-                _onDisposed(new DataDescriptor(_startCluster, _contiguous, (ulong?)_length));
+                _onDisposed(new DataDescriptor(_startCluster, _contiguous, (ulong) _length));
         }
 
         /// <inheritdoc />
@@ -144,9 +142,6 @@ namespace ExFat.IO
         /// <inheritdoc />
         public override long Seek(long offset, SeekOrigin origin)
         {
-            if (!_length.HasValue)
-                throw new InvalidOperationException();
-
             long newPosition;
             switch (origin)
             {
@@ -157,7 +152,7 @@ namespace ExFat.IO
                     newPosition = _position + offset;
                     break;
                 case SeekOrigin.End:
-                    newPosition = _length.Value + offset;
+                    newPosition = _length + offset;
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(origin), origin, null);
@@ -166,7 +161,7 @@ namespace ExFat.IO
             if (newPosition < 0)
                 newPosition = 0;
             if (newPosition > _length)
-                newPosition = _length.Value;
+                newPosition = _length;
 
             _position = newPosition;
             return _position;
@@ -290,7 +285,7 @@ namespace ExFat.IO
             if (_contiguous)
             {
                 var nextCluster = cluster + clustersCount;
-                var lastContiguousCluster = _startCluster + ((_length.Value + _clusterReader.BytesPerCluster - 1) / _clusterReader.BytesPerCluster - 1);
+                var lastContiguousCluster = _startCluster + ((_length + _clusterReader.BytesPerCluster - 1) / _clusterReader.BytesPerCluster - 1);
                 if (nextCluster.Value <= lastContiguousCluster.Value)
                     return nextCluster;
                 return Cluster.Last;
@@ -319,14 +314,11 @@ namespace ExFat.IO
                 // what remaings in current cluster
                 var remainingInCluster = _clusterReader.BytesPerCluster - CurrentClusterOffset;
                 var toRead = Math.Min(remainingInCluster, count);
-                if (_length.HasValue)
-                {
-                    var leftInFile = _length.Value - _position;
-                    if (leftInFile == 0)
-                        break;
-                    if (toRead > leftInFile)
-                        toRead = (int)leftInFile;
-                }
+                var leftInFile = _length - _position;
+                if (leftInFile == 0)
+                    break;
+                if (toRead > leftInFile)
+                    toRead = (int)leftInFile;
                 SeekClusterFromPosition(false, false);
                 var currentCluster = GetSeekedCluster();
                 // null means nothing left to read (for streams without length; with length we've exited before)
