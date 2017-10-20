@@ -92,6 +92,25 @@ namespace ExFat.DiscUtils.Tests
 
         [TestMethod]
         [TestCategory("Write")]
+        public void CreateEmptyFileTest()
+        {
+            using (var testEnvironment = new TestEnvironment(true))
+            {
+                using (var filesystem = new ExFatEntryFilesystem(testEnvironment.PartitionStream))
+                {
+                    using (var s = filesystem.CreateFile(filesystem.RootDirectory, "a.txt")) { }
+
+                    var f = filesystem.FindChild(filesystem.RootDirectory, "a.txt");
+                    using (var s2 = filesystem.OpenFile(f, FileAccess.Read))
+                    {
+                        Assert.AreEqual(-1, s2.ReadByte());
+                    }
+                }
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("Write")]
         public void DeleteFileTest()
         {
             using (var testEnvironment = new TestEnvironment(true))

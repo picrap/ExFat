@@ -96,8 +96,8 @@ namespace ExFat.IO
             _currentCluster = _startCluster;
 
             // on write streams, there must be at least one cluster allocated (otherwise it won't understand)
-            if (_clusterWriter != null)
-                SeekClusterFromPosition(true, true);
+            //if (_clusterWriter != null)
+            //    SeekClusterFromPosition(true, true);
         }
 
         /// <inheritdoc />
