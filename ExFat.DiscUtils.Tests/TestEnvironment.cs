@@ -53,6 +53,7 @@ namespace ExFat.DiscUtils
             {
                 try
                 {
+                    Assert.Fail("Not elevated");
                     if (IsElevated)
                     {
                         var t = CheckDisk();
