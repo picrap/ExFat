@@ -2,6 +2,10 @@
 // Released under MIT license
 // https://github.com/picrap/ExFat
 
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
 namespace ExFat.DiscUtils.Tests
 {
     using System.IO;
@@ -196,6 +200,50 @@ namespace ExFat.DiscUtils.Tests
                     var aFile = filesystem.FindChild(filesystem.RootDirectory, DiskContent.LongContiguousFileName);
                     var aFolder = filesystem.FindChild(filesystem.RootDirectory, DiskContent.EmptyRootFolderFileName);
                     filesystem.Move(aFile, aFolder, "noob");
+                }
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("Write")]
+        public void RandomReadWriteTest()
+        {
+            using (var testEnvironment = new TestEnvironment(true))
+            {
+                using (var filesystem = new ExFatEntryFilesystem(testEnvironment.PartitionStream))
+                {
+                    var testFolder = filesystem.CreateDirectory(filesystem.RootDirectory, "inner looping test");
+                    var random = new Random(0);
+                    var fileIndex = 0;
+                    var catalogCache = new List<string>();
+                    for (int loop = 0; loop < 10; loop++)
+                    {
+                        // delete some
+                        var existingFiles = filesystem.EnumerateFileSystemEntries(testFolder).ToArray();
+                        for (int index = 0; index < existingFiles.Length; index++)
+                        {
+                            if (random.Next(0, 2) == 0)
+                            {
+                                filesystem.Delete(existingFiles[index]);
+                                Assert.IsTrue(catalogCache.Remove(existingFiles[index].Name));
+                            }
+                        }
+                        // add some
+                        var newFilesCount = random.Next(100, 300);
+                        for (int index = 0; index < newFilesCount; index++)
+                        {
+                            ++fileIndex;
+                            var fileName = fileIndex.ToString();
+                            using (var s = filesystem.CreateFile(testFolder, fileName))
+                            {
+                                var l = random.Next(0, 1000);
+                                var b = BitConverter.GetBytes(fileIndex);
+                                for (int i = 0; i < l; i++)
+                                    s.Write(b, 0, b.Length);
+                            }
+                            catalogCache.Add(fileName);
+                        }
+                    }
                 }
             }
         }
