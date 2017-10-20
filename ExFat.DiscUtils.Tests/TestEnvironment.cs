@@ -60,7 +60,7 @@ namespace ExFat.DiscUtils
                             Assert.Fail("VHDX filesystem is found corrupted by CHKDSK: " + t.Item2);
                     }
                     else
-                        Assert.Inconclusive("Not elevated");
+                        Assert.Fail("Not elevated");
                 }
                 finally
                 {
