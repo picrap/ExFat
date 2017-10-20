@@ -2,6 +2,11 @@
 // Released under MIT license
 // https://github.com/picrap/ExFat
 
+using System.Linq;
+using System.Security.Principal;
+using System.Threading;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+
 namespace ExFat.DiscUtils
 {
     using System;
@@ -43,9 +48,53 @@ namespace ExFat.DiscUtils
         {
             PartitionStream.Dispose();
             _disk.Dispose();
-            // Should not
+            var validDisk = true;
             if (File.Exists(_vhdxPath))
+            {
+                if (IsElevated)
+                    validDisk = CheckDisk();
                 File.Delete(_vhdxPath);
+            }
+            if (!validDisk)
+                Assert.Fail("VHDX filesystem is found corrupted by CHKDSK");
+        }
+
+        private static bool IsElevated
+        {
+            get
+            {
+                var id = WindowsIdentity.GetCurrent();
+                return id.Owner != id.User;
+            }
+        }
+
+        private bool CheckDisk()
+        {
+            var previousDrives = DriveInfo.GetDrives();
+            RunDiskPart("attach", _vhdxPath);
+            Thread.Sleep(500);
+            var newDrives = DriveInfo.GetDrives();
+            var mountedDrive = newDrives.FirstOrDefault(d => previousDrives.All(p => p.Name != d.Name));
+            bool success = false;
+            if (mountedDrive != null)
+            {
+                var result = ProcessUtility.Run("chkdsk", mountedDrive.Name.TrimEnd('\\'));
+                success = result.Item1 == 0;
+            }
+            RunDiskPart("detach", _vhdxPath);
+            return success;
+        }
+
+        private void RunDiskPart(string action, string vdiskPath)
+        {
+            var scriptPath = Path.GetTempFileName();
+            using (var scriptStream = File.CreateText(scriptPath))
+            {
+                scriptStream.WriteLine($"select vdisk file=\"{vdiskPath}\"");
+                scriptStream.WriteLine($"{action} vdisk");
+            }
+            ProcessUtility.Run("diskpart", $"/s {scriptPath}");
+            File.Delete(scriptPath);
         }
     }
 }
