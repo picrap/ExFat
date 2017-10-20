@@ -48,15 +48,25 @@ namespace ExFat.DiscUtils
         {
             PartitionStream.Dispose();
             _disk.Dispose();
-            var validDisk = true;
+            // a check when required
             if (File.Exists(_vhdxPath))
             {
-                if (IsElevated)
-                    validDisk = CheckDisk();
-                File.Delete(_vhdxPath);
+                try
+                {
+                    if (IsElevated)
+                    {
+                        var t = CheckDisk();
+                        if (!t.Item1)
+                            Assert.Fail("VHDX filesystem is found corrupted by CHKDSK: " + t.Item2);
+                    }
+                    else
+                        Assert.Inconclusive("Not elevated");
+                }
+                finally
+                {
+                    File.Delete(_vhdxPath);
+                }
             }
-            if (!validDisk)
-                Assert.Fail("VHDX filesystem is found corrupted by CHKDSK");
         }
 
         private static bool IsElevated
@@ -68,21 +78,23 @@ namespace ExFat.DiscUtils
             }
         }
 
-        private bool CheckDisk()
+        private Tuple<bool, string> CheckDisk()
         {
             var previousDrives = DriveInfo.GetDrives();
             RunDiskPart("attach", _vhdxPath);
             Thread.Sleep(500);
             var newDrives = DriveInfo.GetDrives();
             var mountedDrive = newDrives.FirstOrDefault(d => previousDrives.All(p => p.Name != d.Name));
-            bool success = false;
+            bool success = true;
+            string checkResult = null;
             if (mountedDrive != null)
             {
                 var result = ProcessUtility.Run("chkdsk", mountedDrive.Name.TrimEnd('\\'));
                 success = result.Item1 == 0;
+                checkResult = result.Item2;
             }
             RunDiskPart("detach", _vhdxPath);
-            return success;
+            return Tuple.Create(success, checkResult);
         }
 
         private void RunDiskPart(string action, string vdiskPath)
