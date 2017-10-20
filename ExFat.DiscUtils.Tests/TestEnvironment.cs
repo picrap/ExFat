@@ -83,7 +83,6 @@ namespace ExFat.DiscUtils
         {
             var previousDrives = DriveInfo.GetDrives();
             RunDiskPart("attach", _vhdxPath);
-            Thread.Sleep(500);
             var newDrives = DriveInfo.GetDrives();
             var mountedDrive = newDrives.FirstOrDefault(d => previousDrives.All(p => p.Name != d.Name));
             bool success = true;
@@ -98,7 +97,7 @@ namespace ExFat.DiscUtils
             return Tuple.Create(success, checkResult);
         }
 
-        private void RunDiskPart(string action, string vdiskPath)
+        private static void RunDiskPart(string action, string vdiskPath)
         {
             var scriptPath = Path.GetTempFileName();
             using (var scriptStream = File.CreateText(scriptPath))
