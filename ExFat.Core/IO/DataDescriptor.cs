@@ -10,7 +10,7 @@ namespace ExFat.IO
     /// <summary>
     /// Information about data in partition
     /// </summary>
-    [DebuggerDisplay("@{FirstCluster.Value} ({Length}) contiguous={Contiguous}")]
+    [DebuggerDisplay("@{FirstCluster.Value} ({LogicalLength} / {PhysicalLength}) contiguous={Contiguous}")]
     public class DataDescriptor
     {
         /// <summary>
@@ -31,25 +31,35 @@ namespace ExFat.IO
         public bool Contiguous { get; }
 
         /// <summary>
-        /// Gets the length. Can be null if the data is not contiguous (so the length is marked by last cluster)
+        /// The physical length is the allocated data length
         /// </summary>
         /// <value>
         /// The length.
         /// </value>
-        public ulong Length { get; }
+        public ulong PhysicalLength { get; }
+
+        /// <summary>
+        /// The logical length is between 0 and <see cref="PhysicalLength"/>.
+        /// </summary>
+        /// <value>
+        /// The length of the logical.
+        /// </value>
+        public ulong LogicalLength { get; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DataDescriptor"/> class.
         /// </summary>
         /// <param name="firstCluster">The first cluster.</param>
         /// <param name="contiguous">if set to <c>true</c> [contiguous].</param>
-        /// <param name="length">The length.</param>
+        /// <param name="physicalLength">The length.</param>
+        /// <param name="logicalLength"></param>
         /// <exception cref="ArgumentException">length must be provided for contiguous streams</exception>
-        public DataDescriptor(Cluster firstCluster, bool contiguous, ulong length)
+        public DataDescriptor(Cluster firstCluster, bool contiguous, ulong physicalLength, ulong logicalLength)
         {
             FirstCluster = firstCluster;
             Contiguous = contiguous;
-            Length = length;
+            PhysicalLength = physicalLength;
+            LogicalLength = logicalLength;
         }
 
         /// <summary>
@@ -63,18 +73,19 @@ namespace ExFat.IO
         {
             if (!(obj is DataDescriptor other))
                 return false;
-            return FirstCluster == other.FirstCluster && Contiguous == other.Contiguous && Length == other.Length;
+            return FirstCluster == other.FirstCluster && Contiguous == other.Contiguous
+                && PhysicalLength == other.PhysicalLength && LogicalLength == other.LogicalLength;
         }
 
         /// <summary>
         /// Returns a hash code for this instance.
         /// </summary>
         /// <returns>
-        /// A hash code for this instance, suitable for use in hashing algorithms and data structures like a hash table. 
+        /// A hash code for this instance, suitable for use in hashing algorithms and data structures like a hash table.
         /// </returns>
         public override int GetHashCode()
         {
-            return FirstCluster.Value.GetHashCode() ^ Contiguous.GetHashCode() ^ Length.GetHashCode();
+            return FirstCluster.Value.GetHashCode() ^ Contiguous.GetHashCode() ^ PhysicalLength.GetHashCode() ^ LogicalLength.GetHashCode();
         }
     }
 }

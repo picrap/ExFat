@@ -44,6 +44,7 @@ namespace ExFat.Partition.Entries
         /// </summary>
         /// <value>
         /// The length of the valid data.
+        /// This is lower than or equal to <see cref="DataLength"/>
         /// </value>
         public IValueProvider<UInt64> ValidDataLength { get; }
 
@@ -57,6 +58,7 @@ namespace ExFat.Partition.Entries
 
         /// <summary>
         /// Gets or sets the length of the data.
+        /// This is the allocated data length.
         /// </summary>
         /// <value>
         /// The length of the data.
@@ -72,7 +74,7 @@ namespace ExFat.Partition.Entries
         /// </value>
         public DataDescriptor DataDescriptor
         {
-            get { return new DataDescriptor(FirstCluster.Value, GeneralSecondaryFlags.Value.HasAny(ExFatGeneralSecondaryFlags.NoFatChain), DataLength.Value); }
+            get { return new DataDescriptor(FirstCluster.Value, GeneralSecondaryFlags.Value.HasAny(ExFatGeneralSecondaryFlags.NoFatChain), DataLength.Value, ValidDataLength.Value); }
             set
             {
                 FirstCluster.Value = value.FirstCluster.ToUInt32();
@@ -80,7 +82,8 @@ namespace ExFat.Partition.Entries
                     GeneralSecondaryFlags.Value |= ExFatGeneralSecondaryFlags.NoFatChain;
                 else
                     GeneralSecondaryFlags.Value &= ~ExFatGeneralSecondaryFlags.NoFatChain;
-                DataLength.Value = value.Length;
+                DataLength.Value = value.PhysicalLength;
+                ValidDataLength.Value = value.LogicalLength;
             }
         }
 

@@ -46,7 +46,7 @@ namespace ExFat.Partition
         /// <value>
         /// The root directory data descriptor.
         /// </value>
-        public DataDescriptor RootDirectoryDataDescriptor => new DataDescriptor(BootSector.RootDirectoryCluster.Value, false, long.MaxValue);
+        public DataDescriptor RootDirectoryDataDescriptor => new DataDescriptor(BootSector.RootDirectoryCluster.Value, false, long.MaxValue, long.MaxValue);
 
         /// <summary>
         /// Gets the total size.
@@ -286,8 +286,8 @@ namespace ExFat.Partition
             lock (_fatLock)
             {
                 var cluster = dataDescriptor.FirstCluster;
-                var length = (long?)dataDescriptor.Length ?? long.MaxValue;
-                for (long offset = 0; offset < length; offset += BytesPerCluster)
+                var length = dataDescriptor.PhysicalLength;
+                for (ulong offset = 0; offset < length; offset += (ulong)BytesPerCluster)
                 {
                     if (cluster.IsLast)
                         yield break;
@@ -536,7 +536,7 @@ namespace ExFat.Partition
         /// <returns></returns>
         public ClusterStream CreateDataStream(Action<DataDescriptor> onDisposed = null)
         {
-            return OpenClusterStream(new DataDescriptor(0, true, 0), FileAccess.ReadWrite, onDisposed);
+            return OpenClusterStream(new DataDescriptor(0, true, 0, 0), FileAccess.ReadWrite, onDisposed);
         }
 
         private IEnumerable<TDirectoryEntry> FindRootDirectoryEntries<TDirectoryEntry>()

@@ -72,7 +72,6 @@ namespace ExFat.IO
             set { Seek(value, SeekOrigin.Begin); }
         }
 
-        /// <inheritdoc />
         /// <summary>
         /// Initializes a new instance of the <see cref="T:ExFat.IO.ClusterStream" /> class.
         /// </summary>
@@ -81,6 +80,7 @@ namespace ExFat.IO
         /// <param name="dataDescriptor">The data descriptor.</param>
         /// <param name="onDisposed">Method invoked when stream is disposed.</param>
         /// <exception cref="T:System.ArgumentException">If contiguous is true, the length must be specified</exception>
+        /// <inheritdoc />
         public ClusterStream(IClusterReader clusterReader, IClusterWriter clusterWriter, DataDescriptor dataDescriptor, Action<DataDescriptor> onDisposed)
         {
             _clusterReader = clusterReader;
@@ -92,10 +92,6 @@ namespace ExFat.IO
 
             _position = 0;
             _currentCluster = _startCluster;
-
-            // on write streams, there must be at least one cluster allocated (otherwise it won't understand)
-            //if (_clusterWriter != null)
-            //    SeekClusterFromPosition(true, true);
         }
 
         /// <inheritdoc />
@@ -108,7 +104,7 @@ namespace ExFat.IO
             FlushCurrentCluster();
             base.Dispose(disposing);
             if (disposing && _onDisposed != null)
-                _onDisposed(new DataDescriptor(_startCluster, _contiguous, (ulong) _length));
+                _onDisposed(new DataDescriptor(_startCluster, _contiguous, (ulong) _length, TODO));
         }
 
         /// <inheritdoc />

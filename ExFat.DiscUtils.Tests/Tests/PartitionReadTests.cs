@@ -30,7 +30,7 @@ namespace ExFat.DiscUtils.Tests
                 var fileEntry = partition.GetMetaEntries(partition.RootDirectoryDataDescriptor).Single(e => e.ExtensionsFileName == fileName);
                 var length = overrideLength ?? fileEntry.SecondaryStreamExtension.DataLength.Value;
                 var contiguous = fileEntry.SecondaryStreamExtension.GeneralSecondaryFlags.Value.HasAny(ExFatGeneralSecondaryFlags.NoFatChain);
-                using (var stream = partition.OpenDataStream(new DataDescriptor(fileEntry.SecondaryStreamExtension.FirstCluster.Value, contiguous, length), FileAccess.Read))
+                using (var stream = partition.OpenDataStream(new DataDescriptor(fileEntry.SecondaryStreamExtension.FirstCluster.Value, contiguous, length, length), FileAccess.Read))
                 {
                     var vb = new byte[sizeof(ulong)];
                     var range = Enumerable.Range(0, (int)(length / sizeof(ulong))).Select(r => r * sizeof(ulong));

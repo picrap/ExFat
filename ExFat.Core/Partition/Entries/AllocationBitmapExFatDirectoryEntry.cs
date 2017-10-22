@@ -48,7 +48,7 @@ namespace ExFat.Partition.Entries
         /// <value>
         /// The data descriptor or null if none found.
         /// </value>
-        public DataDescriptor DataDescriptor => new DataDescriptor(FirstCluster.Value, false, DataLength.Value);
+        public DataDescriptor DataDescriptor => new DataDescriptor(FirstCluster.Value, false, DataLength.Value, DataLength.Value);
 
         /// <inheritdoc />
         /// <summary>

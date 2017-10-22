@@ -28,7 +28,7 @@ namespace ExFat.DiscUtils.Tests
                     overwrite.Write(buffer, 0, 8);
                 }
             }
-            using (var read = partition.OpenDataStream(new DataDescriptor(dataDescriptor.FirstCluster, false, DiskContent.LongFileSize * 2), FileAccess.Read))
+            using (var read = partition.OpenDataStream(new DataDescriptor(dataDescriptor.FirstCluster, false, DiskContent.LongFileSize * 2, DiskContent.LongFileSize * 2), FileAccess.Read))
             {
                 for (ulong offset = 0; offset < 2 * DiskContent.LongFileSize; offset += 8)
                 {
@@ -87,7 +87,7 @@ namespace ExFat.DiscUtils.Tests
                 append.Write(buffer, 0, 8);
             }
 
-            using (var read = partition.OpenDataStream(new DataDescriptor(dataDescriptor.FirstCluster, false, DiskContent.LongFileSize + 8), FileAccess.Read))
+            using (var read = partition.OpenDataStream(new DataDescriptor(dataDescriptor.FirstCluster, false, DiskContent.LongFileSize + 8, DiskContent.LongFileSize + 8), FileAccess.Read))
             {
                 for (ulong offset = 0; offset < DiskContent.LongFileSize + 8; offset += 8)
                 {

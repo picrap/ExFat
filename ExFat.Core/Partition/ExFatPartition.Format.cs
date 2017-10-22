@@ -74,8 +74,8 @@ namespace ExFat.Partition
             var allocationBitmapEntry = CreateAllocationBitmap(partition, totalClusters);
 
             // create root directory (cluster 2)
-            var directoryDataDescriptor = new DataDescriptor(0, false, ulong.MaxValue);
-            using (partition.OpenClusterStream(directoryDataDescriptor, FileAccess.ReadWrite, d => directoryDataDescriptor = new DataDescriptor(d.FirstCluster, d.Contiguous, long.MaxValue))) { }
+            var directoryDataDescriptor = new DataDescriptor(0, false, ulong.MaxValue, ulong.MaxValue);
+            using (partition.OpenClusterStream(directoryDataDescriptor, FileAccess.ReadWrite, d => directoryDataDescriptor = new DataDescriptor(d.FirstCluster, d.Contiguous, long.MaxValue, long.MaxValue))) { }
             bootSector.RootDirectoryCluster.Value = directoryDataDescriptor.FirstCluster.ToUInt32();
 
             // boot sector is now complete
@@ -143,7 +143,7 @@ namespace ExFat.Partition
             allocationBitmap.Open(null, 2, totalClusters, true);
             partition._allocationBitmap = allocationBitmap;
 
-            var dataDescriptor = new DataDescriptor(0, false, 0);
+            var dataDescriptor = new DataDescriptor(0, false, 0, 0);
             using (var allocationBitmapStream = partition.OpenClusterStream(dataDescriptor, FileAccess.ReadWrite, d => dataDescriptor = d))
                 allocationBitmap.Write(allocationBitmapStream);
             var allocationBitmapEntry = new AllocationBitmapExFatDirectoryEntry(new Buffer(new byte[32]));
@@ -159,7 +159,7 @@ namespace ExFat.Partition
             var upCaseTable = new ExFatUpCaseTable();
             upCaseTable.SetDefault();
             partition._upCaseTable = upCaseTable;
-            var upCaseTableDataDescriptor = new DataDescriptor(0, false, long.MaxValue);
+            var upCaseTableDataDescriptor = new DataDescriptor(0, false, long.MaxValue, long.MaxValue);
             long length;
             UInt32 checksum;
             using (var upCaseStream = partition.OpenClusterStream(upCaseTableDataDescriptor, FileAccess.ReadWrite, d => upCaseTableDataDescriptor = d))
