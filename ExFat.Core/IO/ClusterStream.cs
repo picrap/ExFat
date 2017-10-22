@@ -20,7 +20,8 @@ namespace ExFat.IO
         private Cluster _startCluster;
         private bool _contiguous;
         private readonly Action<DataDescriptor> _onDisposed;
-        private long _length;
+        private long _dataLength;
+        private long _validDataLength;
         private long _position;
 
         private byte[] _currentClusterBuffer;
@@ -58,7 +59,7 @@ namespace ExFat.IO
         {
             get
             {
-                return _length;
+                return _validDataLength;
             }
         }
 
@@ -88,7 +89,8 @@ namespace ExFat.IO
             _startCluster = dataDescriptor.FirstCluster;
             _contiguous = dataDescriptor.Contiguous;
             _onDisposed = onDisposed;
-            _length = (long) dataDescriptor.Length;
+            _dataLength = (long)dataDescriptor.PhysicalLength;
+            _validDataLength = (long)dataDescriptor.LogicalLength;
 
             _position = 0;
             _currentCluster = _startCluster;
@@ -104,7 +106,7 @@ namespace ExFat.IO
             FlushCurrentCluster();
             base.Dispose(disposing);
             if (disposing && _onDisposed != null)
-                _onDisposed(new DataDescriptor(_startCluster, _contiguous, (ulong) _length, TODO));
+                _onDisposed(new DataDescriptor(_startCluster, _contiguous, (ulong)_dataLength, (ulong)_validDataLength));
         }
 
         /// <inheritdoc />
@@ -148,7 +150,7 @@ namespace ExFat.IO
                     newPosition = _position + offset;
                     break;
                 case SeekOrigin.End:
-                    newPosition = _length + offset;
+                    newPosition = _validDataLength + offset;
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(origin), origin, null);
@@ -156,8 +158,8 @@ namespace ExFat.IO
 
             if (newPosition < 0)
                 newPosition = 0;
-            if (newPosition > _length)
-                newPosition = _length;
+            if (newPosition > _validDataLength)
+                newPosition = _validDataLength;
 
             _position = newPosition;
             return _position;
@@ -174,10 +176,30 @@ namespace ExFat.IO
             if (!CanWrite || !CanSeek)
                 throw new NotSupportedException();
 
+            var position = Position;
+
+            SetDataLength(value);
+            SetValidDataLength(value);
+
+            // adjust position if necessary
+            Seek(position, SeekOrigin.Begin);
+        }
+
+        /// <summary>
+        /// Sets the length of the data.
+        /// This is preallocation
+        /// </summary>
+        /// <param name="dataLength">Length of the data.</param>
+        public void SetDataLength(long dataLength)
+        {
+            if (!CanWrite || !CanSeek)
+                throw new NotSupportedException();
+
+            var position = Position;
+
             // first part: go to end, pushing limits if necessary
             var cluster = _startCluster;
-            var position = Position;
-            for (int offset = 0; offset < value; offset += _clusterReader.BytesPerCluster)
+            for (int offset = 0; offset < dataLength; offset += _clusterReader.BytesPerCluster)
             {
                 _position = offset;
                 SeekClusterFromPosition(true, true);
@@ -189,9 +211,33 @@ namespace ExFat.IO
                 _clusterWriter.FreeCluster(extraCluster);
                 _clusterWriter.SetNextCluster(extraCluster, Cluster.Free);
             }
-            // now adjust
-            _length = value;
             _clusterWriter.SetNextCluster(cluster, Cluster.Last);
+
+            // now adjust
+            _dataLength = dataLength;
+            if (_validDataLength > _dataLength)
+                _validDataLength = dataLength;
+
+            // adjust position if necessary
+            Seek(position, SeekOrigin.Begin);
+        }
+
+        /// <summary>
+        /// Sets the length of the valid data.
+        /// This must be less than or equal to data length
+        /// </summary>
+        /// <param name="validDataLength">Length of the valid data.</param>
+        public void SetValidDataLength(long validDataLength)
+        {
+            if (!CanWrite || !CanSeek)
+                throw new NotSupportedException();
+
+            var position = Position;
+
+            if (validDataLength > _dataLength)
+                throw new ArgumentException("validDataLength must be be lower than or equal to data length", nameof(validDataLength));
+
+            _validDataLength = validDataLength;
 
             // adjust position if necessary
             Seek(position, SeekOrigin.Begin);
@@ -281,7 +327,7 @@ namespace ExFat.IO
             if (_contiguous)
             {
                 var nextCluster = cluster + clustersCount;
-                var lastContiguousCluster = _startCluster + ((_length + _clusterReader.BytesPerCluster - 1) / _clusterReader.BytesPerCluster - 1);
+                var lastContiguousCluster = _startCluster + ((_dataLength + _clusterReader.BytesPerCluster - 1) / _clusterReader.BytesPerCluster - 1);
                 if (nextCluster.Value <= lastContiguousCluster.Value)
                     return nextCluster;
                 return Cluster.Last;
@@ -310,7 +356,7 @@ namespace ExFat.IO
                 // what remaings in current cluster
                 var remainingInCluster = _clusterReader.BytesPerCluster - CurrentClusterOffset;
                 var toRead = Math.Min(remainingInCluster, count);
-                var leftInFile = _length - _position;
+                var leftInFile = _validDataLength - _position;
                 if (leftInFile == 0)
                     break;
                 if (toRead > leftInFile)
@@ -353,8 +399,10 @@ namespace ExFat.IO
                 _currentClusterDirty = true;
                 _position += toWrite;
                 // pushing the limits!
-                if (_position > _length)
-                    _length = _position;
+                if (_position > _validDataLength)
+                    _validDataLength = _position;
+                if (_position > _dataLength)
+                    _dataLength = _position;
                 offset += toWrite;
                 count -= toWrite;
             }
