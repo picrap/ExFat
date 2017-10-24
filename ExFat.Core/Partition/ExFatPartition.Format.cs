@@ -74,7 +74,7 @@ namespace ExFat.Partition
             var allocationBitmapEntry = CreateAllocationBitmap(partition, totalClusters);
 
             // create root directory (cluster 2)
-            var directoryDataDescriptor = new DataDescriptor(0, false, ulong.MaxValue, ulong.MaxValue);
+            var directoryDataDescriptor = new DataDescriptor(2, false, ulong.MaxValue, ulong.MaxValue);
             using (partition.OpenClusterStream(directoryDataDescriptor, FileAccess.ReadWrite, d => directoryDataDescriptor = new DataDescriptor(d.FirstCluster, d.Contiguous, long.MaxValue, long.MaxValue))) { }
             bootSector.RootDirectoryCluster.Value = directoryDataDescriptor.FirstCluster.ToUInt32();
 

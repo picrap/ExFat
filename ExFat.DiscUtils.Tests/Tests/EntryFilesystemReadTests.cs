@@ -16,7 +16,7 @@ namespace ExFat.DiscUtils.Tests
         [TestCategory("Read")]
         public void FindFile()
         {
-            using (var testEnvironment = new TestEnvironment())
+            using (var testEnvironment = StreamTestEnvironment.FromExistingVhdx())
             using (var filesystem = new ExFatEntryFilesystem(testEnvironment.PartitionStream))
             {
                 var file = filesystem.FindChild(filesystem.RootDirectory, DiskContent.LongContiguousFileName);
@@ -28,7 +28,7 @@ namespace ExFat.DiscUtils.Tests
         [TestCategory("Read")]
         public void ReadFile()
         {
-            using (var testEnvironment = new TestEnvironment())
+            using (var testEnvironment = StreamTestEnvironment.FromExistingVhdx())
             using (var filesystem = new ExFatEntryFilesystem(testEnvironment.PartitionStream))
             {
                 var file = filesystem.FindChild(filesystem.RootDirectory, DiskContent.LongContiguousFileName);
@@ -49,7 +49,7 @@ namespace ExFat.DiscUtils.Tests
         [TestCategory("Read")]
         public void UpdateLastAccessTime()
         {
-            using (var testEnvironment = new TestEnvironment())
+            using (var testEnvironment = StreamTestEnvironment.FromExistingVhdx())
             using (var filesystem = new ExFatEntryFilesystem(testEnvironment.PartitionStream))
             {
                 var file = filesystem.FindChild(filesystem.RootDirectory, DiskContent.LongContiguousFileName);

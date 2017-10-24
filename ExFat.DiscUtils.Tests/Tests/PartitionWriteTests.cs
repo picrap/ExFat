@@ -47,7 +47,7 @@ namespace ExFat.DiscUtils.Tests
         [TestCategory("Write")]
         public void OverwriteSparseTest()
         {
-            using (var testEnvironment = new TestEnvironment())
+            using (var testEnvironment = StreamTestEnvironment.FromExistingVhdx())
             {
                 using (var partition = new ExFatPartition(testEnvironment.PartitionStream))
                 {
@@ -63,7 +63,7 @@ namespace ExFat.DiscUtils.Tests
         [TestCategory("Write")]
         public void OverwriteContiguousTest()
         {
-            using (var testEnvironment = new TestEnvironment())
+            using (var testEnvironment = StreamTestEnvironment.FromExistingVhdx())
             {
                 using (var partition = new ExFatPartition(testEnvironment.PartitionStream))
                 {
@@ -106,7 +106,7 @@ namespace ExFat.DiscUtils.Tests
         [TestCategory("Write")]
         public void AppendSparseTest()
         {
-            using (var testEnvironment = new TestEnvironment())
+            using (var testEnvironment = StreamTestEnvironment.FromExistingVhdx())
             {
                 using (var partition = new ExFatPartition(testEnvironment.PartitionStream))
                 {
@@ -122,7 +122,7 @@ namespace ExFat.DiscUtils.Tests
         [TestCategory("Write")]
         public void AppendContiguousTest()
         {
-            using (var testEnvironment = new TestEnvironment())
+            using (var testEnvironment = StreamTestEnvironment.FromExistingVhdx())
             {
                 using (var partition = new ExFatPartition(testEnvironment.PartitionStream))
                 {
@@ -139,7 +139,7 @@ namespace ExFat.DiscUtils.Tests
         [TestCategory("Write")]
         public void CreateStreamTest()
         {
-            using (var testEnvironment = new TestEnvironment())
+            using (var testEnvironment = StreamTestEnvironment.FromExistingVhdx())
             {
                 using (var partition = new ExFatPartition(testEnvironment.PartitionStream))
                 {

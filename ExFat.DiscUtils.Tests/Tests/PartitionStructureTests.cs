@@ -17,7 +17,7 @@ namespace ExFat.DiscUtils.Tests
         [TestCategory("Structure")]
         public void DirectoryEntries()
         {
-            using (var testEnvironment = new TestEnvironment())
+            using (var testEnvironment = StreamTestEnvironment.FromExistingVhdx())
             {
                 var partition = new ExFatPartition(testEnvironment.PartitionStream);
                 var entries = partition.GetEntries(partition.RootDirectoryDataDescriptor).ToArray();
@@ -29,7 +29,7 @@ namespace ExFat.DiscUtils.Tests
         [TestCategory("Structure")]
         public void ValidGroupedEntries()
         {
-            using (var testEnvironment = new TestEnvironment())
+            using (var testEnvironment = StreamTestEnvironment.FromExistingVhdx())
             {
                 var partition = new ExFatPartition(testEnvironment.PartitionStream);
                 var entries = partition.GetMetaEntries(partition.RootDirectoryDataDescriptor).ToArray();
@@ -41,7 +41,7 @@ namespace ExFat.DiscUtils.Tests
         [TestCategory("Structure")]
         public void CheckHashes()
         {
-            using (var testEnvironment = new TestEnvironment())
+            using (var testEnvironment = StreamTestEnvironment.FromExistingVhdx())
             {
                 var partition = new ExFatPartition(testEnvironment.PartitionStream);
                 foreach (var entry in partition.GetMetaEntries(partition.RootDirectoryDataDescriptor))
@@ -59,7 +59,7 @@ namespace ExFat.DiscUtils.Tests
         [TestCategory("Structure")]
         public void CheckChecksums()
         {
-            using (var testEnvironment = new TestEnvironment())
+            using (var testEnvironment = StreamTestEnvironment.FromExistingVhdx())
             {
                 var partition = new ExFatPartition(testEnvironment.PartitionStream);
                 foreach (var entry in partition.GetMetaEntries(partition.RootDirectoryDataDescriptor))
@@ -77,7 +77,7 @@ namespace ExFat.DiscUtils.Tests
         [TestCategory("Structure")]
         public void AllocationBitmapExists()
         {
-            using (var testEnvironment = new TestEnvironment())
+            using (var testEnvironment = StreamTestEnvironment.FromExistingVhdx())
             {
                 var partition = new ExFatPartition(testEnvironment.PartitionStream);
                 var bitmap = partition.GetAllocationBitmap();

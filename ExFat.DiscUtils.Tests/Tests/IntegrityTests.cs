@@ -14,7 +14,7 @@ namespace ExFat.DiscUtils.Tests
         [TestCategory("Detection")]
         public void ValidVolume()
         {
-            using (var testEnvironment = new TestEnvironment())
+            using (var testEnvironment = StreamTestEnvironment.FromExistingVhdx())
             {
                 Assert.IsTrue(ExFatFileSystem.Detect(testEnvironment.PartitionStream));
             }

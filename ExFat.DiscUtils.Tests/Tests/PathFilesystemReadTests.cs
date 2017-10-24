@@ -16,7 +16,7 @@ namespace ExFat.DiscUtils.Tests
         [TestCategory("Read")]
         public void ReadRootFolderEntriesTest()
         {
-            using (var testEnvironment = new TestEnvironment())
+            using (var testEnvironment = StreamTestEnvironment.FromExistingVhdx())
             using (var filesystem = new ExFatPathFilesystem(testEnvironment.PartitionStream))
             {
                 var entries = filesystem.EnumerateEntries(@"\").ToArray();
@@ -31,7 +31,7 @@ namespace ExFat.DiscUtils.Tests
         [TestCategory("Read")]
         public void ReadSubFolderFilesTest()
         {
-            using (var testEnvironment = new TestEnvironment())
+            using (var testEnvironment = StreamTestEnvironment.FromExistingVhdx())
             using (var filesystem = new ExFatPathFilesystem(testEnvironment.PartitionStream))
             {
                 var entries = filesystem.EnumerateEntries(DiskContent.LongFolderFileName).ToArray();
@@ -43,7 +43,7 @@ namespace ExFat.DiscUtils.Tests
         [TestCategory("Read")]
         public void ReadDatesTest()
         {
-            using (var testEnvironment = new TestEnvironment())
+            using (var testEnvironment = StreamTestEnvironment.FromExistingVhdx())
             using (var filesystem = new ExFatPathFilesystem(testEnvironment.PartitionStream))
             {
                 var c = filesystem.GetCreationTime(DiskContent.LongContiguousFileName);

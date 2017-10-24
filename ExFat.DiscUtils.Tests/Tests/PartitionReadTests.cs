@@ -18,7 +18,7 @@ namespace ExFat.DiscUtils.Tests
     {
         internal static void ReadFile(string fileName, Func<ulong, ulong> getValueAtOffset, ulong? overrideLength = null, bool forward = true, bool forceSeek = false)
         {
-            using (var testEnvironment = new TestEnvironment())
+            using (var testEnvironment = StreamTestEnvironment.FromExistingVhdx())
             {
                 var fs = new ExFatPartition(testEnvironment.PartitionStream);
                 ReadFile(fs, fileName, getValueAtOffset, overrideLength, forward, forceSeek);

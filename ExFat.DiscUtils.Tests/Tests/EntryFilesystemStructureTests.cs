@@ -16,7 +16,7 @@ namespace ExFat.DiscUtils.Tests
         [TestCategory("Read")]
         public void ReadFile()
         {
-            using (var testEnvironment = new TestEnvironment())
+            using (var testEnvironment = StreamTestEnvironment.FromExistingVhdx())
             using (var filesystem = new ExFatEntryFilesystem(testEnvironment.PartitionStream))
             {
                 var files = filesystem.EnumerateFileSystemEntries(filesystem.RootDirectory).ToArray();

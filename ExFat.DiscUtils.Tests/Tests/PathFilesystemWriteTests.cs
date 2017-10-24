@@ -26,7 +26,7 @@ namespace ExFat.DiscUtils.Tests
         [TestCategory("Write")]
         public void CreateDirectory()
         {
-            using (var testEnvironment = new TestEnvironment(true))
+            using (var testEnvironment = StreamTestEnvironment.FromExistingVhdx(true))
             {
                 using (var filesystem = new ExFatPathFilesystem(testEnvironment.PartitionStream))
                 {
@@ -43,7 +43,7 @@ namespace ExFat.DiscUtils.Tests
         [TestCategory("Write")]
         public void CreateDirectoryTree()
         {
-            using (var testEnvironment = new TestEnvironment(true))
+            using (var testEnvironment = StreamTestEnvironment.FromExistingVhdx(true))
             {
                 using (var filesystem = new ExFatPathFilesystem(testEnvironment.PartitionStream))
                 {
@@ -60,7 +60,7 @@ namespace ExFat.DiscUtils.Tests
         [TestCategory("Write")]
         public void DeleteTree()
         {
-            using (var testEnvironment = new TestEnvironment(true))
+            using (var testEnvironment = StreamTestEnvironment.FromExistingVhdx(true))
             {
                 using (var filesystem = new ExFatPathFilesystem(testEnvironment.PartitionStream))
                 {
@@ -74,7 +74,7 @@ namespace ExFat.DiscUtils.Tests
         [TestCategory("Write")]
         public void CreateFileTree()
         {
-            using (var testEnvironment = new TestEnvironment(true))
+            using (var testEnvironment = StreamTestEnvironment.FromExistingVhdx(true))
             {
                 using (var filesystem = new ExFatPathFilesystem(testEnvironment.PartitionStream))
                 {
@@ -94,7 +94,7 @@ namespace ExFat.DiscUtils.Tests
         [TestCategory("Write")]
         public void MoveTree()
         {
-            using (var testEnvironment = new TestEnvironment(true))
+            using (var testEnvironment = StreamTestEnvironment.FromExistingVhdx(true))
             {
                 using (var filesystem = new ExFatPathFilesystem(testEnvironment.PartitionStream))
                 {

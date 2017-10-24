@@ -2,55 +2,38 @@
 // Released under MIT license
 // https://github.com/picrap/ExFat
 
-using System.Linq;
-using System.Security.Principal;
-using System.Threading;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-
 namespace ExFat.DiscUtils
 {
     using System;
     using System.IO;
-    using System.IO.Compression;
-    using global::DiscUtils;
-    using global::DiscUtils.Streams;
+    using System.Linq;
+    using System.Security.Principal;
     using global::DiscUtils.Vhdx;
+    using Microsoft.VisualStudio.TestTools.UnitTesting;
 
     internal class TestEnvironment : IDisposable
     {
-        private readonly string _vhdxPath;
-        private readonly Disk _disk;
+        protected string VhdxPath;
+        protected Disk Disk;
 
-        public Stream PartitionStream { get; }
-
-        public TestEnvironment(bool allowDebugKeep = false)
+        protected TestEnvironment()
         {
-            _vhdxPath = Path.Combine(Path.GetTempPath(), $"exFAT test (to be removed) {Guid.NewGuid():N}.vhdx");
+        }
 
-            using (var gzStream = GetType().Assembly.GetManifestResourceStream(GetType(), "exFAT.vhdx.gz"))
-            using (var gzipStream = new GZipStream(gzStream, CompressionMode.Decompress))
+        private static bool IsElevated
+        {
+            get
             {
-                FileOptions fileOptions = 0;
-//                var fileOptions = FileOptions.DeleteOnClose;
-//#if DEBUG
-//                if (allowDebugKeep)
-//                    fileOptions &= ~FileOptions.DeleteOnClose;
-//#endif
-                var vhdxStream = allowDebugKeep ? (Stream)File.Create(_vhdxPath, 1 << 20, fileOptions) : new MemoryStream();
-                gzipStream.CopyTo(vhdxStream);
-
-                _disk = new Disk(vhdxStream, Ownership.Dispose);
-                var volume = VolumeManager.GetPhysicalVolumes(_disk)[1];
-                PartitionStream = volume.Open();
+                var id = WindowsIdentity.GetCurrent();
+                return id.Owner != id.User;
             }
         }
 
-        public void Dispose()
+        public virtual void Dispose()
         {
-            PartitionStream.Dispose();
-            _disk.Dispose();
+            Disk?.Dispose();
             // a check when required
-            if (File.Exists(_vhdxPath))
+            if (VhdxPath != null && File.Exists(VhdxPath))
             {
                 try
                 {
@@ -65,24 +48,15 @@ namespace ExFat.DiscUtils
                 }
                 finally
                 {
-                    File.Delete(_vhdxPath);
+                    File.Delete(VhdxPath);
                 }
-            }
-        }
-
-        private static bool IsElevated
-        {
-            get
-            {
-                var id = WindowsIdentity.GetCurrent();
-                return id.Owner != id.User;
             }
         }
 
         private Tuple<bool, string> CheckDisk()
         {
             var previousDrives = DriveInfo.GetDrives();
-            RunDiskPart("attach", _vhdxPath);
+            RunDiskPart("attach", VhdxPath);
             var newDrives = DriveInfo.GetDrives();
             var mountedDrive = newDrives.FirstOrDefault(d => previousDrives.All(p => p.Name != d.Name));
             bool success = true;
@@ -93,7 +67,7 @@ namespace ExFat.DiscUtils
                 success = result.Item1 == 0;
                 checkResult = result.Item2;
             }
-            RunDiskPart("detach", _vhdxPath);
+            RunDiskPart("detach", VhdxPath);
             return Tuple.Create(success, checkResult);
         }
 

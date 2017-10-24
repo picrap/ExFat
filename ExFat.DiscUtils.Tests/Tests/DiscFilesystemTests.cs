@@ -16,7 +16,7 @@ namespace ExFat.DiscUtils.Tests
         [TestCategory("Read")]
         public void ReadAllFiles()
         {
-            using (var testEnvironment = new TestEnvironment())
+            using (var testEnvironment = StreamTestEnvironment.FromExistingVhdx())
             {
                 using (var filesystem = new ExFatFileSystem(testEnvironment.PartitionStream))
                 {
@@ -30,7 +30,7 @@ namespace ExFat.DiscUtils.Tests
         [TestCategory("Read")]
         public void ReadRootFiles()
         {
-            using (var testEnvironment = new TestEnvironment())
+            using (var testEnvironment = StreamTestEnvironment.FromExistingVhdx())
             {
                 using (var filesystem = new ExFatFileSystem(testEnvironment.PartitionStream))
                 {
@@ -48,7 +48,7 @@ namespace ExFat.DiscUtils.Tests
         [TestCategory("Read")]
         public void ReadRootDirectories()
         {
-            using (var testEnvironment = new TestEnvironment())
+            using (var testEnvironment = StreamTestEnvironment.FromExistingVhdx())
             {
                 using (var filesystem = new ExFatFileSystem(testEnvironment.PartitionStream))
                 {
@@ -66,7 +66,7 @@ namespace ExFat.DiscUtils.Tests
         [TestCategory("Write")]
         public void MoveFile()
         {
-            using (var testEnvironment = new TestEnvironment())
+            using (var testEnvironment = StreamTestEnvironment.FromExistingVhdx())
             {
                 using (var filesystem = new ExFatFileSystem(testEnvironment.PartitionStream))
                 {
@@ -84,7 +84,7 @@ namespace ExFat.DiscUtils.Tests
         [TestCategory("Write")]
         public void MoveFileToDirectory()
         {
-            using (var testEnvironment = new TestEnvironment())
+            using (var testEnvironment = StreamTestEnvironment.FromExistingVhdx())
             {
                 using (var filesystem = new ExFatFileSystem(testEnvironment.PartitionStream))
                 {

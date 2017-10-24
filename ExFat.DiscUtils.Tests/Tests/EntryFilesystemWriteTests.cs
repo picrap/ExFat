@@ -20,7 +20,7 @@ namespace ExFat.DiscUtils.Tests
         [TestCategory("Write")]
         public void AppendTest()
         {
-            using (var testEnvironment = new TestEnvironment(true))
+            using (var testEnvironment = StreamTestEnvironment.FromExistingVhdx(true))
             using (var filesystem = new ExFatEntryFilesystem(testEnvironment.PartitionStream))
             {
                 var file = filesystem.FindChild(filesystem.RootDirectory, DiskContent.LongContiguousFileName);
@@ -43,7 +43,7 @@ namespace ExFat.DiscUtils.Tests
         [TestCategory("Write")]
         public void CreateDirectoryTest()
         {
-            using (var testEnvironment = new TestEnvironment(true))
+            using (var testEnvironment = StreamTestEnvironment.FromExistingVhdx(true))
             {
                 using (var filesystem = new ExFatEntryFilesystem(testEnvironment.PartitionStream))
                 {
@@ -60,7 +60,7 @@ namespace ExFat.DiscUtils.Tests
         [TestCategory("Write")]
         public void CreateSubDirectoryTest()
         {
-            using (var testEnvironment = new TestEnvironment(true))
+            using (var testEnvironment = StreamTestEnvironment.FromExistingVhdx(true))
             {
                 using (var filesystem = new ExFatEntryFilesystem(testEnvironment.PartitionStream))
                 {
@@ -77,7 +77,7 @@ namespace ExFat.DiscUtils.Tests
         [TestCategory("Write")]
         public void CreateFileTest()
         {
-            using (var testEnvironment = new TestEnvironment(true))
+            using (var testEnvironment = StreamTestEnvironment.FromExistingVhdx(true))
             {
                 using (var filesystem = new ExFatEntryFilesystem(testEnvironment.PartitionStream))
                 {
@@ -98,7 +98,7 @@ namespace ExFat.DiscUtils.Tests
         [TestCategory("Write")]
         public void CreateEmptyFileTest()
         {
-            using (var testEnvironment = new TestEnvironment(true))
+            using (var testEnvironment = StreamTestEnvironment.FromExistingVhdx(true))
             {
                 using (var filesystem = new ExFatEntryFilesystem(testEnvironment.PartitionStream))
                 {
@@ -117,7 +117,7 @@ namespace ExFat.DiscUtils.Tests
         [TestCategory("Write")]
         public void DeleteFileTest()
         {
-            using (var testEnvironment = new TestEnvironment(true))
+            using (var testEnvironment = StreamTestEnvironment.FromExistingVhdx(true))
             {
                 using (var filesystem = new ExFatEntryFilesystem(testEnvironment.PartitionStream))
                 {
@@ -132,7 +132,7 @@ namespace ExFat.DiscUtils.Tests
         [TestCategory("Write")]
         public void DeleteDirectoryTest()
         {
-            using (var testEnvironment = new TestEnvironment(true))
+            using (var testEnvironment = StreamTestEnvironment.FromExistingVhdx(true))
             {
                 using (var filesystem = new ExFatEntryFilesystem(testEnvironment.PartitionStream))
                 {
@@ -147,7 +147,7 @@ namespace ExFat.DiscUtils.Tests
         [TestCategory("Write")]
         public void TruncateFileTest()
         {
-            using (var testEnvironment = new TestEnvironment(true))
+            using (var testEnvironment = StreamTestEnvironment.FromExistingVhdx(true))
             {
                 using (var filesystem = new ExFatEntryFilesystem(testEnvironment.PartitionStream))
                 {
@@ -171,7 +171,7 @@ namespace ExFat.DiscUtils.Tests
         [TestCategory("Write")]
         public void LengthenFileTest()
         {
-            using (var testEnvironment = new TestEnvironment(true))
+            using (var testEnvironment = StreamTestEnvironment.FromExistingVhdx(true))
             {
                 using (var filesystem = new ExFatEntryFilesystem(testEnvironment.PartitionStream))
                 {
@@ -193,7 +193,7 @@ namespace ExFat.DiscUtils.Tests
         [TestCategory("Write")]
         public void MoveFileTest()
         {
-            using (var testEnvironment = new TestEnvironment(true))
+            using (var testEnvironment = StreamTestEnvironment.FromExistingVhdx(true))
             {
                 using (var filesystem = new ExFatEntryFilesystem(testEnvironment.PartitionStream))
                 {
@@ -208,7 +208,7 @@ namespace ExFat.DiscUtils.Tests
         [TestCategory("Write")]
         public void RandomReadWriteTest()
         {
-            using (var testEnvironment = new TestEnvironment(true))
+            using (var testEnvironment = StreamTestEnvironment.FromExistingVhdx(true))
             {
                 using (var filesystem = new ExFatEntryFilesystem(testEnvironment.PartitionStream))
                 {
@@ -245,6 +245,19 @@ namespace ExFat.DiscUtils.Tests
                         }
                     }
                 }
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("Write")]
+        public void CreateFolderOnNewPartitionTest()
+        {
+            using (var testEnvironment = EntryFilesystemTestEnvironment.FromNewVhdx())
+            {
+                var filesystem = testEnvironment.FileSystem;
+                filesystem.CreateDirectory(filesystem.RootDirectory, "folder");
+                var folder = filesystem.FindChild(filesystem.RootDirectory, "folder");
+                Assert.IsNotNull(folder);
             }
         }
     }

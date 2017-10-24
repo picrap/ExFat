@@ -18,7 +18,7 @@ namespace ExFat.DiscUtils.Tests
         [TestCategory("Structure")]
         public void ReadLongFileClusters()
         {
-            using (var testEnvironment = new TestEnvironment())
+            using (var testEnvironment = StreamTestEnvironment.FromExistingVhdx())
             using (var partition = new ExFatPartition(testEnvironment.PartitionStream))
             {
                 var oneM = partition.GetMetaEntries(partition.RootDirectoryDataDescriptor).Single(e => e.ExtensionsFileName == DiskContent.LongSparseFile1Name);
