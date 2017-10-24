@@ -64,7 +64,7 @@
     <Compile Include="Tests\PartitionWriteTests.cs" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="exFAT.vhdx.gz" />
+    <EmbeddedResource Include="Environment\exFAT.vhdx.gz" />
   </ItemGroup>
   <ItemGroup>
     <None Include="project.json" />

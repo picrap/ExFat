@@ -24,6 +24,12 @@ namespace ExFat.DiscUtils.Environment
             return testEnvironment;
         }
 
+        public override void Dispose()
+        {
+            FileSystem.Dispose();
+            base.Dispose();
+        }
+
         private void CreateVhdx(bool allowKeepDebug, long length)
         {
             var diskStream = CreateVhdxStream(allowKeepDebug);
