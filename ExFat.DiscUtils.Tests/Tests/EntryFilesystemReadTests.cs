@@ -5,6 +5,7 @@
 namespace ExFat.DiscUtils.Tests
 {
     using System.IO;
+    using Environment;
     using Filesystem;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -54,7 +55,9 @@ namespace ExFat.DiscUtils.Tests
             {
                 var file = filesystem.FindChild(filesystem.RootDirectory, DiskContent.LongContiguousFileName);
                 var access0 = file.LastAccessTime;
-                using (var stream = filesystem.OpenFile(file, FileAccess.Read)) { }
+                using (var stream = filesystem.OpenFile(file, FileAccess.Read))
+                {
+                }
                 var access1 = file.LastAccessTime;
                 Assert.IsTrue(access1 > access0);
                 var file2 = filesystem.FindChild(filesystem.RootDirectory, DiskContent.LongContiguousFileName);

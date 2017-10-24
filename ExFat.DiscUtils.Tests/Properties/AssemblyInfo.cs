@@ -6,4 +6,3 @@ using System.Reflection;
 
 [assembly: AssemblyTitle("ExFat Tests")]
 [assembly: AssemblyDescription("All tests in here")]
-

@@ -6,6 +6,7 @@ namespace ExFat.DiscUtils.Tests
 {
     using System.Collections.Generic;
     using System.Linq;
+    using Environment;
     using IO;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Partition;
@@ -21,9 +22,10 @@ namespace ExFat.DiscUtils.Tests
             using (var testEnvironment = StreamTestEnvironment.FromExistingVhdx())
             using (var partition = new ExFatPartition(testEnvironment.PartitionStream))
             {
-                var oneM = partition.GetMetaEntries(partition.RootDirectoryDataDescriptor).Single(e => e.ExtensionsFileName == DiskContent.LongSparseFile1Name);
+                var oneM = partition.GetMetaEntries(partition.RootDirectoryDataDescriptor)
+                    .Single(e => e.ExtensionsFileName == DiskContent.LongSparseFile1Name);
                 var clusters = new List<Cluster>();
-                for (Cluster c = oneM.SecondaryStreamExtension.FirstCluster.Value; ; c = partition.GetNextCluster(c))
+                for (Cluster c = oneM.SecondaryStreamExtension.FirstCluster.Value;; c = partition.GetNextCluster(c))
                 {
                     if (c.IsLast)
                         break;

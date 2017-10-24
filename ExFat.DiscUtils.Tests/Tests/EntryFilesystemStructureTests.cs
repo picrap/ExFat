@@ -5,6 +5,7 @@
 namespace ExFat.DiscUtils.Tests
 {
     using System.Linq;
+    using Environment;
     using Filesystem;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
 

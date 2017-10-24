@@ -44,9 +44,9 @@
     <Compile Include="..\ExFat.Core\Properties\ProductInfo.cs">
       <Link>Properties\ProductInfo.cs</Link>
     </Compile>
-    <Compile Include="EntryFilesystemTestEnvironment.cs" />
+    <Compile Include="Environment\EntryFilesystemTestEnvironment.cs" />
     <Compile Include="ProcessUtility.cs" />
-    <Compile Include="TestEnvironment.cs" />
+    <Compile Include="Environment\TestEnvironment.cs" />
     <Compile Include="Tests\DiscFilesystemTests.cs" />
     <Compile Include="Tests\PartitionClustersTests.cs" />
     <Compile Include="DiskContent.cs" />
@@ -58,7 +58,7 @@
     <Compile Include="Tests\PathFilesystemWriteTests.cs" />
     <Compile Include="Tests\PartitionReadTests.cs" />
     <Compile Include="Tests\PartitionStructureTests.cs" />
-    <Compile Include="StreamTestEnvironment.cs" />
+    <Compile Include="Environment\StreamTestEnvironment.cs" />
     <Compile Include="Tests\IntegrityTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Tests\PartitionWriteTests.cs" />

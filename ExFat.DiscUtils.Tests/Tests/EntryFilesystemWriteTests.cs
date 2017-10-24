@@ -2,13 +2,13 @@
 // Released under MIT license
 // https://github.com/picrap/ExFat
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-
 namespace ExFat.DiscUtils.Tests
 {
+    using System;
+    using System.Collections.Generic;
     using System.IO;
+    using System.Linq;
+    using Environment;
     using Filesystem;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -29,7 +29,7 @@ namespace ExFat.DiscUtils.Tests
                     s.Seek(0, SeekOrigin.End);
                     s.WriteByte(123);
                 }
-                Assert.AreEqual(file.Length, (long)DiskContent.LongFileSize + 1);
+                Assert.AreEqual(file.Length, (long) DiskContent.LongFileSize + 1);
                 using (var s2 = filesystem.OpenFile(file, FileAccess.Read))
                 {
                     s2.Seek(-1, SeekOrigin.End);
@@ -102,7 +102,9 @@ namespace ExFat.DiscUtils.Tests
             {
                 using (var filesystem = new ExFatEntryFilesystem(testEnvironment.PartitionStream))
                 {
-                    using (var s = filesystem.CreateFile(filesystem.RootDirectory, "a.txt")) { }
+                    using (var s = filesystem.CreateFile(filesystem.RootDirectory, "a.txt"))
+                    {
+                    }
 
                     var f = filesystem.FindChild(filesystem.RootDirectory, "a.txt");
                     using (var s2 = filesystem.OpenFile(f, FileAccess.Read))

@@ -2,7 +2,7 @@
 // Released under MIT license
 // https://github.com/picrap/ExFat
 
-namespace ExFat.DiscUtils
+namespace ExFat.DiscUtils.Environment
 {
     using System;
     using System.IO;
@@ -41,7 +41,9 @@ namespace ExFat.DiscUtils
                 //                if (allowDebugKeep)
                 //                    fileOptions &= ~FileOptions.DeleteOnClose;
                 //#endif
-                var vhdxStream = allowDebugKeep ? (Stream)File.Create(VhdxPath, 1 << 20, fileOptions) : new MemoryStream();
+                var vhdxStream = allowDebugKeep
+                    ? (Stream) File.Create(VhdxPath, 1 << 20, fileOptions)
+                    : new MemoryStream();
                 gzipStream.CopyTo(vhdxStream);
 
                 Disk = new Disk(vhdxStream, Ownership.Dispose);

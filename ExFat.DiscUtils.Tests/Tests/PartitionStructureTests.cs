@@ -5,6 +5,7 @@
 namespace ExFat.DiscUtils.Tests
 {
     using System.Linq;
+    using Environment;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Partition;
     using Partition.Entries;
@@ -21,7 +22,8 @@ namespace ExFat.DiscUtils.Tests
             {
                 var partition = new ExFatPartition(testEnvironment.PartitionStream);
                 var entries = partition.GetEntries(partition.RootDirectoryDataDescriptor).ToArray();
-                Assert.IsTrue(entries.OfType<FileNameExtensionExFatDirectoryEntry>().Any(e => e.FileName.Value == DiskContent.LongContiguousFileName));
+                Assert.IsTrue(entries.OfType<FileNameExtensionExFatDirectoryEntry>()
+                    .Any(e => e.FileName.Value == DiskContent.LongContiguousFileName));
             }
         }
 

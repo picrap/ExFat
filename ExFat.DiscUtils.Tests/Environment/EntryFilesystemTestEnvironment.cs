@@ -2,7 +2,7 @@
 // Released under MIT license
 // https://github.com/picrap/ExFat
 
-namespace ExFat.DiscUtils
+namespace ExFat.DiscUtils.Environment
 {
     using System;
     using System.IO;
@@ -31,15 +31,16 @@ namespace ExFat.DiscUtils
             var gpt = GuidPartitionTable.Initialize(Disk);
             gpt.Create(gpt.FirstUsableSector, gpt.LastUsableSector, GuidPartitionTypes.WindowsBasicData, 0, null);
             var volume = VolumeManager.GetPhysicalVolumes(Disk).First();
-            uint bytesPerSector = (uint)(volume.PhysicalGeometry?.BytesPerSector ?? 512);
+            uint bytesPerSector = (uint) (volume.PhysicalGeometry?.BytesPerSector ?? 512);
             var clusterCount = 1 << 25;
             var clusterSize = length / clusterCount;
-            var clusterBits = (int)Math.Ceiling(Math.Log(clusterSize) / Math.Log(2));
+            var clusterBits = (int) Math.Ceiling(Math.Log(clusterSize) / Math.Log(2));
             if (clusterBits > 18)
                 clusterBits = 18;
             else if (clusterBits < 11)
                 clusterBits = 11;
-            FileSystem = ExFatEntryFilesystem.Format(volume.Open(), new ExFatFormatOptions { SectorsPerCluster = (1u << clusterBits) / bytesPerSector });
+            FileSystem = ExFatEntryFilesystem.Format(volume.Open(),
+                new ExFatFormatOptions {SectorsPerCluster = (1u << clusterBits) / bytesPerSector});
         }
     }
 }

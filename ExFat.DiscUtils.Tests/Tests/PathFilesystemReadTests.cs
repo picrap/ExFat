@@ -5,6 +5,7 @@
 namespace ExFat.DiscUtils.Tests
 {
     using System.Linq;
+    using Environment;
     using Filesystem;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -20,7 +21,7 @@ namespace ExFat.DiscUtils.Tests
             using (var filesystem = new ExFatPathFilesystem(testEnvironment.PartitionStream))
             {
                 var entries = filesystem.EnumerateEntries(@"\").ToArray();
-                Assert.IsTrue(entries.Any(e=>e.Path== DiskContent.LongContiguousFileName));
+                Assert.IsTrue(entries.Any(e => e.Path == DiskContent.LongContiguousFileName));
                 Assert.IsTrue(entries.Any(e => e.Path == DiskContent.LongSparseFile1Name));
                 Assert.IsTrue(entries.Any(e => e.Path == DiskContent.EmptyRootFolderFileName));
                 Assert.IsTrue(entries.Any(e => e.Path == DiskContent.LongFolderFileName));

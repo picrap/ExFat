@@ -7,6 +7,7 @@ namespace ExFat.DiscUtils.Tests
     using System;
     using System.IO;
     using System.Linq;
+    using Environment;
     using Filesystem;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -65,7 +66,8 @@ namespace ExFat.DiscUtils.Tests
                 using (var filesystem = new ExFatPathFilesystem(testEnvironment.PartitionStream))
                 {
                     filesystem.DeleteTree(DiskContent.LongFolderFileName);
-                    Assert.IsFalse(filesystem.EnumerateEntries("").Any(e => e.Path == $@"\{DiskContent.LongFolderFileName}"));
+                    Assert.IsFalse(filesystem.EnumerateEntries("")
+                        .Any(e => e.Path == $@"\{DiskContent.LongFolderFileName}"));
                 }
             }
         }
@@ -100,7 +102,9 @@ namespace ExFat.DiscUtils.Tests
                 {
                     filesystem.Move(DiskContent.LongSparseFile1Name, DiskContent.EmptyRootFolderFileName);
                     Assert.IsNull(filesystem.GetInformation(DiskContent.LongSparseFile1Name));
-                    Assert.IsNotNull(filesystem.GetInformation(DiskContent.EmptyRootFolderFileName + "\\" + DiskContent.LongSparseFile1Name));
+                    Assert.IsNotNull(
+                        filesystem.GetInformation(DiskContent.EmptyRootFolderFileName + "\\" +
+                                                  DiskContent.LongSparseFile1Name));
                 }
             }
         }

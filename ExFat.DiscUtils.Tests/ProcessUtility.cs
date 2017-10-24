@@ -1,17 +1,13 @@
-﻿#region Arx One
-
-// This is ExFat, an exFAT accessor written in pure C#
+﻿// This is ExFat, an exFAT accessor written in pure C#
 // Released under MIT license
 // https://github.com/picrap/ExFat
 
-#endregion
-
-using System;
-using System.Diagnostics;
-using System.Text;
-
 namespace ExFat.DiscUtils
 {
+    using System;
+    using System.Diagnostics;
+    using System.Text;
+
     /// <summary>
     /// Extensions to Process
     /// </summary>

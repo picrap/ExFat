@@ -6,6 +6,7 @@ namespace ExFat.DiscUtils.Tests
 {
     using System.IO;
     using System.Linq;
+    using Environment;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
 
     [TestClass]

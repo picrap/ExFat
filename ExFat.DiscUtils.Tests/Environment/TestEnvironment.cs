@@ -2,7 +2,7 @@
 // Released under MIT license
 // https://github.com/picrap/ExFat
 
-namespace ExFat.DiscUtils
+namespace ExFat.DiscUtils.Environment
 {
     using System;
     using System.IO;

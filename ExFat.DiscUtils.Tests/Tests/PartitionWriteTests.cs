@@ -7,6 +7,7 @@ namespace ExFat.DiscUtils.Tests
     using System;
     using System.IO;
     using System.Linq;
+    using Environment;
     using IO;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Partition;
@@ -17,7 +18,8 @@ namespace ExFat.DiscUtils.Tests
     {
         private static void OverwriteTest(ExFatPartition partition, string fileName, Func<ulong, ulong> getOffsetValue)
         {
-            var fileEntry = partition.GetMetaEntries(partition.RootDirectoryDataDescriptor).Single(e => e.ExtensionsFileName == fileName);
+            var fileEntry = partition.GetMetaEntries(partition.RootDirectoryDataDescriptor)
+                .Single(e => e.ExtensionsFileName == fileName);
             var buffer = new Byte[8];
             var dataDescriptor = fileEntry.DataDescriptor;
             using (var overwrite = partition.OpenDataStream(dataDescriptor, FileAccess.ReadWrite))
@@ -28,7 +30,9 @@ namespace ExFat.DiscUtils.Tests
                     overwrite.Write(buffer, 0, 8);
                 }
             }
-            using (var read = partition.OpenDataStream(new DataDescriptor(dataDescriptor.FirstCluster, false, DiskContent.LongFileSize * 2, DiskContent.LongFileSize * 2), FileAccess.Read))
+            using (var read = partition.OpenDataStream(
+                new DataDescriptor(dataDescriptor.FirstCluster, false, DiskContent.LongFileSize * 2,
+                    DiskContent.LongFileSize * 2), FileAccess.Read))
             {
                 for (ulong offset = 0; offset < 2 * DiskContent.LongFileSize; offset += 8)
                 {
@@ -53,7 +57,8 @@ namespace ExFat.DiscUtils.Tests
                 {
                     OverwriteTest(partition, DiskContent.LongSparseFile1Name, offset => offset / 7);
                     // now check nothing was overwritten
-                    PartitionReadTests.ReadFile(partition, DiskContent.LongSparseFile2Name, DiskContent.GetLongSparseFile2NameOffsetValue);
+                    PartitionReadTests.ReadFile(partition, DiskContent.LongSparseFile2Name,
+                        DiskContent.GetLongSparseFile2NameOffsetValue);
                 }
             }
         }
@@ -69,15 +74,18 @@ namespace ExFat.DiscUtils.Tests
                 {
                     OverwriteTest(partition, DiskContent.LongContiguousFileName, offset => offset / 7);
                     // now check nothing was overwritten
-                    PartitionReadTests.ReadFile(partition, DiskContent.LongSparseFile1Name, DiskContent.GetLongSparseFile1NameOffsetValue);
-                    PartitionReadTests.ReadFile(partition, DiskContent.LongSparseFile2Name, DiskContent.GetLongSparseFile2NameOffsetValue);
+                    PartitionReadTests.ReadFile(partition, DiskContent.LongSparseFile1Name,
+                        DiskContent.GetLongSparseFile1NameOffsetValue);
+                    PartitionReadTests.ReadFile(partition, DiskContent.LongSparseFile2Name,
+                        DiskContent.GetLongSparseFile2NameOffsetValue);
                 }
             }
         }
 
         private static void AppendTest(ExFatPartition partition, string fileName, Func<ulong, ulong> getOffsetValue)
         {
-            var fileEntry = partition.GetMetaEntries(partition.RootDirectoryDataDescriptor).Single(e => e.ExtensionsFileName == fileName);
+            var fileEntry = partition.GetMetaEntries(partition.RootDirectoryDataDescriptor)
+                .Single(e => e.ExtensionsFileName == fileName);
             var buffer = new Byte[8];
             var dataDescriptor = fileEntry.DataDescriptor;
             using (var append = partition.OpenDataStream(dataDescriptor, FileAccess.ReadWrite))
@@ -87,7 +95,9 @@ namespace ExFat.DiscUtils.Tests
                 append.Write(buffer, 0, 8);
             }
 
-            using (var read = partition.OpenDataStream(new DataDescriptor(dataDescriptor.FirstCluster, false, DiskContent.LongFileSize + 8, DiskContent.LongFileSize + 8), FileAccess.Read))
+            using (var read = partition.OpenDataStream(
+                new DataDescriptor(dataDescriptor.FirstCluster, false, DiskContent.LongFileSize + 8,
+                    DiskContent.LongFileSize + 8), FileAccess.Read))
             {
                 for (ulong offset = 0; offset < DiskContent.LongFileSize + 8; offset += 8)
                 {
@@ -110,9 +120,11 @@ namespace ExFat.DiscUtils.Tests
             {
                 using (var partition = new ExFatPartition(testEnvironment.PartitionStream))
                 {
-                    AppendTest(partition, DiskContent.LongSparseFile1Name, DiskContent.GetLongSparseFile1NameOffsetValue);
+                    AppendTest(partition, DiskContent.LongSparseFile1Name,
+                        DiskContent.GetLongSparseFile1NameOffsetValue);
                     // now check nothing was overwritten
-                    PartitionReadTests.ReadFile(partition, DiskContent.LongSparseFile2Name, DiskContent.GetLongSparseFile2NameOffsetValue);
+                    PartitionReadTests.ReadFile(partition, DiskContent.LongSparseFile2Name,
+                        DiskContent.GetLongSparseFile2NameOffsetValue);
                 }
             }
         }
@@ -126,10 +138,13 @@ namespace ExFat.DiscUtils.Tests
             {
                 using (var partition = new ExFatPartition(testEnvironment.PartitionStream))
                 {
-                    AppendTest(partition, DiskContent.LongContiguousFileName, DiskContent.GetLongContiguousFileNameOffsetValue);
+                    AppendTest(partition, DiskContent.LongContiguousFileName,
+                        DiskContent.GetLongContiguousFileNameOffsetValue);
                     // now check nothing was overwritten
-                    PartitionReadTests.ReadFile(partition, DiskContent.LongSparseFile1Name, DiskContent.GetLongSparseFile1NameOffsetValue);
-                    PartitionReadTests.ReadFile(partition, DiskContent.LongSparseFile2Name, DiskContent.GetLongSparseFile2NameOffsetValue);
+                    PartitionReadTests.ReadFile(partition, DiskContent.LongSparseFile1Name,
+                        DiskContent.GetLongSparseFile1NameOffsetValue);
+                    PartitionReadTests.ReadFile(partition, DiskContent.LongSparseFile2Name,
+                        DiskContent.GetLongSparseFile2NameOffsetValue);
                 }
             }
         }
