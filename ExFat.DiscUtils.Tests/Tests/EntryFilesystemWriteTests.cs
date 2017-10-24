@@ -29,7 +29,7 @@ namespace ExFat.DiscUtils.Tests
                     s.Seek(0, SeekOrigin.End);
                     s.WriteByte(123);
                 }
-                Assert.AreEqual(file.Length, (long) DiskContent.LongFileSize + 1);
+                Assert.AreEqual(file.Length, (long)DiskContent.LongFileSize + 1);
                 using (var s2 = filesystem.OpenFile(file, FileAccess.Read))
                 {
                     s2.Seek(-1, SeekOrigin.End);
@@ -252,9 +252,16 @@ namespace ExFat.DiscUtils.Tests
 
         [TestMethod]
         [TestCategory("Write")]
+        public void NewPartitionTest()
+        {
+            using (EntryFilesystemTestEnvironment.FromNewVhdx(true)) { }
+        }
+
+        [TestMethod]
+        [TestCategory("Write")]
         public void CreateFolderOnNewPartitionTest()
         {
-            using (var testEnvironment = EntryFilesystemTestEnvironment.FromNewVhdx())
+            using (var testEnvironment = EntryFilesystemTestEnvironment.FromNewVhdx(true))
             {
                 var filesystem = testEnvironment.FileSystem;
                 filesystem.CreateDirectory(filesystem.RootDirectory, "folder");

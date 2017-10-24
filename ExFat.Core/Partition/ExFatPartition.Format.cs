@@ -73,9 +73,13 @@ namespace ExFat.Partition
             // create allocation bitmap
             var allocationBitmapEntry = CreateAllocationBitmap(partition, totalClusters);
 
-            // create root directory (cluster 2)
-            var directoryDataDescriptor = new DataDescriptor(2, false, ulong.MaxValue, ulong.MaxValue);
-            using (partition.OpenClusterStream(directoryDataDescriptor, FileAccess.ReadWrite, d => directoryDataDescriptor = new DataDescriptor(d.FirstCluster, d.Contiguous, long.MaxValue, long.MaxValue))) { }
+            // create root directory
+            var directoryDataDescriptor = new DataDescriptor(0, false, ulong.MaxValue, ulong.MaxValue);
+            using (var s = partition.OpenClusterStream(directoryDataDescriptor, FileAccess.ReadWrite,
+                d => directoryDataDescriptor = new DataDescriptor(d.FirstCluster, d.Contiguous, long.MaxValue, long.MaxValue)))
+            {
+                s.SetDataLength(bytesPerSector * sectorsPerCluster);
+            }
             bootSector.RootDirectoryCluster.Value = directoryDataDescriptor.FirstCluster.ToUInt32();
 
             // boot sector is now complete
