@@ -60,5 +60,15 @@ namespace ExFat.DiscUtils.Tests
             var t = DateTimeUtility.FromTimeZoneOffset(0xF3);
             Assert.AreEqual(t, TimeSpan.FromHours(-3.25));
         }
+
+        [TestMethod]
+        [TestCategory("DateTimeOffset")]
+        public void NonLocalTimeOffsetFromLocal()
+        {
+            var t = new DateTime(2017, 11, 13, 12, 34, 56, DateTimeKind.Utc);
+            var z = t.ToDateTimeOffset(TimeSpan.FromHours(8));
+            Assert.AreEqual(8.0, z.Offset.TotalHours);
+            Assert.AreEqual(z.Hour, 20);
+        }
     }
 }

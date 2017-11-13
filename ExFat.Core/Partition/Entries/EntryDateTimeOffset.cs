@@ -25,9 +25,16 @@ namespace ExFat.Partition.Entries
         /// </value>
         public DateTimeOffset Value
         {
-            get { return new DateTimeOffset(_dateTimeProvider.Value, _offsetProvider.Value); }
+            get
+            {
+                var offset = _offsetProvider.Value;
+                // the provided date is local, so first, we shift it to UTC, then add the offset
+                var dateTime = new DateTime((_dateTimeProvider.Value - offset).Ticks, DateTimeKind.Utc);
+                return dateTime.ToDateTimeOffset(offset);
+            }
             set
             {
+                // DateTime member is the local, and this is what we expect
                 _dateTimeProvider.Value = value.DateTime;
                 _offsetProvider.Value = value.Offset;
             }
