@@ -241,7 +241,7 @@ namespace ExFat.Filesystem
 
         private Node GetNode(Node parentNode, Path path)
         {
-            var filesystemEntry = parentNode.Entry != null ? _entryFilesystem.FindChild(parentNode.Entry, path.Name) : null;
+            var filesystemEntry = parentNode.Entry != null && parentNode.Entry.IsDirectory ? _entryFilesystem.FindChild(parentNode.Entry, path.Name) : null;
             return parentNode.NewChild(path, filesystemEntry);
         }
 
@@ -471,7 +471,7 @@ namespace ExFat.Filesystem
         {
             var path = ParsePath(literalPath);
             var parentEntry = GetNode(path.GetParent());
-            if (parentEntry == null)
+            if (parentEntry == null || !parentEntry.Entry.IsDirectory)
                 throw new DirectoryNotFoundException();
             var child = _entryFilesystem.FindChild(parentEntry.Entry, path.Name);
             // not existing?
