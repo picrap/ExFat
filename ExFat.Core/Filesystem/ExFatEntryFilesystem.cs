@@ -109,6 +109,8 @@ namespace ExFat.Filesystem
         /// <exception cref="System.InvalidOperationException"></exception>
         public IEnumerable<ExFatFilesystemEntry> EnumerateFileSystemEntries(ExFatFilesystemEntry directoryEntry)
         {
+            if (directoryEntry == null)
+                throw new ArgumentNullException(nameof(directoryEntry));
             if (!directoryEntry.IsDirectory)
                 throw new InvalidOperationException();
 
@@ -132,6 +134,9 @@ namespace ExFat.Filesystem
         /// <exception cref="System.InvalidOperationException"></exception>
         public ExFatFilesystemEntry FindChild(ExFatFilesystemEntry directoryEntry, string name)
         {
+            if (directoryEntry == null)
+                throw new ArgumentNullException(nameof(directoryEntry));
+
             if (!directoryEntry.IsDirectory)
                 throw new InvalidOperationException();
 
@@ -285,6 +290,9 @@ namespace ExFat.Filesystem
         /// <exception cref="IOException"></exception>
         public ExFatFilesystemEntry CreateDirectory(ExFatFilesystemEntry parentDirectoryEntry, string directoryName)
         {
+            if (parentDirectoryEntry == null)
+                throw new ArgumentNullException(nameof(parentDirectoryEntry));
+
             if (!parentDirectoryEntry.IsDirectory)
                 throw new InvalidOperationException();
 
