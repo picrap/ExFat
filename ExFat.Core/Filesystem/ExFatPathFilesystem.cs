@@ -295,9 +295,12 @@ namespace ExFat.Filesystem
         /// <param name="update">The update.</param>
         private void UpdateSafeEntry(Path path, Action<ExFatFilesystemEntry> update)
         {
-            var entry = GetSafeNode(path);
-            update(entry.Entry);
-            _entryFilesystem.Update(entry.Entry);
+            lock (_entriesLock)
+            {
+                var entry = GetSafeNode(path);
+                update(entry.Entry);
+                _entryFilesystem.Update(entry.Entry);
+            }
         }
 
         private void UpdateSafeEntry(string literalPath, Action<ExFatFilesystemEntry> update) => UpdateSafeEntry(ParsePath(literalPath), update);
@@ -311,8 +314,9 @@ namespace ExFat.Filesystem
         {
             var directoryPath = ParsePath(literalDirectoryPath);
             var directoryNode = GetSafeDirectoryNode(directoryPath);
-            return _entryFilesystem.EnumerateFileSystemEntries(directoryNode.Entry)
-                .Select(e => new ExFatEntryInformation(_entryFilesystem, e, GetLiteralPath(directoryPath, e)));
+            lock (_entriesLock)
+                return _entryFilesystem.EnumerateFileSystemEntries(directoryNode.Entry)
+                    .Select(e => new ExFatEntryInformation(_entryFilesystem, e, GetLiteralPath(directoryPath, e))).ToArray();
         }
 
         /// <summary>
@@ -391,12 +395,15 @@ namespace ExFat.Filesystem
 
         private Node CreateDirectoryNode(Path path)
         {
-            var existingDirectory = GetNode(path);
-            if (existingDirectory.Entry != null)
-                return existingDirectory;
-            var parentDirectory = CreateDirectoryNode(path.GetParent());
-            var directoryEntry = _entryFilesystem.CreateDirectory(parentDirectory.Entry, path.Name);
-            return parentDirectory.NewChild(path, directoryEntry);
+            lock (_entriesLock)
+            {
+                var existingDirectory = GetNode(path);
+                if (existingDirectory.Entry != null)
+                    return existingDirectory;
+                var parentDirectory = CreateDirectoryNode(path.GetParent());
+                var directoryEntry = _entryFilesystem.CreateDirectory(parentDirectory.Entry, path.Name);
+                return parentDirectory.NewChild(path, directoryEntry);
+            }
         }
 
         /// <summary>
@@ -415,14 +422,17 @@ namespace ExFat.Filesystem
         /// <exception cref="System.IO.IOException"></exception>
         public void Delete(string literalPath)
         {
-            var node = GetSafeNode(literalPath);
-            if (node.Entry.IsDirectory)
+            lock (_entriesLock)
             {
-                if (_entryFilesystem.EnumerateFileSystemEntries(node.Entry).Any())
-                    throw new IOException();
+                var node = GetSafeNode(literalPath);
+                if (node.Entry.IsDirectory)
+                {
+                    if (_entryFilesystem.EnumerateFileSystemEntries(node.Entry).Any())
+                        throw new IOException();
+                }
+                _entryFilesystem.Delete(node.Entry);
+                node.Remove();
             }
-            _entryFilesystem.Delete(node.Entry);
-            node.Remove();
         }
 
         /// <summary>
@@ -432,14 +442,17 @@ namespace ExFat.Filesystem
         /// <param name="literalPath">The path.</param>
         public void DeleteTree(string literalPath)
         {
-            var cleanPath = ParsePath(literalPath);
-            var entry = GetSafeNode(cleanPath);
-            if (entry.Entry.IsDirectory)
+            lock (_entriesLock)
             {
-                foreach (var childPath in EnumerateEntries(cleanPath.ToLiteral(PathSeparators[0])))
-                    DeleteTree(childPath.Path);
+                var cleanPath = ParsePath(literalPath);
+                var entry = GetSafeNode(cleanPath);
+                if (entry.Entry.IsDirectory)
+                {
+                    foreach (var childPath in EnumerateEntries(cleanPath.ToLiteral(PathSeparators[0])))
+                        DeleteTree(childPath.Path);
+                }
+                Delete(literalPath);
             }
-            Delete(literalPath);
         }
 
         /// <summary>
@@ -449,11 +462,14 @@ namespace ExFat.Filesystem
         /// <returns></returns>
         public ExFatEntryInformation GetInformation(string literalPath)
         {
-            var cleanPath = ParsePath(literalPath);
-            var node = GetNode(cleanPath);
-            if (node.Entry == null)
-                return null;
-            return new ExFatEntryInformation(_entryFilesystem, node.Entry, cleanPath.ToLiteral(PathSeparators[0]));
+            lock (_entriesLock)
+            {
+                var cleanPath = ParsePath(literalPath);
+                var node = GetNode(cleanPath);
+                if (node.Entry == null)
+                    return null;
+                return new ExFatEntryInformation(_entryFilesystem, node.Entry, cleanPath.ToLiteral(PathSeparators[0]));
+            }
         }
 
         /// <summary>
@@ -469,30 +485,33 @@ namespace ExFat.Filesystem
         /// </exception>
         public Stream Open(string literalPath, FileMode mode, FileAccess access)
         {
-            var path = ParsePath(literalPath);
-            var parentEntry = GetNode(path.GetParent());
-            if (parentEntry == null || !parentEntry.Entry.IsDirectory)
-                throw new DirectoryNotFoundException();
-            var child = _entryFilesystem.FindChild(parentEntry.Entry, path.Name);
-            // not existing?
-            if (child == null)
+            lock (_entriesLock)
             {
-                if (mode == FileMode.Append || mode == FileMode.Open || mode == FileMode.Truncate)
-                    throw new FileNotFoundException();
-                parentEntry.RemoveChild(path.Name);
-                return _entryFilesystem.CreateFile(parentEntry.Entry, path.Name);
-            }
+                var path = ParsePath(literalPath);
+                var parentEntry = GetNode(path.GetParent());
+                if (parentEntry == null || !parentEntry.Entry.IsDirectory)
+                    throw new DirectoryNotFoundException();
+                var child = _entryFilesystem.FindChild(parentEntry.Entry, path.Name);
+                // not existing?
+                if (child == null)
+                {
+                    if (mode == FileMode.Append || mode == FileMode.Open || mode == FileMode.Truncate)
+                        throw new FileNotFoundException();
+                    parentEntry.RemoveChild(path.Name);
+                    return _entryFilesystem.CreateFile(parentEntry.Entry, path.Name);
+                }
 
-            if (child.IsDirectory)
-                throw new IOException();
-            if (mode == FileMode.CreateNew)
-                throw new IOException();
-            var stream = _entryFilesystem.OpenFile(child, access);
-            if (mode == FileMode.Truncate)
-                stream.SetLength(0);
-            if (mode == FileMode.Append)
-                stream.Seek(0, SeekOrigin.End);
-            return stream;
+                if (child.IsDirectory)
+                    throw new IOException();
+                if (mode == FileMode.CreateNew)
+                    throw new IOException();
+                var stream = _entryFilesystem.OpenFile(child, access);
+                if (mode == FileMode.Truncate)
+                    stream.SetLength(0);
+                if (mode == FileMode.Append)
+                    stream.Seek(0, SeekOrigin.End);
+                return stream;
+            }
         }
 
         /// <summary>
@@ -503,22 +522,25 @@ namespace ExFat.Filesystem
         /// <param name="targetName">Name of the target. null to keep original name</param>
         public void Move(string sourceLiteralPath, string targetDirectoryLiteralPath, string targetName = null)
         {
-            if (targetDirectoryLiteralPath == null && targetName == null)
-                throw new ArgumentNullException(nameof(targetDirectoryLiteralPath), "Either targetDirectory or targetName has to be provided");
+            lock (_entriesLock)
+            {
+                if (targetDirectoryLiteralPath == null && targetName == null)
+                    throw new ArgumentNullException(nameof(targetDirectoryLiteralPath), "Either targetDirectory or targetName has to be provided");
 
-            var sourcePath = ParsePath(sourceLiteralPath);
-            var targetDirectory = targetDirectoryLiteralPath == null ? sourcePath.GetParent() : ParsePath(targetDirectoryLiteralPath);
+                var sourcePath = ParsePath(sourceLiteralPath);
+                var targetDirectory = targetDirectoryLiteralPath == null ? sourcePath.GetParent() : ParsePath(targetDirectoryLiteralPath);
 
-            var sourceEntry = GetNode(sourcePath);
-            if (sourceEntry == null)
-                throw new FileNotFoundException();
-            var targetDirectoryEntry = GetNode(targetDirectory);
-            if (targetDirectoryEntry == null)
-                throw new FileNotFoundException();
+                var sourceEntry = GetNode(sourcePath);
+                if (sourceEntry == null)
+                    throw new FileNotFoundException();
+                var targetDirectoryEntry = GetNode(targetDirectory);
+                if (targetDirectoryEntry == null)
+                    throw new FileNotFoundException();
 
-            _entryFilesystem.Move(sourceEntry.Entry, targetDirectoryEntry.Entry, targetName);
-            sourceEntry.Remove();
-            targetDirectoryEntry.Remove();
+                _entryFilesystem.Move(sourceEntry.Entry, targetDirectoryEntry.Entry, targetName);
+                sourceEntry.Remove();
+                targetDirectoryEntry.Remove();
+            }
         }
 
         /// <summary>
