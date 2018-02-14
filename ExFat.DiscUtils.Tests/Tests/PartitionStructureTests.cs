@@ -75,6 +75,7 @@ namespace ExFat.DiscUtils.Tests
             }
         }
 
+#if nomore
         [TestMethod]
         [TestCategory("Structure")]
         public void AllocationBitmapExists()
@@ -99,5 +100,6 @@ namespace ExFat.DiscUtils.Tests
                 Assert.IsFalse(bitmap[allocate10 + 9]);
             }
         }
+#endif
     }
 }

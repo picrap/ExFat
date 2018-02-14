@@ -348,19 +348,7 @@ namespace ExFat.Partition
             lock (_allocationLock)
             {
                 var allocationBitmap = GetAllocationBitmap();
-                Cluster cluster;
-                // no data? anything else is good
-                if (!previousClusterHint.IsData)
-                    cluster = allocationBitmap.FindUnallocated();
-                else
-                {
-                    // try next
-                    cluster = previousClusterHint + 1;
-                    if (allocationBitmap[cluster])
-                        cluster = allocationBitmap.FindUnallocated();
-                }
-                allocationBitmap[cluster] = true;
-                return cluster;
+                return allocationBitmap.Allocate(previousClusterHint);
             }
         }
 
@@ -375,7 +363,7 @@ namespace ExFat.Partition
                 var allocationBitmap = GetAllocationBitmap();
                 // TODO: optimize to write all only once
                 foreach (var cluster in GetClusters(dataDescriptor))
-                    allocationBitmap[cluster] = false;
+                    allocationBitmap.Free(cluster);
             }
         }
 
@@ -388,7 +376,7 @@ namespace ExFat.Partition
         {
             lock (_allocationLock)
             {
-                GetAllocationBitmap()[cluster] = false;
+                GetAllocationBitmap().Free(cluster);
             }
         }
 
@@ -568,6 +556,7 @@ namespace ExFat.Partition
             return _upCaseTable;
         }
 
+        private readonly object _allocationBitmapLock = new object();
         private ExFatAllocationBitmap _allocationBitmap;
 
         /// <summary>
@@ -576,15 +565,20 @@ namespace ExFat.Partition
         /// <returns></returns>
         public ExFatAllocationBitmap GetAllocationBitmap()
         {
-            if (_allocationBitmap == null)
+            lock (_allocationBitmapLock)
             {
-                _allocationBitmap = new ExFatAllocationBitmap();
-                var allocationBitmapEntry = FindRootDirectoryEntries<AllocationBitmapExFatDirectoryEntry>()
-                    .First(b => !b.BitmapFlags.Value.HasAny(AllocationBitmapFlags.SecondClusterBitmap));
-                var allocationBitmapStream = OpenDataStream(allocationBitmapEntry.DataDescriptor, FileAccess.ReadWrite);
-                _allocationBitmap.Open(allocationBitmapStream, allocationBitmapEntry.FirstCluster.Value, BootSector.ClusterCount.Value, _options.HasAny(ExFatOptions.DelayWrite));
+                if (_allocationBitmap == null)
+                {
+                    _allocationBitmap = new ExFatAllocationBitmap();
+                    var allocationBitmapEntry = FindRootDirectoryEntries<AllocationBitmapExFatDirectoryEntry>()
+                        .First(b => !b.BitmapFlags.Value.HasAny(AllocationBitmapFlags.SecondClusterBitmap));
+                    var allocationBitmapStream = OpenDataStream(allocationBitmapEntry.DataDescriptor, FileAccess.ReadWrite);
+                    _allocationBitmap.Open(allocationBitmapStream, allocationBitmapEntry.FirstCluster.Value, BootSector.ClusterCount.Value,
+                        _options.HasAny(ExFatOptions.DelayWrite));
+                }
+
+                return _allocationBitmap;
             }
-            return _allocationBitmap;
         }
 
         /// <summary>

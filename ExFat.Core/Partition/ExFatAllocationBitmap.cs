@@ -18,6 +18,7 @@ namespace ExFat.Partition
         private Stream _dataStream;
         private uint _firstCluster;
         private bool _delayWrite;
+        private readonly object _lock = new object();
 
         /// <summary>
         /// Gets the length.
@@ -26,20 +27,6 @@ namespace ExFat.Partition
         /// The length.
         /// </value>
         public long Length { get; private set; }
-
-        /// <summary>
-        /// Gets or sets the allocation state for the specified cluster.
-        /// </summary>
-        /// <value>
-        /// The <see cref="System.Boolean"/>.
-        /// </value>
-        /// <param name="cluster">The cluster.</param>
-        /// <returns></returns>
-        public bool this[Cluster cluster]
-        {
-            get { return GetAt(cluster); }
-            set { SetAt(cluster, value); }
-        }
 
         /// <summary>
         /// Opens the specified data stream.
@@ -64,8 +51,11 @@ namespace ExFat.Partition
         /// <param name="dataStream">The data stream.</param>
         public void Write(Stream dataStream)
         {
-            _dataStream = dataStream;
-            dataStream.Write(_bitmap, 0, _bitmap.Length);
+            lock (_lock)
+            {
+                _dataStream = dataStream;
+                dataStream.Write(_bitmap, 0, _bitmap.Length);
+            }
         }
 
         /// <summary>
@@ -99,29 +89,33 @@ namespace ExFat.Partition
         /// <exception cref="System.ArgumentOutOfRangeException">cluster</exception>
         public bool GetAt(Cluster cluster)
         {
-            if (cluster.Value < _firstCluster || cluster.Value >= Length)
-                throw new ArgumentOutOfRangeException(nameof(cluster));
-            var clusterIndex = cluster.Value - _firstCluster;
-            return GetAtIndex(clusterIndex);
+            lock (_lock)
+            {
+                if (cluster.Value < _firstCluster || cluster.Value >= Length)
+                    throw new ArgumentOutOfRangeException(nameof(cluster));
+                var clusterIndex = cluster.Value - _firstCluster;
+                return GetAtIndex(clusterIndex);
+            }
         }
 
         private bool GetAtIndex(long clusterIndex)
         {
-            var byteIndex = (int)clusterIndex / 8;
-            var bitMask = 1 << (int)(clusterIndex & 7);
-            return (_bitmap[byteIndex] & bitMask) != 0;
+            lock (_lock)
+            {
+                var byteIndex = (int)clusterIndex / 8;
+                var bitMask = 1 << (int)(clusterIndex & 7);
+                return (_bitmap[byteIndex] & bitMask) != 0;
+            }
         }
 
         /// <summary>
-        /// Allocates or frees the specified cluster
+        /// Sets the allocation for the given cluster.
         /// </summary>
         /// <param name="cluster">The cluster.</param>
         /// <param name="allocated">if set to <c>true</c> [allocated].</param>
-        /// <exception cref="System.ArgumentOutOfRangeException">cluster</exception>
-        public void SetAt(Cluster cluster, bool allocated)
+        /// <returns></returns>
+        private int SetAllocation(Cluster cluster, bool allocated)
         {
-            if (cluster.Value < _firstCluster || cluster.Value >= Length)
-                throw new ArgumentOutOfRangeException(nameof(cluster));
             var clusterIndex = cluster.Value - _firstCluster;
             var byteIndex = (int)clusterIndex / 8;
             var bitMask = 1 << (int)(clusterIndex & 7);
@@ -129,25 +123,105 @@ namespace ExFat.Partition
                 _bitmap[byteIndex] |= (byte)bitMask;
             else
                 _bitmap[byteIndex] &= (byte)~bitMask;
-            // update stream only if write is not delayed
+            return byteIndex;
+        }
+
+        /// <summary>
+        /// Writes the specified byte(s) to disk.
+        /// </summary>
+        /// <param name="byteIndex">Index of the byte.</param>
+        /// <param name="length">The length.</param>
+        private void Write(int byteIndex, int length)
+        {
             if (_dataStream != null && !_delayWrite)
             {
                 _dataStream.Seek(byteIndex, SeekOrigin.Begin);
-                _dataStream.Write(_bitmap, byteIndex, 1);
+                _dataStream.Write(_bitmap, byteIndex, length);
             }
+        }
+
+        /// <summary>
+        /// Gets the used clusters.
+        /// This is an optimistic version (since the result may change all the time)
+        /// </summary>
+        /// <returns></returns>
+        public long GetUsedClusters()
+        {
+            long usedClusters = 0;
+            for (int clusterIndex = 0; clusterIndex < Length - _firstCluster;)
+            {
+                if (clusterIndex % 8 == 0)
+                {
+                    if (_bitmap[clusterIndex / 8] == 0xFF)
+                        usedClusters += 8;
+                    clusterIndex += 8;
+                }
+                else
+                {
+                    if (GetAtIndex(clusterIndex++))
+                        usedClusters++;
+                }
+            }
+            return usedClusters;
+        }
+
+        /// <summary>
+        /// Allocates a cluster.
+        /// </summary>
+        /// <param name="contigous">The contigous clusters wanted.</param>
+        /// <returns></returns>
+        public Cluster Allocate(int contigous = 1)
+        {
+            lock (_lock)
+                return Allocate(FindAvailable(_firstCluster, contigous), contigous) ?? Cluster.Free;
+        }
+
+        /// <summary>
+        /// Allocates a cluster, at (or after) the specified cluster.
+        /// </summary>
+        /// <param name="hint">The hint.</param>
+        /// <param name="contigous">The contigous clusters wanted.</param>
+        /// <returns></returns>
+        public Cluster Allocate(Cluster hint, int contigous = 1)
+        {
+            lock (_lock)
+                return Allocate(FindAvailable(hint, contigous) ?? FindAvailable(_firstCluster, contigous), contigous) ?? Cluster.Free;
+        }
+
+        private Cluster? Allocate(Cluster? first, int contigous)
+        {
+            if (!first.HasValue)
+                return null;
+
+            int? firstByteIndex = null;
+            int lastByteIndex = 0;
+            for (int index = 0; index < contigous; index++)
+            {
+                lastByteIndex = SetAllocation(first.Value + index, true);
+                if (!firstByteIndex.HasValue)
+                    firstByteIndex = lastByteIndex;
+            }
+
+            if (firstByteIndex.HasValue)
+                Write(firstByteIndex.Value, lastByteIndex - firstByteIndex.Value + 1);
+            return first.Value;
         }
 
         /// <summary>
         /// Finds one or more unallocated cluster.
         /// Does not allocate them, so all allocation process must be perform form within a lock
         /// </summary>
+        /// <param name="first">The first.</param>
         /// <param name="contiguous">The contiguous.</param>
         /// <returns></returns>
-        public Cluster FindUnallocated(int contiguous = 1)
+        private Cluster? FindAvailable(Cluster first, int contiguous = 1)
         {
+            if (!first.IsData)
+                return null;
+
             UInt32 freeCluster = 0;
             int unallocatedCount = 0;
-            for (UInt32 cluster = _firstCluster; cluster < Length;)
+            for (UInt32 cluster = first.ToUInt32(); cluster < Length;)
             {
                 // special case: byte is filled, skip the block (and reset the search)
                 if (((cluster - _firstCluster) & 0x07) == 0 && _bitmap[cluster / 8] == 0xFF)
@@ -172,31 +246,20 @@ namespace ExFat.Partition
                 ++cluster;
             }
             // nothing found
-            return Cluster.Free;
+            return null;
         }
 
         /// <summary>
-        /// Gets the used clusters.
+        /// Frees the specified cluster.
         /// </summary>
-        /// <returns></returns>
-        public long GetUsedClusters()
+        /// <param name="cluster">The cluster.</param>
+        public void Free(Cluster cluster)
         {
-            long usedClusters = 0;
-            for (int clusterIndex = 0; clusterIndex < Length - _firstCluster;)
+            lock (_lock)
             {
-                if (clusterIndex % 8 == 0)
-                {
-                    if (_bitmap[clusterIndex / 8] == 0xFF)
-                        usedClusters += 8;
-                    clusterIndex += 8;
-                }
-                else
-                {
-                    if (GetAtIndex(clusterIndex++))
-                        usedClusters++;
-                }
+                var byteIndex = SetAllocation(cluster, false);
+                Write(byteIndex, 1);
             }
-            return usedClusters;
         }
     }
 }
