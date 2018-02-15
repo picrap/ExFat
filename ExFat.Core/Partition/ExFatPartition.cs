@@ -6,6 +6,7 @@ namespace ExFat.Partition
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics.Contracts;
     using System.IO;
     using System.Linq;
     using Entries;
@@ -20,7 +21,6 @@ namespace ExFat.Partition
         private readonly Stream _partitionStream;
         private readonly ExFatOptions _options;
         private readonly object _streamLock = new object();
-        private readonly object _allocationLock = new object();
         private readonly object _fatLock = new object();
 
         /// <summary>
@@ -121,7 +121,8 @@ namespace ExFat.Partition
         public void Flush()
         {
             FlushAllocationBitmap();
-            FlushFatPage();
+            lock (_fatLock)
+                FlushFatPage();
             FlushPartitionStream();
         }
 
@@ -187,6 +188,7 @@ namespace ExFat.Partition
         /// </summary>
         /// <param name="cluster">The cluster.</param>
         /// <param name="offset">The offset.</param>
+        // locked on _streamLock
         private void SeekCluster(Cluster cluster, long offset = 0)
         {
             _partitionStream.Seek(GetClusterOffset(cluster) + offset, SeekOrigin.Begin);
@@ -206,6 +208,7 @@ namespace ExFat.Partition
         /// Seeks the sector.
         /// </summary>
         /// <param name="sectorIndex">Index of the sector.</param>
+        // locked on _streamLock
         private void SeekSector(long sectorIndex)
         {
             _partitionStream.Seek(GetSectorOffset(sectorIndex), SeekOrigin.Begin);
@@ -218,12 +221,14 @@ namespace ExFat.Partition
         private int FatPageSize => (int)BootSector.BytesPerSector.Value * SectorsPerFatPage;
         private int ClustersPerFatPage => FatPageSize / sizeof(Int32);
 
+        // already locked on _fatLock
         private byte[] GetFatPage(Cluster cluster)
         {
             var fatPageIndex = GetFatPageIndex(cluster);
             return GetFatPageFromIndex(fatPageIndex);
         }
 
+        // already locked on _fatLock (except from Format but we don't care)
         private byte[] GetFatPageFromIndex(long fatPageIndex)
         {
             if (_fatPage == null)
@@ -244,6 +249,7 @@ namespace ExFat.Partition
             return fatPageIndex;
         }
 
+        // already locked on _fatLock
         private void FlushFatPage()
         {
             if (_fatPage != null && _fatPageDirty)
@@ -324,6 +330,7 @@ namespace ExFat.Partition
             }
         }
 
+        // invoked only from format, so considered as safe
         private void ClearFat()
         {
             var lastPageIndex = GetFatPageIndex(BootSector.ClusterCount.Value);
@@ -345,11 +352,9 @@ namespace ExFat.Partition
         /// <returns></returns>
         public Cluster AllocateCluster(Cluster previousClusterHint)
         {
-            lock (_allocationLock)
-            {
-                var allocationBitmap = GetAllocationBitmap();
-                return allocationBitmap.Allocate(previousClusterHint);
-            }
+            // ExFatAllocationBitmap is thread-safe, so no need to lock here
+            var allocationBitmap = GetAllocationBitmap();
+            return allocationBitmap.Allocate(previousClusterHint);
         }
 
         /// <summary>
@@ -358,13 +363,11 @@ namespace ExFat.Partition
         /// <param name="dataDescriptor">The data descriptor.</param>
         public void Free(DataDescriptor dataDescriptor)
         {
-            lock (_allocationLock)
-            {
-                var allocationBitmap = GetAllocationBitmap();
-                // TODO: optimize to write all only once
-                foreach (var cluster in GetClusters(dataDescriptor))
-                    allocationBitmap.Free(cluster);
-            }
+            // ExFatAllocationBitmap is thread-safe, so no need to lock here
+            var allocationBitmap = GetAllocationBitmap();
+            // TODO: optimize to write all only once
+            foreach (var cluster in GetClusters(dataDescriptor))
+                allocationBitmap.Free(cluster);
         }
 
         /// <inheritdoc />
@@ -374,10 +377,8 @@ namespace ExFat.Partition
         /// <param name="cluster">The cluster.</param>
         public void FreeCluster(Cluster cluster)
         {
-            lock (_allocationLock)
-            {
-                GetAllocationBitmap().Free(cluster);
-            }
+            // ExFatAllocationBitmap is thread-safe, so no need to lock here
+            GetAllocationBitmap().Free(cluster);
         }
 
         /// <inheritdoc />

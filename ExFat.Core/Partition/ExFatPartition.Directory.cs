@@ -45,7 +45,7 @@ namespace ExFat.Partition
         public IEnumerable<ExFatMetaDirectoryEntry> GetMetaEntries(DataDescriptor dataDescriptor)
         {
             var entriesStack = new List<ExFatDirectoryEntry>();
-            foreach (var directoryEntry in GetEntries(dataDescriptor))
+            foreach (var directoryEntry in GetEntries(dataDescriptor)) // locked on _directoryLock
             {
                 if (!directoryEntry.InUse)
                     continue;
